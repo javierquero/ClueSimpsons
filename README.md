@@ -1,4 +1,4 @@
-# 🍩 Anotador Clue: Los Simpson - Edición Pro
+# 🍩 Anotador Clue: Los Simpson
 
 Un anotador digital e inteligente para el juego de mesa **Clue: Los Simpson** (Hasbro / Toy Company). Diseñado para reemplazar la hoja de papel tradicional, automatizar deducciones y mantener la privacidad de tus notas durante la partida.
 
