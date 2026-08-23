@@ -55,24 +55,7 @@
       <span class="text-xl font-extrabold">🎉 ¡CASO RESUELTO!</span>
       <p class="text-xs sm:text-sm mt-0.5" id="solved-text"></p>
     </div>
-
-    <!-- BARRA DE FILTROS Y VISTA -->
-    <div class="bg-yellow-200 border-2 border-yellow-400 rounded-xl p-2.5 mb-3 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-slate-800">
-      <div class="flex items-center space-x-2">
-        <span>👁️ Vista:</span>
-        <label class="flex items-center space-x-1 cursor-pointer bg-white px-2 py-1 rounded border border-yellow-400">
-          <input type="checkbox" id="filter-pending" onchange="toggleFilterPending(this.checked)" class="rounded text-yellow-600">
-          <span>Solo cartas sin resolver</span>
-        </label>
-      </div>
-      <div class="flex items-center space-x-1">
-        <span class="text-slate-600 mr-1">Colapsar:</span>
-        <button onclick="toggleCollapse('suspect')" class="bg-white px-2 py-0.5 rounded border border-yellow-400">👤 Sospechosos</button>
-        <button onclick="toggleCollapse('weapon')" class="bg-white px-2 py-0.5 rounded border border-yellow-400">🔫 Armas</button>
-        <button onclick="toggleCollapse('place')" class="bg-white px-2 py-0.5 rounded border border-yellow-400">🏠 Lugares</button>
-      </div>
-    </div>
-
+    
     <!-- TABLA / MATRIZ PRINCIPAL -->
     <div class="bg-white rounded-xl shadow-lg border-2 border-yellow-500 overflow-hidden">
       <div class="overflow-x-auto">
