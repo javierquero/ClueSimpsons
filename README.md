@@ -37,3 +37,13 @@ Un anotador digital e inteligente para el juego de mesa **Clue: Los Simpson** (H
 ├── index.html              # Código fuente completo (Versión 1)
 ├── caja-clue-simpsons.png  # Imagen para la pantalla de bloqueo
 └── README.md               # Documentación del proyecto
+
+## 📂 Mejoras / Actualizaciones
+
+Selector de cartas al principio de la partida. Que obligue al jugador a seleccionar su cartas. Que controle la cantidad que le tocan.
+
+En la configuración deberían estar Reglas y compartir. Y debería haber un nuevo botón que diga algo así como nueva partida y cargue el que ahora esta en configuración.
+Versión tiene que estar en configuración en configuración.
+Bloquear tiene que estar bien a la izquierda, agrupado con la configuración y nueva partida.
+El banner de ganador arriba no se ve. Tiene que ser en el centro de la pantalla y con sonido. Preferentemente que diga el resultado.
+
