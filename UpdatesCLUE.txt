@@ -1,7 +1,0 @@
-Selector de cartas al principio de la partida. Que obligue a seleccionar la cantidad de cartas por jugador.
-
-En la configuración deberían estar Reglas y compartir. y debería haber un nuevo botón que diga algo asi como nueva partida y cargue el que ahora esta en configuración.
-Versiona en configuración.
-Bloquear bien a la izquierda, agrupado con la configuración y nueva partida.
-El banner de ganador arriba no se ve tiene que se en el centro de la pantalla y con sonido. Preferentemente que diga el resultado.
-Cosmetica de iconos y fuentes. La dona tiene que ser la rosa clásica de los simpson. El titulo tiene que ser con la ttf de los simpsons.
