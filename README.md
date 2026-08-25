@@ -38,6 +38,8 @@ Un anotador digital e inteligente para el juego de mesa **Clue: Los Simpson** (H
 ├── caja-clue-simpsons.png  # Imagen para la pantalla de bloqueo
 └── README.md               # Documentación del proyecto
 
+---
+
 ## 📂 Mejoras / Actualizaciones
 
 Selector de cartas al principio de la partida. Que obligue al jugador a seleccionar su cartas. Que controle la cantidad que le tocan.
