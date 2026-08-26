@@ -1,37 +1,57 @@
 <!DOCTYPE html>
-<!-- CORREGIDO A MANO LOS DUPLICADOS -->
-
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Anotador Clue: Los Simpson</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍩</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="dona.png">
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <style>
-    .sticky-col {
-      position: sticky;
-      left: 0;
-      z-index: 10;
+ <style>
+  @font-face {
+    font-family: 'HomerSimpson';
+    src: url('Homer_Simpson_Revised.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+
+  .font-simpson {
+    font-family: 'HomerSimpson', sans-serif;
+  }
+
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+  }
+</style>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            simpson: ['HomerSimpson', 'sans-serif'],
+          }
+        }
+      }
     }
-  </style>
+  </script>
 </head>
 <body class="bg-amber-100 min-h-screen text-slate-800 font-sans pb-20 overflow-x-hidden">
 
   <!-- TOP HEADER -->
   <header class="bg-yellow-400 border-b-4 border-yellow-600 px-1.5 sm:px-4 py-2 sm:py-3 sticky top-0 z-30 shadow-md">
     <div class="max-w-4xl mx-auto flex items-center justify-between gap-1">
-      <div class="flex items-center space-x-1 shrink-0">
-        <span class="text-lg sm:text-2xl">🍩</span>
-        <h1 class="font-extrabold text-xs sm:text-xl text-yellow-950 tracking-tight sm:tracking-wide">Clue Simpsons</h1>
+      <div class="flex items-center space-x-2 shrink-0">
+        <img src="dona.png" alt="Dona Simpsons" class="w-6 h-6 sm:w-8 sm:h-8">
+        <h1 class="font-simpson text-xl sm:text-3xl lg:text-5xl text-yellow-950 tracking-wide">Clue Simpsons</h1>
       </div>
       <div class="flex items-center space-x-0.5 sm:space-x-2 shrink-0">
-
         <button onclick="openShareModal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-1.5 sm:py-1.5 sm:px-2 rounded-lg text-[11px] sm:text-sm shadow flex items-center">
           📤 <span class="hidden sm:inline ml-1">Compartir</span>
         </button>
-        <button onclick="openMyHandModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-1.5 sm:py-1.5 sm:px-2 rounded-lg text-[11px] sm:text-sm shadow flex items-center">
+        <button id="btn-myhand" onclick="openMyHandModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-1.5 sm:py-1.5 sm:px-2 rounded-lg text-[11px] sm:text-sm shadow flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
           🎴 <span class="hidden sm:inline ml-1">Mis Cartas</span>
         </button>
         <button onclick="openRulesModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-1.5 sm:py-1.5 sm:px-2 rounded-lg text-[11px] sm:text-sm shadow flex items-center">
@@ -66,7 +86,7 @@
         <table class="w-full border-collapse text-left text-xs sm:text-sm">
           <thead>
             <tr class="bg-yellow-200 border-b border-yellow-400" id="table-header">
-				<th class="p-1.5 sm:p-3 font-bold text-slate-800 sticky-col bg-yellow-200 min-w-[110px] sm:min-w-[150px] border-r border-yellow-300">Cartas</th>
+              <th class="p-1.5 sm:p-3 font-bold text-slate-800 sticky-col bg-yellow-200 min-w-[110px] sm:min-w-[150px] border-r border-yellow-300">Cartas</th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>
@@ -93,13 +113,15 @@
     <div class="bg-white rounded-2xl border-4 border-yellow-400 p-5 sm:p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="text-lg font-extrabold text-slate-800 flex items-center">🎴 Marcar Mis Cartas Iniciales</h2>
-        <button onclick="closeMyHandModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
       </div>
-      <p class="text-xs text-slate-600">Marcá las cartas que tenés en tu mano al empezar. Se tildarán automáticamente para vos (✔️) y se tacharán (❌) para tus rivales.</p>
+      <div class="flex justify-between items-center bg-yellow-50 p-2 rounded border border-yellow-300">
+        <p class="text-xs text-slate-700 font-semibold">Selecciona tus cartas:</p>
+        <span id="myhand-counter" class="text-xs font-bold px-2 py-0.5 rounded bg-yellow-300 text-yellow-950">0/0</span>
+      </div>
+      <p class="text-xs text-red-600 font-bold">⚠️ Atención: Una vez confirmadas no se podrán modificar tus selecciones ni tu columna durante la partida.</p>
       <div id="myhand-options" class="space-y-3"></div>
       <div class="flex justify-end space-x-2 pt-3 border-t sticky bottom-0 bg-white">
-        <button onclick="closeMyHandModal()" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm">Cancelar</button>
-        <button onclick="saveMyHand()" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 font-extrabold text-white text-sm shadow">Guardar Mano</button>
+        <button onclick="saveMyHand()" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 font-extrabold text-white text-sm shadow">Confirmar y Guardar Mano</button>
       </div>
     </div>
   </div>
@@ -241,16 +263,14 @@
       <h2 class="text-xl font-extrabold text-slate-800 border-b pb-2">Configurar Partida</h2>
       <div>
         <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Cantidad de Jugadores</label>
-        <select id="player-count-select" onchange="updatePlayerInputs()" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium">
-          <option value="3">3 Jugadores (6 cartas c/u)</option>
-          <option value="4" selected>4 Jugadores (5 y 4 cartas)</option>
-          <option value="5">5 Jugadores (4 y 3 cartas)</option>
-          <option value="6">6 Jugadores (3 cartas c/u)</option>
+        <select id="player-count-select" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium">
+          <option value="3">3 Jugadores</option>
+          <option value="4" selected>4 Jugadores</option>
+          <option value="5">5 Jugadores</option>
+          <option value="6">6 Jugadores</option>
         </select>
       </div>
-      <div id="player-names-container" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
-      <div class="flex items-center justify-between pt-3 border-t">
-
+      <div class="flex items-center justify-end pt-3 border-t">
         <div class="flex space-x-2">
           <button onclick="closeConfigModal()" id="btn-cancel-config" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm hidden">Cancelar</button>
           <button onclick="startNewGame()" class="px-5 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">¡Empezar Juego!</button>
@@ -351,36 +371,16 @@
 
     let gameState = {
       started: false,
+      handLocked: false,
       players: ["Vos", "Jugador 2", "Jugador 3", "Jugador 4"],
       matrix: {},
       envelope: { suspect: "", weapon: "", place: "" },
       history: []
     };
 
-    let historyStack = [];
     let viewSettings = {
-      onlyPending: false,
       collapsed: { suspect: false, weapon: false, place: false }
     };
-
-    function pushHistory() {
-      if (historyStack.length >= 20) historyStack.shift();
-      historyStack.push(JSON.stringify(gameState));
-      updateUndoButton();
-    }
-
-    function undo() {
-      if (historyStack.length === 0) return;
-      gameState = JSON.parse(historyStack.pop());
-      saveState();
-      renderAll();
-      updateUndoButton();
-    }
-
-    function updateUndoButton() {
-      const btn = document.getElementById('btn-undo');
-      if (btn) btn.disabled = historyStack.length === 0;
-    }
 
     function getCardCountForPlayer(playerIdx, totalPlayers) {
       const totalCards = 18;
@@ -476,6 +476,7 @@
         try { 
           gameState = JSON.parse(saved); 
           if (!gameState.envelope) gameState.envelope = { suspect: "", weapon: "", place: "" };
+          if (gameState.handLocked === undefined) gameState.handLocked = false;
         } catch (e) { console.error(e); }
       }
     }
@@ -493,7 +494,6 @@
     function closeEnvelopeModal() { document.getElementById('envelope-modal').classList.add('hidden'); }
 
     function saveEnvelope() {
-      pushHistory();
       const suspect = document.getElementById('envelope-suspect').value;
       const weapon = document.getElementById('envelope-weapon').value;
       const place = document.getElementById('envelope-place').value;
@@ -511,15 +511,11 @@
 
     function openConfigModal() {
       document.getElementById('player-count-select').value = gameState.players.length.toString();
-      updatePlayerInputs();
       
-      const shareBtn = document.getElementById('btn-share-config');
       if (gameState.started) {
         document.getElementById('btn-cancel-config').classList.remove('hidden');
-        if (shareBtn) shareBtn.innerText = "📤 Compartir / Copiar";
       } else {
         document.getElementById('btn-cancel-config').classList.add('hidden');
-        if (shareBtn) shareBtn.innerText = "📥 Cargar Partida";
       }
 
       document.getElementById('config-modal').classList.remove('hidden');
@@ -527,41 +523,17 @@
 
     function closeConfigModal() { document.getElementById('config-modal').classList.add('hidden'); }
 
-    function updatePlayerInputs() {
-      const selectEl = document.getElementById('player-count-select');
-      if (!selectEl) return;
-      const count = parseInt(selectEl.value);
-      const container = document.getElementById('player-names-container');
-      if (!container) return;
-      container.innerHTML = '';
-
-      for (let i = 0; i < count; i++) {
-        const defaultName = i === 0 ? (gameState.players[0] || "Vos") : (gameState.players[i] || `Jugador ${i+1}`);
-        const cardsCount = getCardCountForPlayer(i, count);
-        container.innerHTML += `
-          <div>
-            <label class="block text-xs font-semibold text-slate-600">
-              Nombre Jugador ${i+1} <span class="text-yellow-700 font-bold">(${cardsCount} cartas)</span>
-            </label>
-            <input type="text" id="player-input-${i}" value="${defaultName}" class="w-full border border-yellow-400 rounded p-1.5 text-sm">
-          </div>
-        `;
-      }
-    }
-
     function startNewGame() {
-      pushHistory();
       const selectEl = document.getElementById('player-count-select');
       const count = selectEl ? parseInt(selectEl.value) : 4;
-      const newPlayers = [];
+      const newPlayers = ["Vos"];
 
-      for (let i = 0; i < count; i++) {
-        const inputEl = document.getElementById(`player-input-${i}`);
-        const inputVal = inputEl ? inputEl.value.trim() : '';
-        newPlayers.push(inputVal || `Jugador ${i+1}`);
+      for (let i = 1; i < count; i++) {
+        newPlayers.push(`Jugador ${i+1}`);
       }
 
       gameState.started = true;
+      gameState.handLocked = false;
       gameState.players = newPlayers;
       gameState.matrix = {};
       gameState.envelope = { suspect: "", weapon: "", place: "" };
@@ -569,11 +541,14 @@
       saveState();
       renderAll();
       closeConfigModal();
+      openMyHandModal();
     }
 
-    function toggleFilterPending(checked) {
-      viewSettings.onlyPending = checked;
-      renderAll();
+    function updatePlayerName(index, newName) {
+      gameState.players[index] = newName.trim() || (index === 0 ? "Vos" : `Jugador ${index + 1}`);
+      saveState();
+      renderHistory();
+      populateDropdowns();
     }
 
     function toggleCollapse(category) {
@@ -581,7 +556,34 @@
       renderAll();
     }
 
+    function updateHandModalCounter() {
+      const maxAllowed = getCardCountForPlayer(0, gameState.players.length);
+      const selected = document.querySelectorAll('input[name="myhand-card"]:checked').length;
+      const counterEl = document.getElementById('myhand-counter');
+      if (counterEl) {
+        counterEl.innerText = `${selected}/${maxAllowed}`;
+        if (selected === maxAllowed) {
+          counterEl.className = "text-xs font-bold px-2 py-0.5 rounded bg-emerald-600 text-white";
+        } else {
+          counterEl.className = "text-xs font-bold px-2 py-0.5 rounded bg-yellow-300 text-yellow-950";
+        }
+      }
+    }
+
+    function handleHandCheckboxChange(checkbox) {
+      const maxAllowed = getCardCountForPlayer(0, gameState.players.length);
+      const checkedBoxes = document.querySelectorAll('input[name="myhand-card"]:checked');
+
+      if (checkedBoxes.length > maxAllowed) {
+        checkbox.checked = false;
+        alert(`No podés seleccionar más de ${maxAllowed} cartas para tu mano en una partida de ${gameState.players.length} jugadores.`);
+      }
+      updateHandModalCounter();
+    }
+
     function openMyHandModal() {
+      if (gameState.handLocked) return;
+      
       const container = document.getElementById('myhand-options');
       container.innerHTML = '';
       const sections = [
@@ -596,7 +598,7 @@
           const isChecked = gameState.matrix[`${card}_0`] === 2;
           secHtml += `
             <label class="flex items-center space-x-2 text-xs bg-slate-50 p-1.5 rounded border border-slate-200 cursor-pointer">
-              <input type="checkbox" name="myhand-card" value="${card}" ${isChecked ? 'checked' : ''} class="rounded text-emerald-600">
+              <input type="checkbox" name="myhand-card" value="${card}" ${isChecked ? 'checked' : ''} onchange="handleHandCheckboxChange(this)" class="rounded text-emerald-600">
               <span class="truncate">${card}</span>
             </label>
           `;
@@ -605,15 +607,21 @@
         container.innerHTML += secHtml;
       });
 
+      updateHandModalCounter();
       document.getElementById('myhand-modal').classList.remove('hidden');
     }
 
     function closeMyHandModal() { document.getElementById('myhand-modal').classList.add('hidden'); }
 
     function saveMyHand() {
-      pushHistory();
+      const allotted = getCardCountForPlayer(0, gameState.players.length);
       const checkboxes = document.querySelectorAll('input[name="myhand-card"]:checked');
-      
+
+      if (checkboxes.length !== allotted) {
+        alert(`Tenés que seleccionar exactamente ${allotted} cartas para tu mano.`);
+        return;
+      }
+
       ALL_CARDS_FLAT.forEach(card => {
         if (gameState.matrix[`${card}_0`] === 2) {
           gameState.matrix[`${card}_0`] = 0;
@@ -624,6 +632,7 @@
         confirmCard(cb.value, 0);
       });
 
+      gameState.handLocked = true;
       runAutoDeductions();
       saveState();
       renderAll();
@@ -656,7 +665,6 @@
       const code = document.getElementById('share-code-input').value.trim();
       if (!code) return;
       try {
-        pushHistory();
         const jsonStr = decodeURIComponent(atob(code));
         gameState = JSON.parse(jsonStr);
         gameState.started = true;
@@ -673,6 +681,11 @@
     function renderAll() {
       const totalPlayers = gameState.players.length;
 
+      const btnHand = document.getElementById('btn-myhand');
+      if (btnHand) {
+        btnHand.disabled = gameState.handLocked;
+      }
+
       const env = gameState.envelope;
       const solvedAlert = document.getElementById('solved-alert');
       if (env.suspect && env.weapon && env.place) {
@@ -686,8 +699,8 @@
       const btnBadgeEl = document.getElementById('btn-envelope-badge');
       if (btnBadgeEl) btnBadgeEl.innerText = envItems.length > 0 ? `(${envItems.length}/3)` : '';
 
-		const headerTr = document.getElementById('table-header');
-		headerTr.innerHTML = `<th class="p-1 sm:p-1.5 font-bold text-slate-800 sticky-col bg-yellow-200 w-16 min-w-[60px] border-r border-yellow-300 text-center">Cartas</th>`;
+      const headerTr = document.getElementById('table-header');
+      headerTr.innerHTML = `<th class="p-1 sm:p-1.5 font-bold text-slate-800 sticky-col bg-yellow-200 w-16 min-w-[60px] border-r border-yellow-300 text-center">Cartas</th>`;
       
       gameState.players.forEach((p, idx) => {
         const allotted = getCardCountForPlayer(idx, totalPlayers);
@@ -695,9 +708,14 @@
         const isFull = confirmed >= allotted;
         const badgeStyle = isFull ? 'bg-emerald-600 text-white' : 'bg-yellow-800 text-yellow-100';
 
+        const isUser = idx === 0;
+        const inputHtml = isUser 
+          ? `<div class="font-extrabold text-xs sm:text-sm text-yellow-950 py-1">Vos</div>` 
+          : `<input type="text" value="${p}" onchange="updatePlayerName(${idx}, this.value)" class="w-full text-center font-bold text-xs sm:text-sm bg-transparent border-b border-yellow-500 focus:outline-none focus:border-yellow-800 py-0.5" placeholder="Nombre...">`;
+
         headerTr.innerHTML += `
-          <th class="p-1 sm:p-2.5 font-bold text-center border-r border-yellow-300 min-w-[50px] sm:min-w-[80px]">
-            <div class="truncate max-w-[55px] sm:max-w-none text-[11px] sm:text-sm" title="${p}">${p}</div>
+          <th class="p-1 sm:p-2.5 font-bold text-center border-r border-yellow-300 min-w-[65px] sm:min-w-[90px]">
+            ${inputHtml}
             <div class="text-[9px] sm:text-[10px] font-semibold mt-0.5 sm:mt-1">
               <span class="px-1 py-0.5 rounded-full ${badgeStyle}">${confirmed}/${allotted} ✔️</span>
             </div>
@@ -717,10 +735,9 @@
       sections.forEach(sec => {
         const isCollapsed = viewSettings.collapsed[sec.key];
         tbody.innerHTML += `
-          <tr class="bg-yellow-100 border-y border-yellow-300 cursor-pointer" onclick="toggleCollapse('${sec.key}')">
-            <td colspan="${gameState.players.length + 1}" class="p-1.5 font-black text-xs text-yellow-900 tracking-wider flex justify-between items-center">
-              <span>${sec.name}</span>
-                <!-- TOP HEADER <span class="text-xs sm:text-sm">${isCollapsed ? '➕' : '➖'}</span> -->
+          <tr class="bg-yellow-200 border-y border-yellow-400 cursor-pointer" onclick="toggleCollapse('${sec.key}')">
+            <td colspan="${gameState.players.length + 1}" class="p-2 font-black text-xs sm:text-sm text-yellow-950 tracking-wider uppercase bg-yellow-200">
+              ${sec.name}
             </td>
           </tr>
         `;
@@ -728,12 +745,6 @@
         if (!isCollapsed) {
           sec.items.forEach(card => {
             const inEnvelope = Object.values(gameState.envelope).includes(card);
-            const isConfirmedAnywhere = gameState.players.some((_, pIdx) => gameState.matrix[`${card}_${pIdx}`] === 2);
-            
-            if (viewSettings.onlyPending && (inEnvelope || isConfirmedAnywhere)) {
-              return;
-            }
-
             const envBadge = inEnvelope ? ` <span class="text-[10px] bg-amber-200 text-amber-900 px-1 rounded font-bold">✉️ Sobre</span>` : '';
 
             let rowHtml = `<tr class="border-b border-slate-100 hover:bg-amber-50/50 ${inEnvelope ? 'bg-amber-100/80 font-semibold' : ''}">
@@ -744,8 +755,10 @@
               const stateCode = gameState.matrix[key] || 0;
               const st = STATES[stateCode];
 
+              const cursorClass = (pIdx === 0 && gameState.handLocked) ? 'cursor-not-allowed opacity-80' : 'cursor-pointer';
+
               rowHtml += `
-                <td onclick="cycleCell('${card}', ${pIdx})" class="p-1 sm:p-2 text-center text-sm sm:text-base cursor-pointer select-none border-r border-slate-200 ${st.bg} ${st.text} transition-colors">
+                <td onclick="cycleCell('${card}', ${pIdx})" class="p-1 sm:p-2 text-center text-sm sm:text-base select-none border-r border-slate-200 ${st.bg} ${st.text} ${cursorClass} transition-colors">
                   ${st.symbol}
                 </td>
               `;
@@ -758,11 +771,13 @@
       });
 
       renderHistory();
-      updateUndoButton();
     }
 
     function cycleCell(card, playerIdx) {
-      pushHistory();
+      if (playerIdx === 0 && gameState.handLocked) {
+        return;
+      }
+
       const key = `${card}_${playerIdx}`;
       const currentState = gameState.matrix[key] || 0;
       const nextState = (currentState + 1) % STATES.length;
@@ -790,6 +805,7 @@
     function populateDropdowns() {
       const fill = (id, list, addEmpty = false) => {
         const el = document.getElementById(id);
+        if (!el) return;
         let opts = addEmpty ? `<option value="">-- Sin seleccionar --</option>` : '';
         opts += list.map(item => `<option value="${item}">${item}</option>`).join('');
         el.innerHTML = opts;
@@ -866,7 +882,6 @@
     }
 
     function saveGuess() {
-      pushHistory();
       const guesserIdx = parseInt(document.getElementById('guess-who').value);
       const guesserName = gameState.players[guesserIdx];
       const suspect = document.getElementById('guess-suspect').value;
@@ -930,7 +945,6 @@
 
     function clearHistory() {
       if (confirm("¿Querés borrar el historial de suposiciones?")) {
-        pushHistory();
         gameState.history = [];
         saveState();
         renderHistory();
@@ -942,5 +956,4 @@
     }
   </script>
 </body>
-
 </html>
