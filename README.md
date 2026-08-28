@@ -3,6 +3,7 @@
   Anotador Clue: Los Simpson
   <img src="dona.png" width="40" height="40" alt="Dona Simpsons">
 </h1>
+---
 
 Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para jugar sin papel ni lápiz. Funciona como una web app de una sola página, sin instalación ni conexión a internet requerida durante el juego.
 
