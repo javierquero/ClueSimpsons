@@ -907,19 +907,31 @@
     }
 
     function populateDropdowns() {
+      // Los dropdowns de suposición se llenan dinámicamente en openGuessModal()
+      // para excluir las cartas propias cada vez que se abre el modal.
+    }
+
+    function openGuessModal() {
+      if (!gameState.players.length) return;
+
+      // Excluir del combo las cartas que tiene Vos en mano
+      const myCards = new Set(
+        ALL_CARDS_FLAT.filter(card => gameState.matrix[`${card}_0`] === 2)
+      );
+
       const fill = (id, list) => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.innerHTML = list.map(item => `<option value="${item}">${item}</option>`).join('');
+        el.innerHTML = list
+          .filter(item => !myCards.has(item))
+          .map(item => `<option value="${item}">${item}</option>`)
+          .join('');
       };
 
       fill('guess-suspect', CARDS.suspects);
       fill('guess-weapon', CARDS.weapons);
       fill('guess-place', CARDS.places);
-    }
 
-    function openGuessModal() {
-      if (!gameState.players.length) return;
       document.getElementById('guess-nobody').checked = false;
       renderGuessResponses();
       document.getElementById('guess-modal').classList.remove('hidden');
