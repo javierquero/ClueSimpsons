@@ -24,6 +24,25 @@
     left: 0;
     z-index: 10;
   }
+
+  @keyframes slideDown {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    80% {
+      transform: translateY(5%);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .solved-modal-content {
+    animation: slideDown 2s ease-out forwards;
+  }
 </style>
 
   <script>
@@ -48,10 +67,7 @@
         <h1 class="font-simpson text-xl sm:text-3xl lg:text-5xl text-yellow-950 tracking-wide">Clue Simpsons</h1>
       </div>
       <div class="flex items-center space-x-0.5 sm:space-x-2 shrink-0 flex-wrap">
-        <button onclick="openShareModal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-1.5 sm:py-1.5 sm:px-2 rounded-lg text-[11px] sm:text-sm shadow flex items-center">
-          📤 <span class="hidden sm:inline ml-1">Compartir</span>
-        </button>
-        <button id="btn-myhand" onclick="openMyHandModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-1.5 sm:py-1.5 sm:px-2 rounded-lg text-[11px] sm:text-sm shadow flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+        <button id="btn-myhand" onclick="openMyHandModal()" style="display:none;" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-1.5 sm:py-1.5 sm:px-2 rounded-lg text-[11px] sm:text-sm shadow flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
           🎴 <span class="hidden sm:inline ml-1">Mis Cartas</span>
         </button>
         <button onclick="openRulesModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-1.5 sm:py-1.5 sm:px-2 rounded-lg text-[11px] sm:text-sm shadow flex items-center">
@@ -74,13 +90,6 @@
   </header>
 
   <main class="max-w-4xl mx-auto p-2 sm:p-4">
-    <!-- ALERTA DE CASO RESUELTO -->
-    <div id="solved-alert" class="hidden bg-emerald-500 text-white p-3.5 rounded-xl shadow-lg border-2 border-emerald-700 mb-4 animate-bounce text-center">
-      <span class="text-xl font-extrabold">🎉 ¡CASO RESUELTO!</span>
-      <p class="text-xs sm:text-sm mt-0.5" id="solved-text"></p>
-    </div>
-    
-    <!-- TABLA / MATRIZ PRINCIPAL -->
     <div class="bg-white rounded-xl shadow-lg border-2 border-yellow-500 overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full border-collapse text-left text-xs sm:text-sm">
@@ -94,7 +103,6 @@
       </div>
     </div>
 
-    <!-- HISTORIAL DE SUPOSICIONES -->
     <div class="mt-6 bg-white border-2 border-yellow-400 rounded-xl p-4 shadow-md">
       <div class="flex justify-between items-center mb-3">
         <h2 class="font-bold text-slate-800 flex items-center text-sm sm:text-base">
@@ -107,6 +115,18 @@
       </div>
     </div>
   </main>
+
+  <!-- MODAL CASO RESUELTO -->
+  <div id="solved-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="solved-modal-content bg-emerald-500 text-white rounded-2xl border-4 border-emerald-700 p-6 sm:p-8 w-full max-w-md shadow-2xl text-center space-y-4">
+      <div class="text-5xl">🎉</div>
+      <h2 class="text-2xl font-extrabold">¡CASO RESUELTO!</h2>
+      <p class="text-sm sm:text-base" id="solved-text-modal"></p>
+      <button onclick="closeSolvedModal()" class="mt-2 px-6 py-2 bg-white text-emerald-700 font-extrabold rounded-lg shadow hover:bg-emerald-50 transition-colors">
+        ¡Excelente!
+      </button>
+    </div>
+  </div>
 
   <!-- MODAL MIS CARTAS -->
   <div id="myhand-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -126,54 +146,30 @@
     </div>
   </div>
 
-  <!-- MODAL COMPARTIR / EXPORTAR -->
-  <div id="share-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl border-4 border-yellow-400 p-5 sm:p-6 w-full max-w-md shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h2 class="text-lg font-extrabold text-slate-800 flex items-center">📤 Compartir o Cargar Partida</h2>
-        <button onclick="closeShareModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-700 mb-1">Código de estado actual:</label>
-        <textarea id="share-code-output" readonly class="w-full h-20 p-2 text-xs font-mono border-2 border-yellow-400 rounded-lg bg-slate-50 select-all"></textarea>
-        <div class="flex space-x-2 mt-2">
-          <button onclick="copyShareCode()" class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold py-1.5 rounded-lg text-xs shadow">📋 Copiar Código</button>
-          <button onclick="shareWhatsApp()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 rounded-lg text-xs shadow">💬 Enviar WhatsApp</button>
-        </div>
-      </div>
-      <div class="border-t pt-3">
-        <label class="block text-xs font-bold text-slate-700 mb-1">Cargar partida desde un código:</label>
-        <input type="text" id="share-code-input" placeholder="Pegá el código acá..." class="w-full p-2 text-xs border border-yellow-400 rounded-lg mb-2">
-        <button onclick="importShareCode()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 rounded-lg text-xs shadow">📥 Restaurar Estado</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL SOBRE CONFIDENCIAL -->
+  <!-- MODAL SOBRE CONFIDENCIAL (SOLO LECTURA) -->
   <div id="envelope-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl border-4 border-yellow-400 p-5 sm:p-6 w-full max-w-md shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="text-lg font-extrabold text-slate-800 flex items-center">✉️ Sobre Confidencial</h2>
         <button onclick="closeEnvelopeModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
       </div>
-      <p class="text-xs text-slate-600">Seleccioná las cartas del Sobre. Al guardar, se marcarán cruces (❌) automáticamente para todos los jugadores:</p>
+      <p class="text-xs text-slate-600">Cartas actuales en el sobre (deducidas automáticamente):</p>
       <div class="space-y-3">
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">👤 Sospechoso en el Sobre</label>
-          <select id="envelope-suspect" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-white"></select>
+          <label class="block text-xs font-bold text-slate-700 mb-1">👤 Sospechoso</label>
+          <p id="envelope-display-suspect" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50 text-slate-800">---</p>
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">🔫 Arma en el Sobre</label>
-          <select id="envelope-weapon" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-white"></select>
+          <label class="block text-xs font-bold text-slate-700 mb-1">🔫 Arma</label>
+          <p id="envelope-display-weapon" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50 text-slate-800">---</p>
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">🏠 Lugar en el Sobre</label>
-          <select id="envelope-place" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-white"></select>
+          <label class="block text-xs font-bold text-slate-700 mb-1">🏠 Lugar</label>
+          <p id="envelope-display-place" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50 text-slate-800">---</p>
         </div>
       </div>
-      <div class="flex justify-end space-x-2 pt-3 border-t">
-        <button onclick="closeEnvelopeModal()" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm">Cancelar</button>
-        <button onclick="saveEnvelope()" class="px-5 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Guardar Sobre</button>
+      <div class="flex justify-end pt-3 border-t">
+        <button onclick="closeEnvelopeModal()" class="px-5 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Cerrar</button>
       </div>
     </div>
   </div>
@@ -368,22 +364,17 @@
 
     const ALL_CARDS_FLAT = [...CARDS.suspects, ...CARDS.weapons, ...CARDS.places];
 
-    // Estados: 0=vacio, 1=❌, 2=✔️, 4=👁️, 11-15=❓₁-❓₅
     const STATES = [
       { code: 0, symbol: "", bg: "bg-white", text: "text-slate-300" },
       { code: 1, symbol: "❌", bg: "bg-red-100", text: "text-red-600 font-bold" },
       { code: 2, symbol: "✔️", bg: "bg-emerald-100", text: "text-emerald-700 font-bold" },
-      { code: 4, symbol: "👁️", bg: "bg-blue-100", text: "text-blue-600 font-bold" }
+      { code: 3, symbol: "1", bg: "bg-amber-100", text: "text-amber-600 font-bold" },
+      { code: 4, symbol: "2", bg: "bg-amber-100", text: "text-amber-600 font-bold" },
+      { code: 5, symbol: "3", bg: "bg-amber-100", text: "text-amber-600 font-bold" },
+      { code: 6, symbol: "4", bg: "bg-amber-100", text: "text-amber-600 font-bold" },
+      { code: 7, symbol: "5", bg: "bg-amber-100", text: "text-amber-600 font-bold" },
+      { code: 8, symbol: "👁️", bg: "bg-blue-100", text: "text-blue-600 font-bold" }
     ];
-    const QUESTION_STATES = [];
-    for (let i = 1; i <= 5; i++) {
-      QUESTION_STATES.push({
-        code: 10 + i,
-        symbol: `❓<sub>${i}</sub>`,
-        bg: "bg-amber-100",
-        text: "text-amber-600 font-bold"
-      });
-    }
 
     let gameState = {
       started: false,
@@ -398,6 +389,98 @@
     let viewSettings = {
       collapsed: { suspect: false, weapon: false, place: false }
     };
+
+    let audioCtx = null;
+    let soundInterval = null;
+
+    // CAMPANITA DE JUEGO (ding-dong)
+    function playSolvedSound() {
+      try {
+        if (soundInterval) {
+          clearInterval(soundInterval);
+          soundInterval = null;
+        }
+        if (audioCtx) {
+          audioCtx.close();
+          audioCtx = null;
+        }
+
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playDing(freq, duration, startTime, volume = 0.3) {
+          if (!audioCtx) return;
+          // Oscilador principal
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(volume, audioCtx.currentTime + startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTime + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + startTime);
+          osc.stop(audioCtx.currentTime + startTime + duration);
+
+          // Armónico para sonido metálico
+          const osc2 = audioCtx.createOscillator();
+          const gain2 = audioCtx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.value = freq * 2.003;
+          gain2.gain.setValueAtTime(volume * 0.15, audioCtx.currentTime + startTime);
+          gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTime + duration);
+          osc2.connect(gain2);
+          gain2.connect(audioCtx.destination);
+          osc2.start(audioCtx.currentTime + startTime);
+          osc2.stop(audioCtx.currentTime + startTime + duration);
+        }
+
+        // "Ding" (agudo) y "Dong" (más grave)
+        playDing(1000, 0.35, 0.0, 0.25);  // Ding
+        playDing(800, 0.45, 0.25, 0.2);   // Dong
+
+        // Repetir cada 3 segundos
+        soundInterval = setInterval(() => {
+          if (!audioCtx) return;
+          if (audioCtx.state === 'closed') {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          playDing(1000, 0.35, 0.0, 0.25);
+          playDing(800, 0.45, 0.25, 0.2);
+        }, 3000);
+
+      } catch (e) {
+        console.warn('No se pudo reproducir el sonido:', e);
+      }
+    }
+
+    function stopSolvedSound() {
+      if (soundInterval) {
+        clearInterval(soundInterval);
+        soundInterval = null;
+      }
+      if (audioCtx) {
+        try { audioCtx.close(); } catch (e) {}
+        audioCtx = null;
+      }
+    }
+
+    function showSolvedModal() {
+      const modal = document.getElementById('solved-modal');
+      const text = document.getElementById('solved-text-modal');
+      const env = gameState.envelope;
+      text.innerHTML = `<b>Asesino:</b> ${env.suspect}<br><b>Arma:</b> ${env.weapon}<br><b>Lugar:</b> ${env.place}`;
+      modal.classList.remove('hidden');
+      const content = modal.querySelector('.solved-modal-content');
+      content.style.animation = 'none';
+      content.offsetHeight;
+      content.style.animation = 'slideDown 2s ease-out forwards';
+      playSolvedSound();
+    }
+
+    function closeSolvedModal() {
+      document.getElementById('solved-modal').classList.add('hidden');
+      stopSolvedSound();
+    }
 
     function getCardCountForPlayer(playerIdx, totalPlayers) {
       const totalCards = 18;
@@ -415,7 +498,6 @@
       return count;
     }
 
-    // Verificar si todas las celdas de una carta son ❌ (estado 1)
     function allCrossedForCard(card) {
       return gameState.players.every((_, pIdx) => {
         const val = gameState.matrix[`${card}_${pIdx}`] || 0;
@@ -423,7 +505,6 @@
       });
     }
 
-    // Actualizar el sobre basado en las cruces (una por categoría)
     function updateEnvelopeFromCrosses() {
       const categories = ['suspect', 'weapon', 'place'];
       const catCards = {
@@ -452,16 +533,22 @@
           gameState.envelope[cat] = "";
         }
       });
+
+      const solved = gameState.envelope.suspect && gameState.envelope.weapon && gameState.envelope.place;
+      if (solved) {
+        showSolvedModal();
+      } else {
+        closeSolvedModal();
+      }
     }
 
-    // Función para asegurar un solo ✔️ por fila
     function ensureSingleCheck(card, playerIdx) {
       gameState.players.forEach((_, pIdx) => {
         if (pIdx !== playerIdx) {
           const key = `${card}_${pIdx}`;
           if (gameState.matrix[key] === 2) {
             const current = gameState.matrix[key] || 0;
-            if (current !== 4 && current < 11) {
+            if (current !== 8 && (current < 3 || current > 7)) {
               gameState.matrix[key] = 1;
             }
           }
@@ -469,7 +556,6 @@
       });
     }
 
-    // Función principal para actualizar el estado después de cualquier cambio
     function refreshState() {
       updateEnvelopeFromCrosses();
       saveState();
@@ -484,7 +570,6 @@
         openConfigModal();
       }
 
-      // Recalcular el sobre al cargar
       updateEnvelopeFromCrosses();
       saveState();
       renderAll();
@@ -510,34 +595,13 @@
     function closeRulesModal() { document.getElementById('rules-modal').classList.add('hidden'); }
 
     function openEnvelopeModal() {
-      document.getElementById('envelope-suspect').value = gameState.envelope.suspect || "";
-      document.getElementById('envelope-weapon').value = gameState.envelope.weapon || "";
-      document.getElementById('envelope-place').value = gameState.envelope.place || "";
+      document.getElementById('envelope-display-suspect').textContent = gameState.envelope.suspect || "---";
+      document.getElementById('envelope-display-weapon').textContent = gameState.envelope.weapon || "---";
+      document.getElementById('envelope-display-place').textContent = gameState.envelope.place || "---";
       document.getElementById('envelope-modal').classList.remove('hidden');
     }
 
     function closeEnvelopeModal() { document.getElementById('envelope-modal').classList.add('hidden'); }
-
-    function saveEnvelope() {
-      const suspect = document.getElementById('envelope-suspect').value;
-      const weapon = document.getElementById('envelope-weapon').value;
-      const place = document.getElementById('envelope-place').value;
-
-      gameState.envelope = { suspect, weapon, place };
-      // Poner cruces en todos los jugadores para esas cartas
-      [suspect, weapon, place].filter(Boolean).forEach(card => {
-        gameState.players.forEach((_, pIdx) => {
-          const key = `${card}_${pIdx}`;
-          const current = gameState.matrix[key] || 0;
-          if (current !== 4 && current < 11) {
-            gameState.matrix[key] = 1;
-          }
-        });
-      });
-
-      refreshState();
-      closeEnvelopeModal();
-    }
 
     function getMyEffectiveCardCount() {
       if (gameState.myCardsCount !== null && gameState.myCardsCount !== undefined) {
@@ -684,93 +748,43 @@
         return;
       }
 
-      // Limpiamos mi columna de ✔️ anteriores
       ALL_CARDS_FLAT.forEach(card => {
         if (gameState.matrix[`${card}_0`] === 2) {
           gameState.matrix[`${card}_0`] = 0;
         }
       });
 
-      // Marcamos mis cartas
       checkboxes.forEach(cb => {
         const card = cb.value;
         gameState.matrix[`${card}_0`] = 2;
       });
 
-      // Ahora, para cada carta que tengo, ponemos cruces en los demás jugadores (bloqueo inicial)
       checkboxes.forEach(cb => {
         const card = cb.value;
         gameState.players.forEach((_, pIdx) => {
           if (pIdx !== 0) {
             const key = `${card}_${pIdx}`;
             const current = gameState.matrix[key] || 0;
-            if (current !== 4 && current < 11) {
+            if (current !== 8 && (current < 3 || current > 7)) {
               gameState.matrix[key] = 1;
             }
           }
         });
       });
 
-      // ---- NUEVO: poner cruces en mi columna para las cartas que no tengo ----
       ALL_CARDS_FLAT.forEach(card => {
         if (gameState.matrix[`${card}_0`] !== 2) {
-          gameState.matrix[`${card}_0`] = 1; // ❌
+          gameState.matrix[`${card}_0`] = 1;
         }
       });
-      // ---------------------------------------------------------------
 
       gameState.handLocked = true;
       refreshState();
       closeMyHandModal();
     }
 
-    function openShareModal() {
-      const jsonStr = JSON.stringify(gameState);
-      const code = btoa(encodeURIComponent(jsonStr));
-      document.getElementById('share-code-output').value = code;
-      document.getElementById('share-modal').classList.remove('hidden');
-    }
-
-    function closeShareModal() { document.getElementById('share-modal').classList.add('hidden'); }
-
-    function copyShareCode() {
-      const output = document.getElementById('share-code-output');
-      output.select();
-      navigator.clipboard.writeText(output.value);
-      alert("¡Código copiado al portapapeles!");
-    }
-
-    function shareWhatsApp() {
-      const code = document.getElementById('share-code-output').value;
-      const text = encodeURIComponent(`🍩 *Anotador Clue Simpsons*\nAcá tenés mi partida guardada para restaurar:\n\n${code}`);
-      window.open(`https://wa.me/?text=${text}`, '_blank');
-    }
-
-    function importShareCode() {
-      const code = document.getElementById('share-code-input').value.trim();
-      if (!code) return;
-      try {
-        const jsonStr = decodeURIComponent(atob(code));
-        gameState = JSON.parse(jsonStr);
-        gameState.started = true;
-        if (gameState.myCardsCount === undefined) gameState.myCardsCount = null;
-        // Recalcular el sobre
-        updateEnvelopeFromCrosses();
-        saveState();
-        renderAll();
-        closeShareModal();
-        closeConfigModal();
-        alert("¡Partida restaurada con éxito!");
-      } catch (e) {
-        alert("Código inválido. Verificá que esté bien copiado.");
-      }
-    }
-
     function getStateInfo(code) {
       for (let st of STATES) {
-        if (st.code === code) return st;
-      }
-      for (let st of QUESTION_STATES) {
         if (st.code === code) return st;
       }
       return STATES[0];
@@ -785,14 +799,6 @@
       }
 
       const env = gameState.envelope;
-      const solvedAlert = document.getElementById('solved-alert');
-      if (env.suspect && env.weapon && env.place) {
-        document.getElementById('solved-text').innerHTML = `<b>Asesino:</b> ${env.suspect}<br><b>Arma:</b> ${env.weapon}<br><b>Lugar:</b> ${env.place}`;
-        solvedAlert.classList.remove('hidden');
-      } else {
-        solvedAlert.classList.add('hidden');
-      }
-
       const envItems = [env.suspect, env.weapon, env.place].filter(Boolean);
       const btnBadgeEl = document.getElementById('btn-envelope-badge');
       if (btnBadgeEl) {
@@ -855,13 +861,11 @@
               let st, cursorClass, clickHandler;
 
               if (pIdx === 0 && gameState.handLocked) {
-                // Columna "Vos" bloqueada: no editable
                 st = getStateInfo(stateCode);
                 cursorClass = 'cursor-not-allowed opacity-70';
                 clickHandler = '';
               } 
               else if (gameState.matrix[`${card}_0`] === 2 && pIdx !== 0) {
-                // Es mi carta y estamos en columna de otro: inmovible
                 st = getStateInfo(stateCode);
                 cursorClass = 'cursor-not-allowed opacity-70';
                 clickHandler = '';
@@ -895,27 +899,24 @@
       const key = `${card}_${playerIdx}`;
       const currentCode = gameState.matrix[key] || 0;
 
-      // Ciclo: 0 -> 1 -> 2 -> 11 -> 12 -> 13 -> 14 -> 15 -> 4 -> 0
       let nextCode;
       if (currentCode === 0) nextCode = 1;
       else if (currentCode === 1) nextCode = 2;
-      else if (currentCode === 2) nextCode = 11;
-      else if (currentCode === 11) nextCode = 12;
-      else if (currentCode === 12) nextCode = 13;
-      else if (currentCode === 13) nextCode = 14;
-      else if (currentCode === 14) nextCode = 15;
-      else if (currentCode === 15) nextCode = 4;
-      else if (currentCode === 4) nextCode = 0;
+      else if (currentCode === 2) nextCode = 3;
+      else if (currentCode === 3) nextCode = 4;
+      else if (currentCode === 4) nextCode = 5;
+      else if (currentCode === 5) nextCode = 6;
+      else if (currentCode === 6) nextCode = 7;
+      else if (currentCode === 7) nextCode = 8;
+      else if (currentCode === 8) nextCode = 0;
       else nextCode = 0;
 
       gameState.matrix[key] = nextCode;
 
-      // Si el nuevo estado es ✔️ (2), asegurar que no haya otro ✔️ en la misma fila
       if (nextCode === 2) {
         ensureSingleCheck(card, playerIdx);
       }
 
-      // Actualizar el sobre automáticamente
       refreshState();
     }
 
@@ -931,10 +932,6 @@
       fill('guess-suspect', CARDS.suspects);
       fill('guess-weapon', CARDS.weapons);
       fill('guess-place', CARDS.places);
-
-      fill('envelope-suspect', CARDS.suspects, true);
-      fill('envelope-weapon', CARDS.weapons, true);
-      fill('envelope-place', CARDS.places, true);
     }
 
     function openGuessModal() {
@@ -1026,7 +1023,6 @@
               if (!(gameState.matrix[`${cardVal}_0`] === 2 && idx !== 0) && !(idx === 0 && gameState.handLocked)) {
                 const key = `${cardVal}_${idx}`;
                 gameState.matrix[key] = 2;
-                // Asegurar un solo ✔️ en la fila
                 ensureSingleCheck(cardVal, idx);
                 refreshState();
               }
