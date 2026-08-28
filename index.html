@@ -137,6 +137,1083 @@
 
   <!-- ═══ TOP HEADER ═══ -->
   <header class="bg-yellow-400 border-b-4 border-yellow-600 px-2 sm:px-4 py-2 sm:py-3 sticky top-0 z-30 shadow-md">
+    <div class="max-w-5xl mx-auto flex items-center justify-center sm:justify-between gap-1">
+      <!-- Logo mobile: centrado con donas a ambos lados -->
+      <div class="flex items-center justify-center w-full sm:w-auto sm:justify-start space-x-2 shrink-0">
+        <img src="dona.png" alt="Dona" class="w-6 h-6 sm:w-8 sm:h-8">
+        <h1 class="font-simpson text-xl sm:text-3xl lg:text-5xl text-yellow-950 tracking-wide">Clue Simpsons</h1>
+        <img src="dona.png" alt="Dona" class="w-6 h-6 sm:hidden">
+      </div>
+      <!-- Desktop buttons only -->
+      <div class="desktop-only flex items-center space-x-1 sm:space-x-2 shrink-0 flex-wrap">
+        <button id="btn-myhand" onclick="openMyHandModal()" style="display:none !important;"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+          🎴 <span class="ml-1">Mis Cartas</span>
+        </button>
+        <button onclick="openRulesModal()"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center">
+          📖 <span class="ml-1">Reglas</span>
+        </button>
+        <button onclick="openEnvelopeModal()" id="btn-envelope"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center">
+          ✉️ <span class="ml-1">Sobre</span>
+        </button>
+        <button onclick="openGuessModal()"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center">
+          🔍 <span class="ml-1">Suposición</span>
+        </button>
+        <button onclick="toggleLock(true)"
+          class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-1.5 px-2 rounded-lg text-sm flex items-center shadow">
+          🔒 <span class="ml-1">Bloquear</span>
+        </button>
+        <button onclick="openConfigModal()"
+          class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center">
+          ⚙️
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="max-w-5xl mx-auto p-2 sm:p-4">
+    <div id="desktop-layout">
+      <!-- LEFT: tabla principal -->
+      <div>
+        <div class="bg-white rounded-xl shadow-lg border-2 border-yellow-500 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left text-xs sm:text-sm">
+              <thead>
+                <tr class="bg-yellow-200 border-b border-yellow-400" id="table-header">
+                  <th class="p-1.5 sm:p-3 font-bold text-slate-800 sticky-col bg-yellow-200 min-w-[90px] sm:min-w-[150px] border-r border-yellow-300">Cartas</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Historial -->
+        <div class="mt-4 bg-white border-2 border-yellow-400 rounded-xl p-4 shadow-md">
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="font-bold text-slate-800 flex items-center text-sm sm:text-base">📜 Historial de Suposiciones</h2>
+            <button onclick="clearHistory()" class="text-xs text-red-600 hover:underline font-bold">Borrar historial</button>
+          </div>
+          <div id="history-list" class="space-y-2 text-xs sm:text-sm max-h-48 overflow-y-auto">
+            <p class="text-slate-400 italic">No hay suposiciones registradas aún.</p>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+  </main>
+
+  <!-- ═══ BOTTOM NAV (mobile only) ═══ -->
+  <nav id="bottom-nav">
+    <button onclick="openMyHandModal()" id="nav-btn-myhand" style="display:none !important;">
+      <span class="nav-icon">🎴</span>Mis Cartas
+    </button>
+    <button onclick="openEnvelopeModal()">
+      <span class="nav-icon">✉️</span>Sobre
+    </button>
+    <button onclick="openGuessModal()">
+      <span class="nav-icon">🔍</span>Suposición
+    </button>
+    <button onclick="openRulesModal()">
+      <span class="nav-icon">📖</span>Reglas
+    </button>
+    <button onclick="openConfigModal()">
+      <span class="nav-icon">⚙️</span>Opciones
+    </button>
+  </nav>
+
+  <!-- ═══ MODAL CASO RESUELTO ═══ -->
+  <div id="solved-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="solved-modal-content bg-emerald-500 text-white rounded-2xl border-4 border-emerald-700 p-6 sm:p-8 w-full max-w-md shadow-2xl text-center space-y-4">
+      <div class="text-5xl">🎉</div>
+      <h2 class="text-2xl font-extrabold">¡CASO RESUELTO!</h2>
+      <p class="text-sm sm:text-base" id="solved-text-modal"></p>
+      <button onclick="closeSolvedModal()" class="mt-2 px-6 py-2 bg-white text-emerald-700 font-extrabold rounded-lg shadow hover:bg-emerald-50">
+        ¡Excelente!
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL MIS CARTAS (bottom sheet en mobile, centrado en desktop) ═══ -->
+  <div id="myhand-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'myhand-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800">🎴 Marcar Mis Cartas Iniciales</h2>
+          <button onclick="closeMyHandModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-1">✕</button>
+        </div>
+        <div class="flex justify-between items-center bg-yellow-50 p-2 rounded border border-yellow-300 mb-2">
+          <p class="text-xs text-slate-700 font-semibold">Selecciona tus cartas:</p>
+          <span id="myhand-counter" class="text-xs font-bold px-2 py-0.5 rounded bg-yellow-300 text-yellow-950">0/0</span>
+        </div>
+        <p class="text-xs text-red-600 font-bold mb-3">⚠️ Una vez confirmadas no se podrán modificar.</p>
+        <div id="myhand-options" class="space-y-3"></div>
+        <div class="flex justify-end pt-3 border-t mt-3 sticky bottom-0 bg-white">
+          <button id="btn-confirm-hand" onclick="saveMyHand()" disabled
+            class="px-5 py-2.5 rounded-xl font-extrabold text-sm shadow bg-slate-300 text-slate-400 cursor-not-allowed transition-colors">
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL SOBRE CONFIDENCIAL ═══ -->
+  <div id="envelope-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'envelope-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800">✉️ Sobre Confidencial</h2>
+          <button onclick="closeEnvelopeModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <p class="text-xs text-slate-600 mb-3">Cartas deducidas automáticamente:</p>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">👤 Sospechoso</label>
+            <p id="envelope-display-suspect" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">🔫 Arma</label>
+            <p id="envelope-display-weapon" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">🏠 Lugar</label>
+            <p id="envelope-display-place" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
+          </div>
+        </div>
+        <div class="flex justify-end pt-3 border-t mt-3">
+          <button onclick="closeEnvelopeModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL REGLAS ═══ -->
+  <div id="rules-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'rules-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-2xl sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content text-xs sm:text-sm text-slate-700 leading-relaxed space-y-4">
+        <div class="flex justify-between items-center border-b pb-2 sticky top-0 bg-white z-10 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800">📋 Instrucciones — Clue: Los Simpsons</h2>
+          <button onclick="closeRulesModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-1">✕</button>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🎯 Objetivo</p>
+          <p>El Jefe Wiggum encuentra muerto al empresario Charles Montgomery Burns. Los sospechosos disfrazados de su CLUE-personaje favorito intentan averiguar quién mató al Sr. Burns. Tenés que descubrir: ¿Quién lo hizo? ¿Dónde? ¿Con qué arma?</p>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">📦 Incluye</p>
+          <ul class="list-disc ml-5 space-y-0.5">
+            <li>Tablero Clue con 9 lugares de Springfield</li>
+            <li>6 fichas de sospechosos: Homero, Marge, Bart, Lisa, Krusty y Waylon Smithers</li>
+            <li>6 armas: Guante extensible, Dona envenenada, Collar, Saxofón, Barra de Plutonio, Honda</li>
+            <li>36 tarjetas (6 sospechosos, 6 armas, 9 lugares, más otras)</li>
+            <li>Block de hojas de Detective</li>
+            <li>1 sobre confidencial</li>
+            <li>2 dados</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">⚙️ Preparación</p>
+          <ul class="list-disc ml-5 space-y-1">
+            <li>Buscar el espacio SALIDA del sospechoso más cercano a cada jugador y colocar su ficha ahí.</li>
+            <li>Colocar cada Arma en distintos Lugares. Seleccionar seis de los nueve que hay en total.</li>
+            <li>Colocar en el tablero el sobre vacío rotulado "CONFIDENCIAL, Archivo del Caso".</li>
+            <li>Dividir el mazo en tres grupos: Sospechosos, Lugares y Armas. Mezclar cada grupo y poner una carta boca abajo en el sobre. Nadie puede verlas.</li>
+            <li>Juntar y mezclar los tres grupos restantes. Repartirlos boca abajo empezando por el lado derecho.</li>
+            <li>Tomar una hoja del block de Detective y doblarla para que nadie vea las anotaciones.</li>
+            <li>Lisa Simpson siempre tira primero si nadie juega con ella.</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🎮 Cómo jugar</p>
+          <div class="space-y-2">
+            <div>
+              <p class="font-semibold text-slate-800">Mover la ficha</p>
+              <ul class="list-disc ml-5 space-y-0.5">
+                <li>Tirar los dados y mover la ficha tantas casillas como marquen.</li>
+                <li>Podés mover horizontal o verticalmente, hacia adelante o atrás, pero nunca en diagonal.</li>
+                <li>No podés entrar al mismo cuadro dos veces durante la misma jugada.</li>
+                <li>No podés entrar, saltar o caer en un cuadro ocupado por otro Sospechoso.</li>
+              </ul>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-800">Pasadizos Secretos</p>
+              <p class="ml-1">Los Lugares en las esquinas están interconectados por Pasadizos Secretos. Si te encontrás en alguno de esos Lugares, podés usar el pasadizo en lugar de tirar los dados.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🔍 Cómo hacer una Suposición</p>
+          <p>Cuando entrés a un Lugar, hacé una Suposición nombrando las tres tarjetas que creés que están en el sobre. Primero decís el Sospechoso, luego el Lugar (donde estás), y después el Arma.</p>
+          <p class="mt-1">El jugador a tu izquierda revisa sus tarjetas. Si tiene alguna de las mencionadas, te la muestra en secreto (solo una). Si no tiene ninguna, pasa al siguiente jugador.</p>
+          <p class="mt-1 font-semibold">Recordá: solo podés hacer UNA Suposición por turno.</p>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">⚠️ Qué pasa si tu Suposición es incorrecta</p>
+          <p>Si nadie las ve, volvé a colocar las tres tarjetas dentro del sobre.</p>
+          <p class="mt-1">Ya no podrás moverte durante el juego, pero podés seguir tratando de probar las Suposiciones de tus contrincantes.</p>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🏆 Cómo ganar</p>
+          <p>Cuando creas que tu Acusación es totalmente correcta, tomá las tres tarjetas del sobre y verificalas en secreto. Si son las correctas, ¡ganaste! Mostralas a todos.</p>
+          <p class="mt-1">Si tu Acusación es falsa, perdiste. Devolvé las tarjetas al sobre sin mostrárselas a nadie y seguís participando para mostrar tarjetas a los demás, pero ya no podés ganar.</p>
+        </div>
+        <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
+          © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
+          Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
+          <span class="not-italic font-semibold text-slate-400">v27 — 28/08/2026</span>
+        </div>
+        <div class="flex justify-end pt-2 border-t">
+          <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL CONFIGURACIÓN ═══ -->
+  <div id="config-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'config-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <h2 class="text-lg font-extrabold text-slate-800 border-b pb-2 mb-4 pt-1">⚙️ Configurar Partida</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Cantidad de Jugadores</label>
+            <select id="player-count-select" onchange="updateMyCardsCountOptions()" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium">
+              <option value="3">3 Jugadores</option>
+              <option value="4" selected>4 Jugadores</option>
+              <option value="5">5 Jugadores</option>
+              <option value="6">6 Jugadores</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">¿Cuántas cartas te tocaron a vos?</label>
+            <select id="my-cards-count-select" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium"></select>
+            <p class="text-[11px] text-slate-500 mt-1">Usá esto si el reparto no fue exacto.</p>
+          </div>
+        </div>
+        <div class="flex items-center justify-end pt-4 border-t mt-4">
+          <div class="flex space-x-2">
+            <button onclick="closeConfigModal()" id="btn-cancel-config" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm hidden">Cancelar</button>
+            <button onclick="startNewGame()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">¡Empezar Juego!</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL SUPOSICIÓN ═══ -->
+  <div id="guess-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'guess-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-lg sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content space-y-3">
+        <div class="flex justify-between items-center border-b pb-2 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800">Nueva Suposición</h2>
+          <button onclick="closeGuessModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Sospechoso</label>
+          <div class="relative" id="dd-suspect-wrapper">
+            <button type="button" onclick="toggleDropdown('suspect')" id="dd-suspect-btn"
+              class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm text-left bg-white flex justify-between items-center">
+              <span id="dd-suspect-label">—</span><span class="text-slate-400">▾</span>
+            </button>
+            <div id="dd-suspect-list" class="hidden absolute z-50 w-full bg-white border-2 border-yellow-400 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg"></div>
+          </div>
+          <input type="hidden" id="guess-suspect">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Arma</label>
+          <div class="relative" id="dd-weapon-wrapper">
+            <button type="button" onclick="toggleDropdown('weapon')" id="dd-weapon-btn"
+              class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm text-left bg-white flex justify-between items-center">
+              <span id="dd-weapon-label">—</span><span class="text-slate-400">▾</span>
+            </button>
+            <div id="dd-weapon-list" class="hidden absolute z-50 w-full bg-white border-2 border-yellow-400 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg"></div>
+          </div>
+          <input type="hidden" id="guess-weapon">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Lugar</label>
+          <div class="relative" id="dd-place-wrapper">
+            <button type="button" onclick="toggleDropdown('place')" id="dd-place-btn"
+              class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm text-left bg-white flex justify-between items-center">
+              <span id="dd-place-label">—</span><span class="text-slate-400">▾</span>
+            </button>
+            <div id="dd-place-list" class="hidden absolute z-50 w-full bg-white border-2 border-yellow-400 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg"></div>
+          </div>
+          <input type="hidden" id="guess-place">
+        </div>
+        <div class="pt-2 border-t">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-bold text-slate-800 text-sm">Respuestas (en orden)</span>
+            <label class="flex items-center space-x-1 text-xs text-slate-600">
+              <input type="checkbox" id="guess-nobody" onchange="toggleNobodyShow(this.checked)" class="rounded border-yellow-400">
+              <span>Nadie mostró carta</span>
+            </label>
+          </div>
+          <div id="guess-responses-container" class="space-y-3 max-h-48 overflow-y-auto pr-1"></div>
+        </div>
+        <div class="flex justify-end space-x-2 pt-3 border-t">
+          <button onclick="closeGuessModal()" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm">Cancelar</button>
+          <button onclick="saveGuess()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PANTALLA DE BLOQUEO ═══ -->
+  <div id="lock-screen" class="fixed inset-0 bg-yellow-400 z-50 flex flex-col items-center justify-center p-6 text-center hidden">
+    <img src="caja-clue-simpsons.png" alt="Caja Clue Los Simpsons" class="max-w-xs sm:max-w-sm rounded-xl shadow-2xl mb-4 border-4 border-yellow-600">
+    <h2 class="text-2xl font-extrabold text-yellow-950 mb-2">Anotador Bloqueado</h2>
+    <p class="text-yellow-900 text-sm mb-6">Tocá el botón para volver a ver tus notas secretas.</p>
+    <button onclick="toggleLock(false)" class="bg-slate-900 text-white font-extrabold px-6 py-3 rounded-xl shadow-lg hover:bg-slate-800">
+      Desbloquear Pantalla
+    </button>
+  </div>
+
+  <script>
+    // ── DATOS ──────────────────────────────────────────────────────────────
+    const CARDS = {
+      suspects: ["Srita. Escarlata","Sra. Blanco","Profesor Moradillo","Coronel Mostaza","Sra. Azulino","Sr. Verdi"],
+      weapons:  ["Collar","Honda","Saxofón","Guante extensible","Barra de Plutonio","Dona envenenada"],
+      places:   ["Kwik-E-Mart","El Calabozo del Androide","Asilo Springfield","Bolerama","Mansión Burns","Estudios Krustylu","Casa de los Simpsons","El Holandés Frito","Planta Nuclear"]
+    };
+    const ALL_CARDS_FLAT = [...CARDS.suspects, ...CARDS.weapons, ...CARDS.places];
+
+    const STATES = [
+      { code: 0, symbol: "",   bg: "bg-white",      text: "text-slate-300" },
+      { code: 1, symbol: "❌", bg: "bg-red-100",    text: "text-red-600 font-bold" },
+      { code: 2, symbol: "✔️", bg: "bg-emerald-100",text: "text-emerald-700 font-bold" },
+      { code: 3, symbol: "1",  bg: "bg-amber-100",  text: "text-amber-600 font-bold" },
+      { code: 4, symbol: "2",  bg: "bg-amber-100",  text: "text-amber-600 font-bold" },
+      { code: 5, symbol: "3",  bg: "bg-amber-100",  text: "text-amber-600 font-bold" },
+      { code: 6, symbol: "4",  bg: "bg-amber-100",  text: "text-amber-600 font-bold" },
+      { code: 7, symbol: "5",  bg: "bg-amber-100",  text: "text-amber-600 font-bold" },
+      { code: 8, symbol: "👁️", bg: "bg-blue-100",   text: "text-blue-600 font-bold" }
+    ];
+
+    let gameState = {
+      started: false, handLocked: false, myCardsCount: null,
+      players: ["J1","J2","J3","J4"],
+      matrix: {}, envelope: { suspect:"", weapon:"", place:"" }, history: []
+    };
+    let viewSettings = { collapsed: { suspect:false, weapon:false, place:false } };
+    let audioCtx = null, soundInterval = null;
+
+    // ── BOTTOM SHEET helpers ───────────────────────────────────────────────
+    function sheetBackdropClose(e, modalId) {
+      // Cerrar sólo si se hizo click en el backdrop (no en el contenido)
+      if (e.target === document.getElementById(modalId)) {
+        document.getElementById(modalId).classList.add('hidden');
+      }
+    }
+
+    // ── AUDIO ──────────────────────────────────────────────────────────────
+    function playSolvedSound() {
+      try {
+        if (soundInterval) { clearInterval(soundInterval); soundInterval = null; }
+        if (audioCtx) { audioCtx.close(); audioCtx = null; }
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playDing(freq, duration, startTime, volume = 0.3) {
+          if (!audioCtx) return;
+          const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+          osc.type = 'sine'; osc.frequency.value = freq;
+          gain.gain.setValueAtTime(volume, audioCtx.currentTime + startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTime + duration);
+          osc.connect(gain); gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + startTime);
+          osc.stop(audioCtx.currentTime + startTime + duration);
+          const osc2 = audioCtx.createOscillator(), gain2 = audioCtx.createGain();
+          osc2.type = 'sine'; osc2.frequency.value = freq * 2.003;
+          gain2.gain.setValueAtTime(volume * 0.15, audioCtx.currentTime + startTime);
+          gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTime + duration);
+          osc2.connect(gain2); gain2.connect(audioCtx.destination);
+          osc2.start(audioCtx.currentTime + startTime);
+          osc2.stop(audioCtx.currentTime + startTime + duration);
+        }
+        playDing(1000, 0.35, 0.0, 0.25);
+        playDing(800, 0.45, 0.25, 0.2);
+        soundInterval = setInterval(() => {
+          if (!audioCtx) return;
+          if (audioCtx.state === 'closed') audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          playDing(1000, 0.35, 0.0, 0.25);
+          playDing(800, 0.45, 0.25, 0.2);
+        }, 3000);
+      } catch(e) { console.warn('No se pudo reproducir el sonido:', e); }
+    }
+    function stopSolvedSound() {
+      if (soundInterval) { clearInterval(soundInterval); soundInterval = null; }
+      if (audioCtx) { try { audioCtx.close(); } catch(e){} audioCtx = null; }
+    }
+
+    // ── SOLVED MODAL ──────────────────────────────────────────────────────
+    function showSolvedModal() {
+      const modal = document.getElementById('solved-modal');
+      const text  = document.getElementById('solved-text-modal');
+      const env = gameState.envelope;
+      text.innerHTML = `<b>Asesino:</b> ${env.suspect}<br><b>Arma:</b> ${env.weapon}<br><b>Lugar:</b> ${env.place}`;
+      modal.classList.remove('hidden');
+      const content = modal.querySelector('.solved-modal-content');
+      content.style.animation = 'none';
+      content.offsetHeight;
+      content.style.animation = 'slideDown 2s ease-out forwards';
+      playSolvedSound();
+    }
+    function closeSolvedModal() {
+      document.getElementById('solved-modal').classList.add('hidden');
+      stopSolvedSound();
+    }
+
+    // ── GAME LOGIC ────────────────────────────────────────────────────────
+    function getCardCountForPlayer(playerIdx, totalPlayers) {
+      const base = Math.floor(18 / totalPlayers), rem = 18 % totalPlayers;
+      return playerIdx < rem ? base + 1 : base;
+    }
+    function getMyEffectiveCardCount() {
+      if (gameState.myCardsCount !== null && gameState.myCardsCount !== undefined) return gameState.myCardsCount;
+      return getCardCountForPlayer(0, gameState.players.length);
+    }
+    function allCrossedForCard(card) {
+      return gameState.players.every((_, pIdx) => {
+        const val = gameState.matrix[`${card}_${pIdx}`] || 0;
+        return val === 1;
+      });
+    }
+    function updateEnvelopeFromCrosses() {
+      const catCards = { suspect: CARDS.suspects, weapon: CARDS.weapons, place: CARDS.places };
+      ['suspect','weapon','place'].forEach(cat => {
+        let found = null;
+        for (const card of catCards[cat]) { if (allCrossedForCard(card)) { found = card; break; } }
+        gameState.envelope[cat] = found || "";
+      });
+      const solved = gameState.envelope.suspect && gameState.envelope.weapon && gameState.envelope.place;
+      if (solved) showSolvedModal(); else closeSolvedModal();
+    }
+    function ensureSingleCheck(card, playerIdx) {
+      gameState.players.forEach((_, pIdx) => {
+        if (pIdx !== playerIdx) {
+          const key = `${card}_${pIdx}`;
+          if (gameState.matrix[key] === 2) {
+            const cur = gameState.matrix[key] || 0;
+            if (cur !== 8 && (cur < 3 || cur > 7)) gameState.matrix[key] = 1;
+          }
+        }
+      });
+    }
+    function refreshState() { updateEnvelopeFromCrosses(); saveState(); renderAll(); }
+    function getStateInfo(code) { return STATES.find(s => s.code === code) || STATES[0]; }
+
+    function cycleCell(card, playerIdx) {
+      if (playerIdx === 0 && gameState.handLocked) return;
+      if (gameState.matrix[`${card}_0`] === 2 && playerIdx !== 0) return;
+      const key = `${card}_${playerIdx}`;
+      const cur = gameState.matrix[key] || 0;
+      const seq = [0,1,2,3,4,5,6,7,8,0];
+      const idx = seq.indexOf(cur);
+      const next = idx >= 0 ? seq[idx + 1] ?? 0 : 0;
+      gameState.matrix[key] = next;
+      if (next === 2) ensureSingleCheck(card, playerIdx);
+      refreshState();
+    }
+
+    // ── STORAGE ───────────────────────────────────────────────────────────
+    function saveState() { localStorage.setItem('simpsons_clue_state', JSON.stringify(gameState)); }
+    function loadState() {
+      const saved = localStorage.getItem('simpsons_clue_state');
+      if (saved) {
+        try {
+          gameState = JSON.parse(saved);
+          if (!gameState.envelope)             gameState.envelope = { suspect:"", weapon:"", place:"" };
+          if (gameState.handLocked === undefined) gameState.handLocked = false;
+          if (gameState.myCardsCount === undefined) gameState.myCardsCount = null;
+        } catch(e) { console.error(e); }
+      }
+    }
+
+    // ── CONFIG MODAL ──────────────────────────────────────────────────────
+    function updateMyCardsCountOptions() {
+      const playerCount = parseInt(document.getElementById('player-count-select').value);
+      const select = document.getElementById('my-cards-count-select');
+      if (!select) return;
+      const base = Math.floor(18 / playerCount), rem = 18 % playerCount;
+      const options = rem > 0 ? [base, base + 1] : [base];
+      select.innerHTML = options.map(n => {
+        const sel = (gameState.myCardsCount === n) ? 'selected' : '';
+        return `<option value="${n}" ${sel}>${n} cartas</option>`;
+      }).join('');
+      if (options.length === 1) select.value = options[0];
+    }
+    function openConfigModal() {
+      document.getElementById('player-count-select').value = gameState.players.length.toString();
+      updateMyCardsCountOptions();
+      document.getElementById('btn-cancel-config').classList.toggle('hidden', !gameState.started);
+      document.getElementById('config-modal').classList.remove('hidden');
+    }
+    function closeConfigModal() { document.getElementById('config-modal').classList.add('hidden'); }
+
+    function startNewGame() {
+      const count = parseInt(document.getElementById('player-count-select').value || 4);
+      const newPlayers = ["J1"];
+      for (let i = 1; i < count; i++) newPlayers.push(`J${i+1}`);
+      const myCardsSelect = document.getElementById('my-cards-count-select');
+      gameState.myCardsCount = myCardsSelect ? parseInt(myCardsSelect.value) : null;
+      gameState.started = true; gameState.handLocked = false;
+      gameState.players = newPlayers; gameState.matrix = {};
+      gameState.envelope = { suspect:"", weapon:"", place:"" }; gameState.history = [];
+      saveState(); renderAll(); closeConfigModal(); openMyHandModal();
+    }
+
+    function updatePlayerName(index, newName) {
+      gameState.players[index] = newName.trim() || `J${index+1}`;
+      saveState(); renderHistory(); populateDropdowns();
+    }
+
+    function toggleCollapse(category) {
+      viewSettings.collapsed[category] = !viewSettings.collapsed[category];
+      renderAll();
+    }
+
+    // ── MY HAND MODAL ─────────────────────────────────────────────────────
+    function updateHandModalCounter() {
+      const maxAllowed = getMyEffectiveCardCount();
+      const selected = document.querySelectorAll('input[name="myhand-card"]:checked').length;
+      const counterEl = document.getElementById('myhand-counter');
+      const btnConfirm = document.getElementById('btn-confirm-hand');
+      if (counterEl) {
+        counterEl.innerText = `${selected}/${maxAllowed}`;
+        counterEl.className = selected === maxAllowed
+          ? "text-xs font-bold px-2 py-0.5 rounded bg-emerald-600 text-white"
+          : "text-xs font-bold px-2 py-0.5 rounded bg-yellow-300 text-yellow-950";
+      }
+      if (btnConfirm) {
+        const ready = selected === maxAllowed;
+        btnConfirm.disabled = !ready;
+        btnConfirm.className = ready
+          ? "px-5 py-2.5 rounded-xl font-extrabold text-sm shadow bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-colors"
+          : "px-5 py-2.5 rounded-xl font-extrabold text-sm shadow bg-slate-300 text-slate-400 cursor-not-allowed transition-colors";
+      }
+      document.querySelectorAll('input[name="myhand-card"]').forEach(cb => {
+        if (!cb.checked) {
+          cb.disabled = selected >= maxAllowed;
+          const lbl = cb.closest('label');
+          if (lbl) {
+            lbl.classList.toggle('opacity-40', selected >= maxAllowed);
+            lbl.classList.toggle('cursor-not-allowed', selected >= maxAllowed);
+          }
+        }
+      });
+    }
+    function handleHandCheckboxChange(checkbox) {
+      const maxAllowed = getMyEffectiveCardCount();
+      if (document.querySelectorAll('input[name="myhand-card"]:checked').length > maxAllowed)
+        checkbox.checked = false;
+      updateHandModalCounter();
+    }
+    function openMyHandModal() {
+      if (gameState.handLocked) return;
+      const container = document.getElementById('myhand-options');
+      container.innerHTML = '';
+      const sections = [
+        { title: "👤 Sospechosos", cards: CARDS.suspects },
+        { title: "🔫 Armas",       cards: CARDS.weapons  },
+        { title: "🏠 Lugares",     cards: CARDS.places   }
+      ];
+      sections.forEach(sec => {
+        let html = `<div class="font-bold text-xs text-yellow-900 bg-yellow-200 p-1.5 rounded">${sec.title}</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 my-1">`;
+        sec.cards.forEach(card => {
+          const isChecked = gameState.matrix[`${card}_0`] === 2;
+          html += `<label class="flex items-center space-x-2 text-xs bg-slate-50 p-2 rounded border border-slate-200 cursor-pointer min-h-[40px]">
+            <input type="checkbox" name="myhand-card" value="${card}" ${isChecked ? 'checked' : ''} onchange="handleHandCheckboxChange(this)" class="rounded text-emerald-600 w-4 h-4 shrink-0">
+            <span class="truncate">${card}</span>
+          </label>`;
+        });
+        html += `</div>`;
+        container.innerHTML += html;
+      });
+      updateHandModalCounter();
+      document.getElementById('myhand-modal').classList.remove('hidden');
+    }
+    function closeMyHandModal() { document.getElementById('myhand-modal').classList.add('hidden'); }
+
+    function saveMyHand() {
+      const allotted = getMyEffectiveCardCount();
+      const checkboxes = document.querySelectorAll('input[name="myhand-card"]:checked');
+      if (checkboxes.length !== allotted) {
+        alert(`Tenés que seleccionar exactamente ${allotted} cartas para tu mano.`);
+        return;
+      }
+      ALL_CARDS_FLAT.forEach(card => {
+        if (gameState.matrix[`${card}_0`] === 2) gameState.matrix[`${card}_0`] = 0;
+      });
+      checkboxes.forEach(cb => { gameState.matrix[`${cb.value}_0`] = 2; });
+      checkboxes.forEach(cb => {
+        gameState.players.forEach((_, pIdx) => {
+          if (pIdx !== 0) {
+            const key = `${cb.value}_${pIdx}`, cur = gameState.matrix[key] || 0;
+            if (cur !== 8 && (cur < 3 || cur > 7)) gameState.matrix[key] = 1;
+          }
+        });
+      });
+      ALL_CARDS_FLAT.forEach(card => {
+        if (gameState.matrix[`${card}_0`] !== 2) gameState.matrix[`${card}_0`] = 1;
+      });
+      gameState.handLocked = true;
+      refreshState();
+      closeMyHandModal();
+    }
+
+    // ── ENVELOPE MODAL ────────────────────────────────────────────────────
+    function openEnvelopeModal() {
+      document.getElementById('envelope-display-suspect').textContent = gameState.envelope.suspect || "---";
+      document.getElementById('envelope-display-weapon').textContent  = gameState.envelope.weapon  || "---";
+      document.getElementById('envelope-display-place').textContent   = gameState.envelope.place   || "---";
+      document.getElementById('envelope-modal').classList.remove('hidden');
+    }
+    function closeEnvelopeModal() { document.getElementById('envelope-modal').classList.add('hidden'); }
+
+    // ── RULES ─────────────────────────────────────────────────────────────
+    function openRulesModal()  { document.getElementById('rules-modal').classList.remove('hidden'); }
+    function closeRulesModal() { document.getElementById('rules-modal').classList.add('hidden'); }
+
+    // ── GUESS MODAL ───────────────────────────────────────────────────────
+    // ── CUSTOM DROPDOWNS (guess modal) ────────────────────────────────────
+    function buildDropdown(type, list, myCards) {
+      const listEl  = document.getElementById(`dd-${type}-list`);
+      const labelEl = document.getElementById(`dd-${type}-label`);
+      const hiddenEl = document.getElementById(`guess-${type}`);
+      listEl.innerHTML = '';
+      list.forEach((item, i) => {
+        const isMine = myCards.has(item);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = item;
+        btn.className = `w-full text-left px-3 py-2 text-sm hover:bg-yellow-50 border-b border-slate-100 last:border-0 ${isMine ? 'font-bold' : ''}`;
+        if (isMine) btn.style.color = '#dc2626';
+        btn.onclick = () => {
+          hiddenEl.value = item;
+          labelEl.textContent = item;
+          labelEl.style.color = isMine ? '#dc2626' : '';
+          labelEl.style.fontWeight = isMine ? 'bold' : '';
+          listEl.classList.add('hidden');
+          renderGuessResponses();
+        };
+        listEl.appendChild(btn);
+      });
+      // seleccionar el primero por defecto
+      const first = list[0];
+      hiddenEl.value = first;
+      labelEl.textContent = first;
+      const firstIsMine = myCards.has(first);
+      labelEl.style.color = firstIsMine ? '#dc2626' : '';
+      labelEl.style.fontWeight = firstIsMine ? 'bold' : '';
+    }
+
+    function toggleDropdown(type) {
+      ['suspect','weapon','place'].forEach(t => {
+        if (t !== type) document.getElementById(`dd-${t}-list`).classList.add('hidden');
+      });
+      document.getElementById(`dd-${type}-list`).classList.toggle('hidden');
+    }
+
+    // Cerrar dropdowns al hacer click fuera
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#dd-suspect-wrapper') &&
+          !e.target.closest('#dd-weapon-wrapper') &&
+          !e.target.closest('#dd-place-wrapper')) {
+        ['suspect','weapon','place'].forEach(t =>
+          document.getElementById(`dd-${t}-list`)?.classList.add('hidden')
+        );
+      }
+    });
+
+    function openGuessModal() {
+      if (!gameState.players.length) return;
+      const myCards = new Set(ALL_CARDS_FLAT.filter(card => gameState.matrix[`${card}_0`] === 2));
+      buildDropdown('suspect', CARDS.suspects, myCards);
+      buildDropdown('weapon',  CARDS.weapons,  myCards);
+      buildDropdown('place',   CARDS.places,   myCards);
+      document.getElementById('guess-nobody').checked = false;
+      renderGuessResponses();
+      document.getElementById('guess-modal').classList.remove('hidden');
+    }
+    function closeGuessModal() { document.getElementById('guess-modal').classList.add('hidden'); }
+
+    function renderGuessResponses() {
+      const container = document.getElementById('guess-responses-container');
+      const isNobody  = document.getElementById('guess-nobody').checked;
+      container.innerHTML = '';
+      const suspect = document.getElementById('guess-suspect').value;
+      const weapon  = document.getElementById('guess-weapon').value;
+      const place   = document.getElementById('guess-place').value;
+      gameState.players.forEach((p, idx) => {
+        if (idx === 0) return;
+        container.innerHTML += `
+          <div class="p-2.5 border rounded-lg bg-slate-50 space-y-1.5">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-700">
+              <span>${p}</span>
+              <div class="space-x-3">
+                <label class="inline-flex items-center space-x-1 cursor-pointer">
+                  <input type="radio" name="resp_${idx}" value="passed" checked onchange="toggleCardDropdown(${idx})" class="text-yellow-500">
+                  <span>Pasó</span>
+                </label>
+                <label class="inline-flex items-center space-x-1 cursor-pointer">
+                  <input type="radio" name="resp_${idx}" value="showed" ${isNobody ? 'disabled' : ''} onchange="toggleCardDropdown(${idx})" class="text-yellow-500">
+                  <span>Mostró</span>
+                </label>
+              </div>
+            </div>
+            <div id="card-select-wrapper-${idx}" class="hidden pt-1">
+              <select id="card-shown-${idx}" class="w-full border rounded p-1.5 text-xs text-slate-700 bg-white">
+                <option value="${suspect}">${suspect}</option>
+                <option value="${weapon}">${weapon}</option>
+                <option value="${place}">${place}</option>
+              </select>
+            </div>
+          </div>`;
+      });
+    }
+    function toggleNobodyShow(checked) { renderGuessResponses(); }
+    function toggleCardDropdown(pIdx) {
+      const showed  = document.querySelector(`input[name="resp_${pIdx}"]:checked`)?.value === 'showed';
+      const wrapper = document.getElementById(`card-select-wrapper-${pIdx}`);
+      if (wrapper) wrapper.classList.toggle('hidden', !showed);
+    }
+
+    function saveGuess() {
+      const guesserName = gameState.players[0];
+      const suspect = document.getElementById('guess-suspect').value;
+      const weapon  = document.getElementById('guess-weapon').value;
+      const place   = document.getElementById('guess-place').value;
+      const nobody  = document.getElementById('guess-nobody').checked;
+      const askedCards = [suspect, weapon, place];
+      let logText = `<b>${guesserName}</b> preguntó por [${suspect}, ${weapon}, ${place}]. `;
+
+      if (nobody) {
+        askedCards.forEach(card => {
+          gameState.players.forEach((p, idx) => {
+            if (idx === 0) return;
+            const key = `${card}_${idx}`, cur = gameState.matrix[key] || 0;
+            if (cur === 0 || (cur >= 3 && cur <= 7)) gameState.matrix[key] = 1;
+          });
+        });
+        logText += `<span class="text-red-600 font-bold">Nadie mostró carta.</span>`;
+      } else {
+        const details = [];
+        gameState.players.forEach((p, idx) => {
+          if (idx === 0) return;
+          const resp = document.querySelector(`input[name="resp_${idx}"]:checked`)?.value;
+          if (resp === 'passed') {
+            askedCards.forEach(card => {
+              const key = `${card}_${idx}`, cur = gameState.matrix[key] || 0;
+              if (cur === 0 || (cur >= 3 && cur <= 7)) gameState.matrix[key] = 1;
+            });
+            details.push(`${p} pasó`);
+          } else if (resp === 'showed') {
+            const cardVal = document.getElementById(`card-shown-${idx}`)?.value || "Desconocida";
+            details.push(`${p} mostró (${cardVal})`);
+            if (cardVal !== "Desconocida") {
+              if (!(idx === 0 && gameState.handLocked)) {
+                gameState.matrix[`${cardVal}_${idx}`] = 2;
+                ensureSingleCheck(cardVal, idx);
+              }
+              askedCards.filter(c => c !== cardVal).forEach(card => {
+                const k = `${card}_${idx}`, cur = gameState.matrix[k] || 0;
+                if (cur === 0 || (cur >= 3 && cur <= 7)) gameState.matrix[k] = 1;
+              });
+            }
+          }
+        });
+        logText += details.join(', ') + '.';
+      }
+      gameState.history.unshift(logText);
+      refreshState();
+      closeGuessModal();
+    }
+
+    // ── HISTORY ───────────────────────────────────────────────────────────
+    function renderHistory() {
+      const list = document.getElementById('history-list');
+      if (!gameState.history || !gameState.history.length) {
+        list.innerHTML = `<p class="text-slate-400 italic">No hay suposiciones registradas aún.</p>`;
+        return;
+      }
+      list.innerHTML = gameState.history.map(item =>
+        `<div class="p-2 bg-yellow-50 border border-yellow-200 rounded text-slate-700 leading-snug">${item}</div>`
+      ).join('');
+    }
+    function clearHistory() {
+      if (confirm("¿Querés borrar el historial de suposiciones?")) {
+        gameState.history = []; saveState(); renderHistory();
+      }
+    }
+
+    // ── LOCK SCREEN ───────────────────────────────────────────────────────
+    function toggleLock(show) { document.getElementById('lock-screen').classList.toggle('hidden', !show); }
+
+    function populateDropdowns() {} // Se llenan dinámicamente en openGuessModal()
+
+    // ── RENDER ALL ────────────────────────────────────────────────────────
+    function renderAll() {
+      const totalPlayers = gameState.players.length;
+
+      // Botón mis cartas (header desktop + nav mobile)
+      const btnHand    = document.getElementById('btn-myhand');
+      const navBtnHand = document.getElementById('nav-btn-myhand');
+      if (btnHand) {
+        btnHand.style.display = 'none';
+        btnHand.disabled = gameState.handLocked;
+      }
+      if (navBtnHand) {
+        navBtnHand.style.display = 'none';
+      }
+
+      // Badge sobre (desktop)
+      const env = gameState.envelope;
+      const envItems = [env.suspect, env.weapon, env.place].filter(Boolean);
+      const badgeEl = document.getElementById('btn-envelope-badge');
+      if (badgeEl) {
+        if (envItems.length > 0) {
+          badgeEl.innerText = `(${envItems.length}/3)`;
+          badgeEl.classList.add('visible');
+        } else {
+          badgeEl.innerText = '';
+          badgeEl.classList.remove('visible');
+        }
+      }
+
+      // Sidebar sobre (desktop lg)
+      const ss = document.getElementById('sidebar-envelope-suspect');
+      const sw = document.getElementById('sidebar-envelope-weapon');
+      const sp = document.getElementById('sidebar-envelope-place');
+      if (ss) ss.textContent = env.suspect || "---";
+      if (sw) sw.textContent = env.weapon  || "---";
+      if (sp) sp.textContent = env.place   || "---";
+
+      // Header de la tabla
+      const headerTr = document.getElementById('table-header');
+      headerTr.innerHTML = `<th class="p-1 sm:p-1.5 font-bold text-slate-800 sticky-col bg-yellow-200 w-[90px] sm:w-auto min-w-[90px] sm:min-w-[150px] border-r border-yellow-300 text-center text-xs sm:text-sm">Cartas</th>`;
+      gameState.players.forEach((p, idx) => {
+        const isUser = idx === 0;
+        const inputHtml = idx === 0
+          ? `<div class="font-extrabold text-xs sm:text-sm text-yellow-950 py-0.5">Vos</div>`
+          : `<input type="text" value="${p}" onchange="updatePlayerName(${idx}, this.value)"
+               class="w-full text-center font-bold text-xs sm:text-sm bg-transparent focus:outline-none py-0.5"
+               placeholder="J${idx+1}">`;
+        headerTr.innerHTML += `
+          <th class="p-1 sm:p-2.5 font-bold text-center border-r border-yellow-300 min-w-[40px] sm:min-w-[90px]">
+            ${inputHtml}
+          </th>`;
+      });
+
+      // Body de la tabla
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
+      const sections = [
+        { key: "suspect", name: "SOSPECHOSOS", items: CARDS.suspects },
+        { key: "weapon",  name: "ARMAS",       items: CARDS.weapons  },
+        { key: "place",   name: "LUGARES",     items: CARDS.places   }
+      ];
+
+      sections.forEach(sec => {
+        const isCollapsed = viewSettings.collapsed[sec.key];
+        tbody.innerHTML += `
+          <tr class="bg-yellow-200 border-y border-yellow-400 cursor-pointer" onclick="toggleCollapse('${sec.key}')">
+            <td colspan="${totalPlayers + 1}" class="p-1.5 sm:p-2 font-black text-xs sm:text-sm text-yellow-950 tracking-wider uppercase bg-yellow-200">
+              ${isCollapsed ? '▶' : '▼'} ${sec.name}
+            </td>
+          </tr>`;
+
+        if (!isCollapsed) {
+          sec.items.forEach(card => {
+            const inEnvelope = Object.values(gameState.envelope).includes(card);
+            const envBadge = inEnvelope
+              ? ` <span class="text-[9px] sm:text-[10px] bg-amber-200 text-amber-900 px-1 rounded font-bold">✉️</span>`
+              : '';
+            let rowHtml = `<tr class="border-b border-slate-100 hover:bg-amber-50/50 ${inEnvelope ? 'bg-amber-100/80 font-semibold' : ''}">
+              <td class="p-1 sm:p-2 text-[11px] sm:text-sm font-medium sticky-col bg-white border-r border-slate-200 shadow-sm leading-tight max-w-[90px] sm:max-w-none">${card}${envBadge}</td>`;
+
+            gameState.players.forEach((p, pIdx) => {
+              const key = `${card}_${pIdx}`;
+              const stateCode = gameState.matrix[key] || 0;
+              let st, cursorClass, clickHandler;
+              if (pIdx === 0 && gameState.handLocked) {
+                st = getStateInfo(stateCode); cursorClass = 'cursor-not-allowed opacity-70'; clickHandler = '';
+              } else if (gameState.matrix[`${card}_0`] === 2 && pIdx !== 0) {
+                st = getStateInfo(stateCode); cursorClass = 'cursor-not-allowed opacity-70'; clickHandler = '';
+              } else {
+                st = getStateInfo(stateCode); cursorClass = 'cursor-pointer';
+                clickHandler = `onclick="cycleCell('${card}', ${pIdx})"`;
+              }
+              rowHtml += `<td ${clickHandler} class="p-1 sm:p-2 text-center text-sm sm:text-base select-none border-r border-slate-200 ${st.bg} ${st.text} ${cursorClass} transition-colors min-w-[38px] sm:min-w-0">${st.symbol}</td>`;
+            });
+            rowHtml += `</tr>`;
+            tbody.innerHTML += rowHtml;
+          });
+        }
+      });
+
+      renderHistory();
+    }
+
+    // ── INIT ──────────────────────────────────────────────────────────────
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      populateDropdowns();
+      if (!gameState.started) openConfigModal();
+      updateEnvelopeFromCrosses();
+      saveState();
+      renderAll();
+    });
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Anotador Clue: Los Simpson</title>
+  <link rel="icon" type="image/svg+xml" href="dona.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    @font-face {
+      font-family: 'HomerSimpson';
+      src: url('Homer_Simpson_Revised.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    .font-simpson {
+      font-family: 'HomerSimpson', sans-serif;
+    }
+
+    .sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 10;
+    }
+
+    @keyframes slideDown {
+      0%   { transform: translateY(-100%); opacity: 0; }
+      80%  { transform: translateY(5%);    opacity: 1; }
+      100% { transform: translateY(0);     opacity: 1; }
+    }
+    .solved-modal-content { animation: slideDown 2s ease-out forwards; }
+
+    /* ── BOTTOM SHEET (mobile modals) ── */
+    .bottom-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(3px);
+    }
+    .bottom-sheet.hidden { display: none; }
+    .bottom-sheet-inner {
+      background: white;
+      border-radius: 20px 20px 0 0;
+      border-top: 4px solid #facc15;
+      max-height: 85dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 0 env(safe-area-inset-bottom, 16px);
+    }
+    .sheet-handle {
+      width: 40px; height: 4px;
+      background: #d1d5db;
+      border-radius: 2px;
+      margin: 10px auto 4px;
+    }
+    .sheet-content { padding: 0 16px 16px; }
+
+    /* ── BOTTOM NAV (mobile) ── */
+    #bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 40;
+      background: #fef08a;
+      border-top: 3px solid #ca8a04;
+      display: flex;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    #bottom-nav button {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 8px 2px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #713f12;
+      background: none;
+      border: none;
+      cursor: pointer;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #bottom-nav button:active { background: #fde68a; }
+    #bottom-nav button .nav-icon { font-size: 20px; line-height: 1; }
+
+
+    /* ── Select no-zoom iOS ── */
+    select, input[type="text"] { font-size: 16px; }
+
+    /* ── DESKTOP: hide bottom nav ── */
+    @media (min-width: 768px) {
+      #bottom-nav { display: none !important; }
+      body { padding-bottom: 0 !important; }
+    }
+    /* ── MOBILE: hide desktop header buttons, show bottom nav ── */
+    @media (max-width: 767px) {
+      .desktop-only { display: none !important; }
+      body { padding-bottom: 72px; }
+    }
+    /* ── MOBILE: hide sheet wrappers that are desktop-modal-only ── */
+    /* (handled by JS showing the right modal per breakpoint) */
+
+    /* ── Envelope badge ── */
+    #btn-envelope-badge { display: none; }
+    #btn-envelope-badge.visible { display: inline-block; }
+
+    /* ── Desktop sidebar ── */
+
+
+    /* ── Table compact on mobile ── */
+    @media (max-width: 767px) {
+      .card-name-col { max-width: 90px; font-size: 11px; }
+      .cell-td { padding: 6px 4px !important; font-size: 14px; min-width: 38px; }
+      .card-name-col td { padding: 6px 4px !important; }
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { simpson: ['HomerSimpson', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-amber-100 min-h-screen text-slate-800 font-sans overflow-x-hidden">
+
+  <!-- ═══ TOP HEADER ═══ -->
+  <header class="bg-yellow-400 border-b-4 border-yellow-600 px-2 sm:px-4 py-2 sm:py-3 sticky top-0 z-30 shadow-md">
     <div class="max-w-5xl mx-auto flex items-center justify-between gap-1">
       <!-- Logo -->
       <div class="flex items-center space-x-2 shrink-0">
@@ -367,7 +1444,7 @@
         <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
           © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
           Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
-          <span class="not-italic font-semibold text-slate-400">v28 — 29/08/2026</span>
+          <span class="not-italic font-semibold text-slate-400">v30 — 29/08/2026</span>
         </div>
         <div class="flex justify-end pt-2 border-t">
           <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
