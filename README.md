@@ -1,3 +1,7 @@
+<h1 align="center">
+  <img src="dona.png" width="40" height="40" alt="Dona Simpsons">
+  Clue Simpsons – Anotador Digital
+</h1>
 # Anotador Clue: Los Simpson 
 <link rel="icon" type="image/svg+xml" href="dona.png">
 
