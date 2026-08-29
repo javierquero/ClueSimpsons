@@ -10,64 +10,16 @@
   "lang": "es",
   "icons": [
     {
-      "src": "dona-icon.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "dona-icon.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    }
-  ]
-}{
-  "name": "Anotador Clue Simpsons",
-  "short_name": "Clue Simpsons",
-  "description": "Anotador digital para el juego de mesa Clue: Los Simpsons",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#fef08a",
-  "theme_color": "#ca8a04",
-  "lang": "es",
-  "icons": [
-    {
-      "src": "dona.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "dona.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    }
-  ]
-}{
-  "name": "Anotador Clue Simpsons",
-  "short_name": "Clue Simpsons",
-  "description": "Anotador digital para el juego de mesa Clue: Los Simpsons",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#fef08a",
-  "theme_color": "#ca8a04",
-  "lang": "es",
-  "icons": [
-    {
-      "src": "dona.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "dona.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
     }
   ]
 }
