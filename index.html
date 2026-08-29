@@ -213,7 +213,6 @@
         <div class="mt-4 bg-white border-2 border-yellow-400 rounded-xl p-4 shadow-md">
           <div class="flex justify-between items-center mb-3">
             <h2 class="font-bold text-slate-800 flex items-center text-sm sm:text-base">📜 Historial de Suposiciones</h2>
-            <button onclick="clearHistory()" class="text-xs text-red-600 hover:underline font-bold">Borrar historial</button>
           </div>
           <div id="history-list" class="space-y-2 text-xs sm:text-sm max-h-48 overflow-y-auto">
             <p class="text-slate-400 italic">No hay suposiciones registradas aún.</p>
@@ -389,7 +388,7 @@
         <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
           © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
           Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
-          <span class="not-italic font-semibold text-slate-400">v30 — 28/08/2026</span>
+          <span class="not-italic font-semibold text-slate-400">v32 — 29/08/2026</span>
         </div>
         <div class="flex justify-end pt-2 border-t">
           <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
@@ -665,16 +664,27 @@
     function getStateInfo(code) { return STATES.find(s => s.code === code) || STATES[0]; }
 
     function cycleCell(card, playerIdx) {
-      if (playerIdx === 0 && gameState.handLocked) return;
-      if (gameState.matrix[`${card}_0`] === 2 && playerIdx !== 0) return;
+      if (playerIdx === 0 && gameState.handLocked) return; // "Vos" siempre bloqueado
+      const isMyCard = gameState.matrix[`${card}_0`] === 2 || gameState.matrix[`${card}_0`] === 8;
       const key = `${card}_${playerIdx}`;
       const cur = gameState.matrix[key] || 0;
-      const seq = [0,1,2,3,4,5,6,7,8,0];
-      const idx = seq.indexOf(cur);
-      const next = idx >= 0 ? seq[idx + 1] ?? 0 : 0;
-      gameState.matrix[key] = next;
-      if (next === 2) ensureSingleCheck(card, playerIdx);
-      refreshState();
+
+      if (isMyCard && playerIdx !== 0) {
+        // Carta propia: otros jugadores solo ciclan entre ❌ y 👁️
+        const seqMine = [1, 8, 1];
+        const idx = seqMine.indexOf(cur);
+        gameState.matrix[key] = idx >= 0 ? seqMine[idx + 1] ?? 1 : 1;
+        refreshState(); return;
+      }
+
+      if (!isMyCard) {
+        // Carta ajena: ciclo normal sin 👁️
+        const seqOther = [0,1,2,3,4,5,6,7,0];
+        const idx = seqOther.indexOf(cur);
+        gameState.matrix[key] = idx >= 0 ? seqOther[idx + 1] ?? 0 : 0;
+        if (gameState.matrix[key] === 2) ensureSingleCheck(card, playerIdx);
+        refreshState();
+      }
     }
 
     // ── STORAGE ───────────────────────────────────────────────────────────
@@ -1096,12 +1106,19 @@
             gameState.players.forEach((p, pIdx) => {
               const key = `${card}_${pIdx}`;
               const stateCode = gameState.matrix[key] || 0;
+              const isMyCard = gameState.matrix[`${card}_0`] === 2 || gameState.matrix[`${card}_0`] === 8;
               let st, cursorClass, clickHandler;
+
               if (pIdx === 0 && gameState.handLocked) {
+                // Celda "Vos" siempre bloqueada cuando mano confirmada
                 st = getStateInfo(stateCode); cursorClass = 'cursor-not-allowed opacity-70'; clickHandler = '';
-              } else if (gameState.matrix[`${card}_0`] === 2 && pIdx !== 0) {
-                st = getStateInfo(stateCode); cursorClass = 'cursor-not-allowed opacity-70'; clickHandler = '';
+              } else if (isMyCard && pIdx !== 0) {
+                // Carta propia, otro jugador: clickeable, cicla entre ❌ y 👁️
+                st = getStateInfo(stateCode === 0 ? 1 : stateCode);
+                cursorClass = 'cursor-pointer';
+                clickHandler = `onclick="cycleCell('${card}', ${pIdx})"`;
               } else {
+                // Carta ajena: ciclo normal
                 st = getStateInfo(stateCode); cursorClass = 'cursor-pointer';
                 clickHandler = `onclick="cycleCell('${card}', ${pIdx})"`;
               }
