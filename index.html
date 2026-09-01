@@ -29,7 +29,10 @@
     .sticky-col {
       position: sticky;
       left: 0;
-      z-index: 10;
+      z-index: 5;
+    }
+    thead .sticky-col {
+      z-index: 15;
     }
 
     @keyframes slideDown {
@@ -195,9 +198,9 @@
       <!-- LEFT: tabla principal -->
       <div>
         <div class="bg-white rounded-xl shadow-lg border-2 border-yellow-500 overflow-hidden">
-          <div class="overflow-x-auto">
+          <div style="overflow: auto; max-height: 65dvh; -webkit-overflow-scrolling: touch;">
             <table class="w-full border-collapse text-left text-xs sm:text-sm">
-              <thead>
+              <thead style="position: sticky; top: 0; z-index: 10;">
                 <tr class="bg-yellow-200 border-b border-yellow-400" id="table-header">
                   <th class="p-1.5 sm:p-3 font-bold text-slate-800 sticky-col bg-yellow-200 min-w-[90px] sm:min-w-[150px] border-r border-yellow-300">Cartas</th>
                 </tr>
@@ -386,7 +389,7 @@
         <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
           © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
           Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
-          <span class="not-italic font-semibold text-slate-400">v34 — 29/08/2026</span>
+          <span class="not-italic font-semibold text-slate-400">v35 — 01/09/2026</span>
         </div>
         <div class="flex justify-end pt-2 border-t">
           <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
@@ -510,11 +513,10 @@
       { code: 0, symbol: "",   bg: "bg-white",      text: "text-slate-300" },
       { code: 1, symbol: "❌", bg: "bg-red-100",    text: "text-red-600 font-bold" },
       { code: 2, symbol: "✔️", bg: "bg-emerald-100",text: "text-emerald-700 font-bold" },
+      { code: 9, symbol: "?",  bg: "bg-slate-100",  text: "text-slate-500 font-bold" },
       { code: 3, symbol: "1",  bg: "bg-amber-100",  text: "text-amber-600 font-bold" },
       { code: 4, symbol: "2",  bg: "bg-amber-100",  text: "text-amber-600 font-bold" },
       { code: 5, symbol: "3",  bg: "bg-amber-100",  text: "text-amber-600 font-bold" },
-      { code: 6, symbol: "4",  bg: "bg-amber-100",  text: "text-amber-600 font-bold" },
-      { code: 7, symbol: "5",  bg: "bg-amber-100",  text: "text-amber-600 font-bold" },
       { code: 8, symbol: "👁️", bg: "bg-blue-100",   text: "text-blue-600 font-bold" }
     ];
 
@@ -667,7 +669,7 @@
 
       if (!isMyCard) {
         // Carta ajena: ciclo normal sin 👁️
-        const seqOther = [0,1,2,3,4,5,6,7,0];
+        const seqOther = [0,1,2,9,3,4,5,0];
         const idx = seqOther.indexOf(cur);
         gameState.matrix[key] = idx >= 0 ? seqOther[idx + 1] ?? 0 : 0;
         if (gameState.matrix[key] === 2) ensureSingleCheck(card, playerIdx);
