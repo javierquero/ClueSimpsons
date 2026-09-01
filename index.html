@@ -198,9 +198,9 @@
       <!-- LEFT: tabla principal -->
       <div>
         <div class="bg-white rounded-xl shadow-lg border-2 border-yellow-500 overflow-hidden">
-          <div style="overflow: auto; max-height: 65dvh; -webkit-overflow-scrolling: touch; transform: translateZ(0);">
+          <div style="overflow: auto; max-height: 65dvh; -webkit-overflow-scrolling: touch;">
             <table class="w-full border-collapse text-left text-xs sm:text-sm">
-              <thead style="position: -webkit-sticky; position: sticky; top: 0; z-index: 10;">
+              <thead style="position: sticky; top: 0; z-index: 10;">
                 <tr class="bg-yellow-200 border-b border-yellow-400" id="table-header">
                   <th class="p-1.5 sm:p-3 font-bold text-slate-800 sticky-col bg-yellow-200 min-w-[90px] sm:min-w-[150px] border-r border-yellow-300">Cartas</th>
                 </tr>
@@ -260,12 +260,13 @@
   </div>
 
   <!-- ═══ MODAL MIS CARTAS (bottom sheet en mobile, centrado en desktop) ═══ -->
-  <div id="myhand-modal" class="bottom-sheet hidden">
+  <div id="myhand-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'myhand-modal')">
     <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
       <div class="sheet-handle sm:hidden"></div>
       <div class="sheet-content">
         <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
-          <h2 class="text-base font-extrabold text-slate-800 sheet-title">🎴 Mis cartas</h2>
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">🎴 Marcar Mis Cartas Iniciales</h2>
+          <button onclick="closeMyHandModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-1">✕</button>
         </div>
         <div class="flex justify-between items-center bg-yellow-50 p-2 rounded border border-yellow-300 mb-2">
           <p class="text-xs text-slate-700 font-semibold">Selecciona tus cartas:</p>
@@ -388,7 +389,7 @@
         <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
           © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
           Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
-          <span class="not-italic font-semibold text-slate-400">v35 Beta — 01/09/2026</span>
+          <span class="not-italic font-semibold text-slate-400">v35 — 01/09/2026</span>
         </div>
         <div class="flex justify-end pt-2 border-t">
           <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
@@ -421,7 +422,6 @@
         </div>
         <div class="flex items-center justify-end pt-4 border-t mt-4">
           <div class="flex space-x-2">
-            <button onclick="resetGame()" class="px-4 py-2 rounded-lg bg-red-100 text-red-700 font-bold text-sm hover:bg-red-200">🗑️ Reiniciar</button>
             <button onclick="closeConfigModal()" id="btn-cancel-config" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm hidden">Cancelar</button>
             <button onclick="startNewGame()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">¡Empezar Juego!</button>
           </div>
@@ -490,28 +490,6 @@
     </div>
   </div>
 
-  <!-- ═══ MODAL PERSONAJE ═══ -->
-  <div id="character-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'character-modal')">
-    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-sm sm:mx-auto sm:my-8 sm:mb-auto">
-      <div class="sheet-handle sm:hidden"></div>
-      <div class="sheet-content">
-        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
-          <h2 class="text-base font-extrabold text-slate-800 sheet-title">🎭 ¿Quién sos?</h2>
-          <button onclick="closeSheet('character-modal')" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-1">✕</button>
-        </div>
-        <p class="text-xs text-slate-500 mb-3">Opcional — elegí tu personaje para mostrarlo en la tabla.</p>
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="selectCharacter('Srita. Escarlata')" class="px-3 py-2 rounded-lg border-2 border-slate-200 text-xs font-bold hover:bg-slate-50 text-slate-900" id="char-btn-0">Srita. Escarlata</button>
-          <button onclick="selectCharacter('Sra. Blanco')" class="px-3 py-2 rounded-lg border-2 border-slate-200 text-xs font-bold hover:bg-slate-50 text-slate-900" id="char-btn-1">Sra. Blanco</button>
-          <button onclick="selectCharacter('Prof. Moradillo')" class="px-3 py-2 rounded-lg border-2 border-slate-200 text-xs font-bold hover:bg-slate-50 text-slate-900" id="char-btn-2">Prof. Moradillo</button>
-          <button onclick="selectCharacter('Cnel. Mostaza')" class="px-3 py-2 rounded-lg border-2 border-slate-200 text-xs font-bold hover:bg-slate-50 text-slate-900" id="char-btn-3">Cnel. Mostaza</button>
-          <button onclick="selectCharacter('Sra. Azulino')" class="px-3 py-2 rounded-lg border-2 border-slate-200 text-xs font-bold hover:bg-slate-50 text-slate-900" id="char-btn-4">Sra. Azulino</button>
-          <button onclick="selectCharacter('Sr. Verdi')" class="px-3 py-2 rounded-lg border-2 border-slate-200 text-xs font-bold hover:bg-slate-50 text-slate-900" id="char-btn-5">Sr. Verdi</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- ═══ PANTALLA DE BLOQUEO ═══ -->
   <div id="lock-screen" class="fixed inset-0 bg-yellow-400 z-50 flex flex-col items-center justify-center p-6 text-center hidden">
     <img src="caja-clue-simpsons.png" alt="Caja Clue Los Simpsons" class="w-64 sm:w-80 md:w-96 lg:w-[480px] xl:w-[560px] rounded-xl shadow-2xl mb-4 border-4 border-yellow-600">
@@ -543,7 +521,7 @@
     ];
 
     let gameState = {
-      started: false, handLocked: false, myCardsCount: null, myCharacter: "",
+      started: false, handLocked: false, myCardsCount: null,
       players: ["J1","J2","J3","J4"],
       matrix: {}, envelope: { suspect:"", weapon:"", place:"" }, history: []
     };
@@ -705,23 +683,11 @@
       const saved = localStorage.getItem('simpsons_clue_state');
       if (saved) {
         try {
-          const parsed = JSON.parse(saved);
-          // Validar que tenga estructura mínima
-          if (!parsed.players || !Array.isArray(parsed.players) || parsed.players.length === 0) {
-            localStorage.removeItem('simpsons_clue_state');
-            return;
-          }
-          gameState = parsed;
-          if (!gameState.envelope)               gameState.envelope = { suspect:"", weapon:"", place:"" };
+          gameState = JSON.parse(saved);
+          if (!gameState.envelope)             gameState.envelope = { suspect:"", weapon:"", place:"" };
           if (gameState.handLocked === undefined) gameState.handLocked = false;
           if (gameState.myCardsCount === undefined) gameState.myCardsCount = null;
-          if (gameState.myCharacter === undefined) gameState.myCharacter = "";
-          if (!gameState.history)                gameState.history = [];
-          if (!gameState.matrix)                 gameState.matrix = {};
-        } catch(e) {
-          console.error('Estado corrupto, reiniciando:', e);
-          localStorage.removeItem('simpsons_clue_state');
-        }
+        } catch(e) { console.error(e); }
       }
     }
 
@@ -738,18 +704,6 @@
       }).join('');
       if (options.length === 1) select.value = options[0];
     }
-    function resetGame() {
-      localStorage.removeItem('simpsons_clue_state');
-      gameState = {
-        started: false, handLocked: false, myCardsCount: null, myCharacter: "",
-        players: ["J1","J2","J3","J4"],
-        matrix: {}, envelope: { suspect:"", weapon:"", place:"" }, history: []
-      };
-      closeSheet('config-modal');
-      renderAll();
-      openConfigModal();
-    }
-
     function openConfigModal() {
       document.getElementById('player-count-select').value = gameState.players.length.toString();
       updateMyCardsCountOptions();
@@ -1057,25 +1011,7 @@
     // ── LOCK SCREEN ───────────────────────────────────────────────────────
     function toggleLock(show) { document.getElementById('lock-screen').classList.toggle('hidden', !show); }
 
-    function selectCharacter(name) {
-      gameState.myCharacter = name;
-      saveState();
-      renderAll();
-      closeSheet('character-modal');
-    }
-
-    function openCharacterModal() {
-      // Marcar el personaje activo
-      const chars = ['', 'Srita. Escarlata', 'Sra. Blanco', 'Prof. Moradillo', 'Cnel. Mostaza', 'Sra. Azulino', 'Sr. Verdi'];
-      const btns  = ['char-btn-none', 'char-btn-0', 'char-btn-1', 'char-btn-2', 'char-btn-3', 'char-btn-4', 'char-btn-5'];
-      chars.forEach((c, i) => {
-        const btn = document.getElementById(btns[i]);
-        if (!btn) return;
-        btn.classList.toggle('ring-2', c === gameState.myCharacter);
-        btn.classList.toggle('ring-yellow-500', c === gameState.myCharacter);
-      });
-      openSheet('character-modal');
-    }
+    function populateDropdowns() { /* los dropdowns se llenan dinámicamente en openGuessModal */ }
 
     // ── RENDER ALL ────────────────────────────────────────────────────────
     function renderAll() {
@@ -1116,11 +1052,10 @@
 
       // Header de la tabla
       const headerTr = document.getElementById('table-header');
-      const colLabel = gameState.myCharacter || 'Cartas';
-      headerTr.innerHTML = `<th class="p-1 sm:p-1.5 font-bold text-slate-800 sticky-col bg-yellow-200 w-[90px] sm:w-auto min-w-[90px] sm:min-w-[150px] border-r border-yellow-300 text-center text-xs sm:text-sm">${colLabel}</th>`;
+      headerTr.innerHTML = `<th class="p-1 sm:p-1.5 font-bold text-slate-800 sticky-col bg-yellow-200 w-[90px] sm:w-auto min-w-[90px] sm:min-w-[150px] border-r border-yellow-300 text-center text-xs sm:text-sm">Cartas</th>`;
       gameState.players.forEach((p, idx) => {
         const inputHtml = idx === 0
-          ? `<div class="font-bold text-xs sm:text-sm text-slate-800 cursor-pointer hover:text-yellow-700" onclick="openCharacterModal()">Vos</div>`
+          ? `<div class="font-extrabold text-xs sm:text-sm text-yellow-950 py-0.5">Vos</div>`
           : `<input type="text" value="${p}" onchange="updatePlayerName(${idx}, this.value)"
                class="w-full text-center font-bold text-xs sm:text-sm bg-transparent focus:outline-none py-0.5"
                placeholder="J${idx+1}">`;
