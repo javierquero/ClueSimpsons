@@ -1,5 +1,5 @@
 
--- Que el selector de cartas al principio de la partida solamente se pueda cerrar o cancelar cuando estan todas las cartas seleccciones con el boton de Confirmar.
+LISTOOOO0 -- Que el selector de cartas al principio de la partida solamente se pueda cerrar o cancelar cuando estan todas las cartas seleccciones con el boton de Confirmar.
 	Ademas el titulo de esa ventana debera ser: "Mis cartas".
 
 LISTOOOOO -- No ocultar la primera fila donde estan los nombres de los jugadores asi al deslizar para abajo se siguen viendo los nombres
