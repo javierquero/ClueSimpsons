@@ -13,5 +13,5 @@ LISTOOOOO -- El pop-up de caso resuelto no debera aparecer automaticamente. En s
 	Luego al abrir el sobre confidencial, si estan las tres opciones seleccionadas, debera haber un boton que diga caso resuelto. al hacer click recien ahi muestra el pop-up como siempre.
 	Si no estan las tres opciones ya descubiertas, el boton tiene que estar grisado. 
 
--- Suposiciones: Cuando selecciono en la pantalla de suposiciones la opcion mostro, el resto de los usuarios deberan tener seleccionado la opcion paso.
+LISTO v37 -- Suposiciones: Cuando selecciono en la pantalla de suposiciones la opcion mostro, el resto de los usuarios deberan tener seleccionado la opcion paso.
 	Esto permite que un solo usuario pueda mostrar cartas como en el juego original.
