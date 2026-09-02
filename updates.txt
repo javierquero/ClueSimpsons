@@ -4,7 +4,7 @@ LISTOOOO0 -- Que el selector de cartas al principio de la partida solamente se p
 
 LISTOOOOO -- No ocultar la primera fila donde estan los nombres de los jugadores asi al deslizar para abajo se siguen viendo los nombres
 
--- Sobre el nombre "Vos" debera permitir hacer click para para seleccionar un nombre de personaje y mostrarlo en el Lugar que dice Cartas. Es para identificar el personaje que somos en el tablero.
+LISTOOOOO -- Sobre el nombre "Vos" debera permitir hacer click para para seleccionar un nombre de personaje y mostrarlo en el Lugar que dice Cartas. Es para identificar el personaje que somos en el tablero.
 	Debera ser opcional y en el caso de no ser elegido debe mostrar Cartas por defecto.
 
 -- El orden en el listado de Sospechosos, armas y lugares debera ser el mismo que en el anotador original del juego. Subir imagen...
