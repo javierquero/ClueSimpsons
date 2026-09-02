@@ -117,7 +117,6 @@
     #bottom-nav button:active { background: #fde68a; }
     #bottom-nav button .nav-icon { font-size: 20px; line-height: 1; }
 
-
     /* ── Select no-zoom iOS ── */
     select, input[type="text"] { font-size: 16px; }
 
@@ -131,8 +130,6 @@
       .desktop-only { display: none !important; }
       body { padding-bottom: 72px; }
     }
-    /* ── MOBILE: hide sheet wrappers that are desktop-modal-only ── */
-    /* (handled by JS showing the right modal per breakpoint) */
 
     /* ── Table compact on mobile ── */
     @media (max-width: 767px) {
@@ -155,13 +152,11 @@
   <!-- ═══ TOP HEADER ═══ -->
   <header class="bg-yellow-400 border-b-4 border-yellow-600 px-2 sm:px-4 py-2 sm:py-3 sticky top-0 z-30 shadow-md">
     <div class="max-w-5xl mx-auto flex items-center justify-center sm:justify-between gap-1">
-      <!-- Logo mobile: centrado con donas a ambos lados -->
       <div class="flex items-center justify-center w-full sm:w-auto sm:justify-start space-x-2 shrink-0">
         <img src="dona.png" alt="Dona" class="w-6 h-6 sm:w-8 sm:h-8">
         <h1 class="font-simpson text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl text-yellow-950 tracking-wide">Clue Simpsons</h1>
         <img src="dona.png" alt="Dona" class="w-6 h-6 sm:w-8 sm:h-8">
       </div>
-      <!-- Desktop buttons only -->
       <div class="desktop-only flex items-center space-x-1 sm:space-x-2 shrink-0 flex-wrap">
         <button id="btn-myhand" onclick="openMyHandModal()" style="display:none !important;"
           class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
@@ -195,14 +190,13 @@
   <!-- ═══ MAIN CONTENT ═══ -->
   <main class="max-w-5xl mx-auto p-2 sm:p-4">
     <div id="desktop-layout">
-      <!-- LEFT: tabla principal -->
       <div>
         <div class="bg-white rounded-xl shadow-lg border-2 border-yellow-500 overflow-hidden">
           <div style="overflow: auto; max-height: 65dvh; -webkit-overflow-scrolling: touch;">
             <table class="w-full border-collapse text-left text-xs sm:text-sm">
               <thead style="position: sticky; top: 0; z-index: 10;">
                 <tr class="bg-yellow-200 border-b border-yellow-400" id="table-header">
-                  <th class="p-1.5 sm:p-3 font-bold text-slate-800 sticky-col bg-yellow-200 min-w-[90px] sm:min-w-[150px] border-r border-yellow-300">Cartas</th>
+                  <th id="th-cards-header" class="p-1.5 sm:p-3 font-bold text-slate-800 sticky-col bg-yellow-200 min-w-[90px] sm:min-w-[150px] border-r border-yellow-300">Cartas</th>
                 </tr>
               </thead>
               <tbody id="table-body"></tbody>
@@ -220,8 +214,6 @@
           </div>
         </div>
       </div>
-
-
     </div>
   </main>
 
@@ -247,6 +239,29 @@
     </button>
   </nav>
 
+  <!-- ═══ MODAL SELECCIONAR MI PERSONAJE ═══ -->
+  <div id="character-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'character-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">Seleccionar mi personaje</h2>
+          <button onclick="closeCharacterModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <p class="text-xs text-slate-600 mb-3">Elige el personaje con el que estás jugando en el tablero:</p>
+        <div id="character-options" class="space-y-2"></div>
+        <div class="flex justify-between pt-3 border-t mt-4">
+          <button onclick="selectMyCharacter('')" class="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-xs">
+            Ninguno (Mostrar "Cartas")
+          </button>
+          <button onclick="closeCharacterModal()" class="px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-xs shadow">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══ MODAL CASO RESUELTO ═══ -->
   <div id="solved-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="solved-modal-content bg-emerald-500 text-white rounded-2xl border-4 border-emerald-700 p-6 sm:p-8 w-full max-w-md shadow-2xl text-center space-y-4">
@@ -259,14 +274,13 @@
     </div>
   </div>
 
-  <!-- ═══ MODAL MIS CARTAS (bottom sheet en mobile, centrado en desktop) ═══ -->
-  <div id="myhand-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'myhand-modal')">
+  <!-- ═══ MODAL MIS CARTAS ═══ -->
+  <div id="myhand-modal" class="bottom-sheet hidden">
     <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
       <div class="sheet-handle sm:hidden"></div>
       <div class="sheet-content">
         <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
-          <h2 class="text-base font-extrabold text-slate-800 sheet-title">🎴 Marcar Mis Cartas Iniciales</h2>
-          <button onclick="closeMyHandModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-1">✕</button>
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">🎴 Mis cartas</h2>
         </div>
         <div class="flex justify-between items-center bg-yellow-50 p-2 rounded border border-yellow-300 mb-2">
           <p class="text-xs text-slate-700 font-semibold">Selecciona tus cartas:</p>
@@ -389,7 +403,7 @@
         <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
           © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
           Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
-          <span class="not-italic font-semibold text-slate-400">v35 — 01/09/2026</span>
+          <span class="not-italic font-semibold text-slate-400">v35 Beta 1 — 01/09/2026</span>
         </div>
         <div class="flex justify-end pt-2 border-t">
           <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
@@ -521,7 +535,7 @@
     ];
 
     let gameState = {
-      started: false, handLocked: false, myCardsCount: null,
+      started: false, handLocked: false, myCardsCount: null, myCharacter: "",
       players: ["J1","J2","J3","J4"],
       matrix: {}, envelope: { suspect:"", weapon:"", place:"" }, history: []
     };
@@ -532,7 +546,6 @@
     function openSheet(id) {
       const modal = document.getElementById(id);
       modal.classList.remove('hidden');
-      // Re-trigger animaciones
       const inner = modal.querySelector('.bottom-sheet-inner');
       const handle = modal.querySelector('.sheet-handle');
       if (inner) { inner.style.animation = 'none'; inner.offsetHeight; inner.style.animation = ''; }
@@ -567,7 +580,6 @@
           osc2.start(audioCtx.currentTime + startTime);
           osc2.stop(audioCtx.currentTime + startTime + duration);
         }
-        // Solo dings iniciales, sin loop (la voz toma el control después)
         playDing(1000, 0.35, 0.0, 0.25);
         playDing(800, 0.45, 0.25, 0.2);
       } catch(e) { console.warn('No se pudo reproducir el sonido:', e); }
@@ -589,11 +601,10 @@
       const voces = window.speechSynthesis.getVoices();
       const vozEs = voces.find(v => v.lang.startsWith('es')) || null;
       if (vozEs) utterance.voice = vozEs;
-      // Parar el loop de sonido mientras habla
       utterance.onstart = () => {
         if (soundInterval) { clearInterval(soundInterval); soundInterval = null; }
       };
-      utterance.onend = () => { /* nada, el sonido ya cumplió su función */ };
+      utterance.onend = () => {};
       setTimeout(() => window.speechSynthesis.speak(utterance), 800);
     }
 
@@ -628,7 +639,7 @@
     function allCrossedForCard(card) {
       return gameState.players.every((_, pIdx) => {
         const val = gameState.matrix[`${card}_${pIdx}`] || 0;
-        return val === 1 || val === 8; // ❌ o 👁️ ambos cuentan como "no tiene"
+        return val === 1 || val === 8;
       });
     }
     function updateEnvelopeFromCrosses() {
@@ -654,13 +665,12 @@
     function getStateInfo(code) { return STATES.find(s => s.code === code) || STATES[0]; }
 
     function cycleCell(card, playerIdx) {
-      if (playerIdx === 0 && gameState.handLocked) return; // "Vos" siempre bloqueado
+      if (playerIdx === 0 && gameState.handLocked) return;
       const isMyCard = gameState.matrix[`${card}_0`] === 2 || gameState.matrix[`${card}_0`] === 8;
       const key = `${card}_${playerIdx}`;
       const cur = gameState.matrix[key] || 0;
 
       if (isMyCard && playerIdx !== 0) {
-        // Carta propia: otros jugadores solo ciclan entre ❌ y 👁️
         const seqMine = [1, 8, 1];
         const idx = seqMine.indexOf(cur);
         gameState.matrix[key] = idx >= 0 ? seqMine[idx + 1] ?? 1 : 1;
@@ -668,7 +678,6 @@
       }
 
       if (!isMyCard) {
-        // Carta ajena: ciclo normal sin 👁️
         const seqOther = [0,1,2,9,3,4,5,0];
         const idx = seqOther.indexOf(cur);
         gameState.matrix[key] = idx >= 0 ? seqOther[idx + 1] ?? 0 : 0;
@@ -687,8 +696,30 @@
           if (!gameState.envelope)             gameState.envelope = { suspect:"", weapon:"", place:"" };
           if (gameState.handLocked === undefined) gameState.handLocked = false;
           if (gameState.myCardsCount === undefined) gameState.myCardsCount = null;
+          if (gameState.myCharacter === undefined) gameState.myCharacter = "";
         } catch(e) { console.error(e); }
       }
+    }
+
+    // ── CHARACTER MODAL ───────────────────────────────────────────────────
+    function openCharacterModal() {
+      const container = document.getElementById('character-options');
+      container.innerHTML = '';
+      CARDS.suspects.forEach(char => {
+        const isSelected = gameState.myCharacter === char;
+        container.innerHTML += `
+          <button onclick="selectMyCharacter('${char}')" class="w-full text-left p-2.5 rounded-lg border-2 font-bold text-xs sm:text-sm transition-colors flex justify-between items-center ${isSelected ? 'border-yellow-500 bg-yellow-100 text-yellow-950' : 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-yellow-50'}">
+            <span>${char}</span>
+            ${isSelected ? '<span>✔️</span>' : ''}
+          </button>`;
+      });
+      openSheet('character-modal');
+    }
+    function closeCharacterModal() { closeSheet('character-modal'); }
+    function selectMyCharacter(charName) {
+      gameState.myCharacter = charName;
+      refreshState();
+      closeCharacterModal();
     }
 
     // ── CONFIG MODAL ──────────────────────────────────────────────────────
@@ -726,7 +757,7 @@
 
     function updatePlayerName(index, newName) {
       gameState.players[index] = newName.trim() || `J${index+1}`;
-      saveState(); renderHistory(); populateDropdowns();
+      saveState(); renderHistory();
     }
 
     function toggleCollapse(category) {
@@ -837,13 +868,12 @@
     function closeRulesModal() { closeSheet('rules-modal'); }
 
     // ── GUESS MODAL ───────────────────────────────────────────────────────
-    // ── CUSTOM DROPDOWNS (guess modal) ────────────────────────────────────
     function buildDropdown(type, list, myCards) {
       const listEl  = document.getElementById(`dd-${type}-list`);
       const labelEl = document.getElementById(`dd-${type}-label`);
       const hiddenEl = document.getElementById(`guess-${type}`);
       listEl.innerHTML = '';
-      list.forEach((item, i) => {
+      list.forEach((item) => {
         const isMine = myCards.has(item);
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -860,7 +890,6 @@
         };
         listEl.appendChild(btn);
       });
-      // seleccionar el primero por defecto
       const first = list[0];
       hiddenEl.value = first;
       labelEl.textContent = first;
@@ -876,7 +905,6 @@
       document.getElementById(`dd-${type}-list`).classList.toggle('hidden');
     }
 
-    // Cerrar dropdowns al hacer click fuera
     document.addEventListener('click', e => {
       if (!e.target.closest('#dd-suspect-wrapper') &&
           !e.target.closest('#dd-weapon-wrapper') &&
@@ -941,7 +969,7 @@
     }
 
     function saveGuess() {
-      const guesserName = "Vos";
+      const guesserName = gameState.myCharacter ? `Vos (${gameState.myCharacter})` : "Vos";
       const suspect = document.getElementById('guess-suspect').value;
       const weapon  = document.getElementById('guess-weapon').value;
       const place   = document.getElementById('guess-place').value;
@@ -1002,60 +1030,21 @@
         `<div class="p-2 bg-yellow-50 border border-yellow-200 rounded text-slate-700 leading-snug">${item}</div>`
       ).join('');
     }
-    function clearHistory() {
-      if (confirm("¿Querés borrar el historial de suposiciones?")) {
-        gameState.history = []; saveState(); renderHistory();
-      }
-    }
 
     // ── LOCK SCREEN ───────────────────────────────────────────────────────
     function toggleLock(show) { document.getElementById('lock-screen').classList.toggle('hidden', !show); }
 
-    function populateDropdowns() { /* los dropdowns se llenan dinámicamente en openGuessModal */ }
-
     // ── RENDER ALL ────────────────────────────────────────────────────────
     function renderAll() {
       const totalPlayers = gameState.players.length;
+      const cornerTitle = gameState.myCharacter ? gameState.myCharacter : "Cartas";
 
-      // Botón mis cartas (header desktop + nav mobile)
-      const btnHand    = document.getElementById('btn-myhand');
-      const navBtnHand = document.getElementById('nav-btn-myhand');
-      if (btnHand) {
-        btnHand.style.display = 'none';
-        btnHand.disabled = gameState.handLocked;
-      }
-      if (navBtnHand) {
-        navBtnHand.style.display = 'none';
-      }
-
-      // Badge sobre (desktop)
-      const env = gameState.envelope;
-      const envItems = [env.suspect, env.weapon, env.place].filter(Boolean);
-      const badgeEl = document.getElementById('btn-envelope-badge');
-      if (badgeEl) {
-        if (envItems.length > 0) {
-          badgeEl.innerText = `(${envItems.length}/3)`;
-          badgeEl.classList.add('visible');
-        } else {
-          badgeEl.innerText = '';
-          badgeEl.classList.remove('visible');
-        }
-      }
-
-      // Sidebar sobre (desktop lg)
-      const ss = document.getElementById('sidebar-envelope-suspect');
-      const sw = document.getElementById('sidebar-envelope-weapon');
-      const sp = document.getElementById('sidebar-envelope-place');
-      if (ss) ss.textContent = env.suspect || "---";
-      if (sw) sw.textContent = env.weapon  || "---";
-      if (sp) sp.textContent = env.place   || "---";
-
-      // Header de la tabla
       const headerTr = document.getElementById('table-header');
-      headerTr.innerHTML = `<th class="p-1 sm:p-1.5 font-bold text-slate-800 sticky-col bg-yellow-200 w-[90px] sm:w-auto min-w-[90px] sm:min-w-[150px] border-r border-yellow-300 text-center text-xs sm:text-sm">Cartas</th>`;
+      headerTr.innerHTML = `<th class="p-1 sm:p-1.5 font-bold text-slate-800 sticky-col bg-yellow-200 w-[90px] sm:w-auto min-w-[90px] sm:min-w-[150px] border-r border-yellow-300 text-center text-xs sm:text-sm truncate">${cornerTitle}</th>`;
+      
       gameState.players.forEach((p, idx) => {
         const inputHtml = idx === 0
-          ? `<div class="font-extrabold text-xs sm:text-sm text-yellow-950 py-0.5">Vos</div>`
+          ? `<button onclick="openCharacterModal()" class="font-extrabold text-xs sm:text-sm text-yellow-950 py-0.5 flex items-center justify-center w-full" title="Hacé clic para elegir tu personaje">Vos</button>`
           : `<input type="text" value="${p}" onchange="updatePlayerName(${idx}, this.value)"
                class="w-full text-center font-bold text-xs sm:text-sm bg-transparent focus:outline-none py-0.5"
                placeholder="J${idx+1}">`;
@@ -1065,7 +1054,6 @@
           </th>`;
       });
 
-      // Body de la tabla
       const tbody = document.getElementById('table-body');
       tbody.innerHTML = '';
       const sections = [
@@ -1099,15 +1087,12 @@
               let st, cursorClass, clickHandler;
 
               if (pIdx === 0 && gameState.handLocked) {
-                // Celda "Vos" siempre bloqueada cuando mano confirmada
                 st = getStateInfo(stateCode); cursorClass = 'cursor-not-allowed opacity-70'; clickHandler = '';
               } else if (isMyCard && pIdx !== 0) {
-                // Carta propia, otro jugador: clickeable, cicla entre ❌ y 👁️
                 st = getStateInfo(stateCode === 0 ? 1 : stateCode);
                 cursorClass = 'cursor-pointer';
                 clickHandler = `onclick="cycleCell('${card}', ${pIdx})"`;
               } else {
-                // Carta ajena: ciclo normal
                 st = getStateInfo(stateCode); cursorClass = 'cursor-pointer';
                 clickHandler = `onclick="cycleCell('${card}', ${pIdx})"`;
               }
@@ -1122,30 +1107,18 @@
       renderHistory();
     }
 
-    // ── INIT ──────────────────────────────────────────────────────────────
+    // ── INICIALIZACIÓN ───────────────────────────────────────────────────
     window.addEventListener('DOMContentLoaded', () => {
-      // Precargar voces de síntesis (algunos navegadores las cargan async)
-      if (window.speechSynthesis) {
-        window.speechSynthesis.getVoices();
-        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-      }
       loadState();
-      populateDropdowns();
-      if (!gameState.started) openConfigModal();
-      updateEnvelopeFromCrosses();
-      saveState();
-      renderAll();
+      if (!gameState.started) {
+        openConfigModal();
+      } else {
+        renderAll();
+        if (!gameState.handLocked) {
+          openMyHandModal();
+        }
+      }
     });
-  </script>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('SW registrado:', reg.scope))
-          .catch(err => console.warn('SW error:', err));
-      });
-    }
   </script>
 </body>
 </html>
