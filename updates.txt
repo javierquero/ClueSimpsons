@@ -9,7 +9,7 @@ LISTOOOOO -- Sobre el nombre "Vos" debera permitir hacer click para para selecci
 
 -- El orden en el listado de Sospechosos, armas y lugares debera ser el mismo que en el anotador original del juego. Subir imagen...
 
--- El pop-up de caso resuelto no debera aparecer automaticamente. En su lugar debera titilar el boton del sobre en ambos modos.
+LISTOOOOO -- El pop-up de caso resuelto no debera aparecer automaticamente. En su lugar debera titilar el boton del sobre en ambos modos.
 	Luego al abrir el sobre confidencial, si estan las tres opciones seleccionadas, debera haber un boton que diga caso resuelto. al hacer click recien ahi muestra el pop-up como siempre.
 	Si no estan las tres opciones ya descubiertas, el boton tiene que estar grisado. 
 
