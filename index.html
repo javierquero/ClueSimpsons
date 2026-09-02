@@ -1004,9 +1004,22 @@
     }
     function toggleNobodyShow(checked) { renderGuessResponses(); }
     function toggleCardDropdown(pIdx) {
-      const showed  = document.querySelector(`input[name="resp_${pIdx}"]:checked`)?.value === 'showed';
+      const showed = document.querySelector(`input[name="resp_${pIdx}"]:checked`)?.value === 'showed';
       const wrapper = document.getElementById(`card-select-wrapper-${pIdx}`);
       if (wrapper) wrapper.classList.toggle('hidden', !showed);
+
+      // Si mostró, poner todos los demás en "Pasó"
+      if (showed) {
+        gameState.players.forEach((_, otherIdx) => {
+          if (otherIdx === 0 || otherIdx === pIdx) return;
+          const passedRadio = document.querySelector(`input[name="resp_${otherIdx}"][value="passed"]`);
+          if (passedRadio) {
+            passedRadio.checked = true;
+            const otherWrapper = document.getElementById(`card-select-wrapper-${otherIdx}`);
+            if (otherWrapper) otherWrapper.classList.add('hidden');
+          }
+        });
+      }
     }
 
     function saveGuess() {
