@@ -42,6 +42,15 @@
     }
     .solved-modal-content { animation: slideDown 2s ease-out forwards; }
 
+    /* ── ANIMACIÓN TITILANTE (PULSO DE TAMAÑO / ESCALA PURA - SIN CAMBIO DE COLOR) ── */
+    @keyframes pulseEnvelopeScale {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .envelope-glow {
+      animation: pulseEnvelopeScale 1s infinite ease-in-out !important;
+    }
+
     /* ── BOTTOM SHEET (mobile modals) ── */
     .bottom-sheet {
       position: fixed;
@@ -163,7 +172,7 @@
           🎴 <span class="ml-1">Mis Cartas</span>
         </button>
         <button onclick="openEnvelopeModal()" id="btn-envelope"
-          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28">
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28 transition-all">
           ✉️ <span class="ml-1">Sobre</span>
         </button>
         <button onclick="openGuessModal()"
@@ -222,7 +231,7 @@
     <button onclick="openMyHandModal()" id="nav-btn-myhand" style="display:none !important;">
       <span class="nav-icon">🎴</span>Mis Cartas
     </button>
-    <button onclick="openEnvelopeModal()">
+    <button onclick="openEnvelopeModal()" id="nav-btn-envelope" class="transition-all">
       <span class="nav-icon">✉️</span>Sobre
     </button>
     <button onclick="openGuessModal()">
@@ -322,8 +331,14 @@
             <p id="envelope-display-place" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
           </div>
         </div>
-        <div class="flex justify-end pt-3 border-t mt-3">
-          <button onclick="closeEnvelopeModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Cerrar</button>
+        <div class="flex justify-between items-center pt-4 border-t mt-4 gap-2">
+          <button id="btn-show-solved" onclick="triggerSolvedFromEnvelope()" disabled
+            class="px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow bg-gray-300 text-gray-500 cursor-not-allowed transition-all">
+            🎉 Caso Resuelto
+          </button>
+          <button onclick="closeEnvelopeModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-xs sm:text-sm shadow">
+            Cerrar
+          </button>
         </div>
       </div>
     </div>
@@ -403,7 +418,7 @@
         <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
           © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
           Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
-          <span class="not-italic font-semibold text-slate-400">v35 Beta 1 — 01/09/2026</span>
+          <span class="not-italic font-semibold text-slate-400">v36 — 02/09/2026</span>
         </div>
         <div class="flex justify-end pt-2 border-t">
           <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
@@ -627,6 +642,11 @@
       stopSolvedSound();
     }
 
+    function triggerSolvedFromEnvelope() {
+      closeEnvelopeModal();
+      showSolvedModal();
+    }
+
     // ── GAME LOGIC ────────────────────────────────────────────────────────
     function getCardCountForPlayer(playerIdx, totalPlayers) {
       const base = Math.floor(18 / totalPlayers), rem = 18 % totalPlayers;
@@ -649,8 +669,18 @@
         for (const card of catCards[cat]) { if (allCrossedForCard(card)) { found = card; break; } }
         gameState.envelope[cat] = found || "";
       });
-      const solved = gameState.envelope.suspect && gameState.envelope.weapon && gameState.envelope.place;
-      if (solved) showSolvedModal(); else closeSolvedModal();
+      
+      const solved = !!(gameState.envelope.suspect && gameState.envelope.weapon && gameState.envelope.place);
+      const btnDesk = document.getElementById('btn-envelope');
+      const btnNav = document.getElementById('nav-btn-envelope');
+      
+      if (solved) {
+        btnDesk?.classList.add('envelope-glow');
+        btnNav?.classList.add('envelope-glow');
+      } else {
+        btnDesk?.classList.remove('envelope-glow');
+        btnNav?.classList.remove('envelope-glow');
+      }
     }
     function ensureSingleCheck(card, playerIdx) {
       gameState.players.forEach((_, pIdx) => {
@@ -859,6 +889,17 @@
       document.getElementById('envelope-display-suspect').textContent = gameState.envelope.suspect || "---";
       document.getElementById('envelope-display-weapon').textContent  = gameState.envelope.weapon  || "---";
       document.getElementById('envelope-display-place').textContent   = gameState.envelope.place   || "---";
+      
+      const isSolved = !!(gameState.envelope.suspect && gameState.envelope.weapon && gameState.envelope.place);
+      const btnSolved = document.getElementById('btn-show-solved');
+      if (btnSolved) {
+        btnSolved.disabled = !isSolved;
+        if (isSolved) {
+          btnSolved.className = "px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all";
+        } else {
+          btnSolved.className = "px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow bg-gray-300 text-gray-500 cursor-not-allowed transition-all";
+        }
+      }
       openSheet('envelope-modal');
     }
     function closeEnvelopeModal() { closeSheet('envelope-modal'); }
@@ -1105,6 +1146,7 @@
       });
 
       renderHistory();
+      updateEnvelopeFromCrosses();
     }
 
     // ── INICIALIZACIÓN ───────────────────────────────────────────────────
