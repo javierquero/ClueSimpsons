@@ -175,8 +175,8 @@
           class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28 transition-all">
           ✉️ <span class="ml-1">Sobre</span>
         </button>
-        <button onclick="openGuessModal()"
-          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28">
+        <button id="btn-guess-desktop" onclick="openGuessModal()" disabled
+          class="font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28 bg-slate-300 text-slate-400 cursor-not-allowed transition-colors">
           🔍 <span class="ml-1">Suposición</span>
         </button>
         <button onclick="openRulesModal()"
@@ -234,7 +234,7 @@
     <button onclick="openEnvelopeModal()" id="nav-btn-envelope" class="transition-all">
       <span class="nav-icon">✉️</span>Sobre
     </button>
-    <button onclick="openGuessModal()">
+    <button id="btn-guess-mobile" onclick="openGuessModal()" disabled style="opacity: 0.4;">
       <span class="nav-icon">🔍</span>Suposición
     </button>
     <button onclick="openRulesModal()">
@@ -418,7 +418,7 @@
         <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
           © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
           Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
-          <span class="not-italic font-semibold text-slate-400">v36 — 02/09/2026</span>
+          <span class="not-italic font-semibold text-slate-400">v38 — 02/09/2026</span>
         </div>
         <div class="flex justify-end pt-2 border-t">
           <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
@@ -468,48 +468,24 @@
           <h2 class="text-base font-extrabold text-slate-800 sheet-title">Nueva Suposición</h2>
           <button onclick="closeGuessModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Sospechoso</label>
-          <div class="relative" id="dd-suspect-wrapper">
-            <button type="button" onclick="toggleDropdown('suspect')" id="dd-suspect-btn"
-              class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm text-left bg-white flex justify-between items-center">
-              <span id="dd-suspect-label">—</span><span class="text-slate-400">▾</span>
-            </button>
-            <div id="dd-suspect-list" class="hidden absolute z-50 w-full bg-white border-2 border-yellow-400 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg"></div>
-          </div>
-          <input type="hidden" id="guess-suspect">
+        <!-- Cartas seleccionadas (solo display) -->
+        <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-3 space-y-1 text-sm">
+          <div class="flex justify-between"><span class="text-slate-500 font-bold">👤</span><span id="guess-display-suspect" class="font-semibold text-slate-800">—</span></div>
+          <div class="flex justify-between"><span class="text-slate-500 font-bold">🔫</span><span id="guess-display-weapon" class="font-semibold text-slate-800">—</span></div>
+          <div class="flex justify-between"><span class="text-slate-500 font-bold">🏠</span><span id="guess-display-place" class="font-semibold text-slate-800">—</span></div>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Arma</label>
-          <div class="relative" id="dd-weapon-wrapper">
-            <button type="button" onclick="toggleDropdown('weapon')" id="dd-weapon-btn"
-              class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm text-left bg-white flex justify-between items-center">
-              <span id="dd-weapon-label">—</span><span class="text-slate-400">▾</span>
-            </button>
-            <div id="dd-weapon-list" class="hidden absolute z-50 w-full bg-white border-2 border-yellow-400 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg"></div>
-          </div>
-          <input type="hidden" id="guess-weapon">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Lugar</label>
-          <div class="relative" id="dd-place-wrapper">
-            <button type="button" onclick="toggleDropdown('place')" id="dd-place-btn"
-              class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm text-left bg-white flex justify-between items-center">
-              <span id="dd-place-label">—</span><span class="text-slate-400">▾</span>
-            </button>
-            <div id="dd-place-list" class="hidden absolute z-50 w-full bg-white border-2 border-yellow-400 rounded-lg mt-1 max-h-48 overflow-y-auto shadow-lg"></div>
-          </div>
-          <input type="hidden" id="guess-place">
-        </div>
-        <div class="pt-2 border-t">
+        <input type="hidden" id="guess-suspect">
+        <input type="hidden" id="guess-weapon">
+        <input type="hidden" id="guess-place">
+        <div class="pt-1 border-t">
           <div class="flex items-center justify-between mb-2">
-            <span class="font-bold text-slate-800 text-sm">Respuestas (en orden)</span>
+            <span class="font-bold text-slate-800 text-sm">Respuestas</span>
             <label class="flex items-center space-x-1 text-xs text-slate-600">
               <input type="checkbox" id="guess-nobody" onchange="toggleNobodyShow(this.checked)" class="rounded border-yellow-400">
               <span>Nadie mostró carta</span>
             </label>
           </div>
-          <div id="guess-responses-container" class="space-y-3 max-h-48 overflow-y-auto pr-1"></div>
+          <div id="guess-responses-container" class="space-y-2 max-h-52 overflow-y-auto pr-1"></div>
         </div>
         <div class="flex justify-end space-x-2 pt-3 border-t">
           <button onclick="closeGuessModal()" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm">Cancelar</button>
@@ -555,6 +531,7 @@
       matrix: {}, envelope: { suspect:"", weapon:"", place:"" }, history: []
     };
     let viewSettings = { collapsed: { suspect:false, weapon:false, place:false } };
+    let guessSelection = { suspect: "", weapon: "", place: "" };
     let audioCtx = null, soundInterval = null;
 
     // ── BOTTOM SHEET helpers ───────────────────────────────────────────────
@@ -909,59 +886,45 @@
     function closeRulesModal() { closeSheet('rules-modal'); }
 
     // ── GUESS MODAL ───────────────────────────────────────────────────────
-    function buildDropdown(type, list, myCards) {
-      const listEl  = document.getElementById(`dd-${type}-list`);
-      const labelEl = document.getElementById(`dd-${type}-label`);
-      const hiddenEl = document.getElementById(`guess-${type}`);
-      listEl.innerHTML = '';
-      list.forEach((item) => {
-        const isMine = myCards.has(item);
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.textContent = item;
-        btn.className = `w-full text-left px-3 py-2 text-sm hover:bg-yellow-50 border-b border-slate-100 last:border-0 ${isMine ? 'font-bold' : ''}`;
-        if (isMine) btn.style.color = '#dc2626';
-        btn.onclick = () => {
-          hiddenEl.value = item;
-          labelEl.textContent = item;
-          labelEl.style.color = isMine ? '#dc2626' : '';
-          labelEl.style.fontWeight = isMine ? 'bold' : '';
-          listEl.classList.add('hidden');
-          renderGuessResponses();
-        };
-        listEl.appendChild(btn);
-      });
-      const first = list[0];
-      hiddenEl.value = first;
-      labelEl.textContent = first;
-      const firstIsMine = myCards.has(first);
-      labelEl.style.color = firstIsMine ? '#dc2626' : '';
-      labelEl.style.fontWeight = firstIsMine ? 'bold' : '';
+    function getCategoryForCard(card) {
+      if (CARDS.suspects.includes(card)) return 'suspect';
+      if (CARDS.weapons.includes(card))  return 'weapon';
+      if (CARDS.places.includes(card))   return 'place';
+      return null;
     }
 
-    function toggleDropdown(type) {
-      ['suspect','weapon','place'].forEach(t => {
-        if (t !== type) document.getElementById(`dd-${t}-list`).classList.add('hidden');
-      });
-      document.getElementById(`dd-${type}-list`).classList.toggle('hidden');
-    }
-
-    document.addEventListener('click', e => {
-      if (!e.target.closest('#dd-suspect-wrapper') &&
-          !e.target.closest('#dd-weapon-wrapper') &&
-          !e.target.closest('#dd-place-wrapper')) {
-        ['suspect','weapon','place'].forEach(t =>
-          document.getElementById(`dd-${t}-list`)?.classList.add('hidden')
-        );
+    function updateGuessButton() {
+      const ready = guessSelection.suspect && guessSelection.weapon && guessSelection.place;
+      const btnD = document.getElementById('btn-guess-desktop');
+      const btnM = document.getElementById('btn-guess-mobile');
+      if (btnD) {
+        btnD.disabled = !ready;
+        btnD.className = ready
+          ? 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28 transition-colors'
+          : 'font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28 bg-slate-300 text-slate-400 cursor-not-allowed transition-colors';
       }
-    });
+      if (btnM) {
+        btnM.disabled = !ready;
+        btnM.style.opacity = ready ? '1' : '0.4';
+      }
+    }
+
+    function selectForGuess(card) {
+      const cat = getCategoryForCard(card);
+      if (!cat) return;
+      guessSelection[cat] = (guessSelection[cat] === card) ? "" : card;
+      updateGuessButton();
+      renderAll();
+    }
 
     function openGuessModal() {
       if (!gameState.players.length) return;
-      const myCards = new Set(ALL_CARDS_FLAT.filter(card => gameState.matrix[`${card}_0`] === 2));
-      buildDropdown('suspect', CARDS.suspects, myCards);
-      buildDropdown('weapon',  CARDS.weapons,  myCards);
-      buildDropdown('place',   CARDS.places,   myCards);
+      document.getElementById('guess-suspect').value = guessSelection.suspect;
+      document.getElementById('guess-weapon').value  = guessSelection.weapon;
+      document.getElementById('guess-place').value   = guessSelection.place;
+      document.getElementById('guess-display-suspect').textContent = guessSelection.suspect || '—';
+      document.getElementById('guess-display-weapon').textContent  = guessSelection.weapon  || '—';
+      document.getElementById('guess-display-place').textContent   = guessSelection.place   || '—';
       document.getElementById('guess-nobody').checked = false;
       renderGuessResponses();
       openSheet('guess-modal');
@@ -1023,6 +986,8 @@
     }
 
     function saveGuess() {
+      guessSelection = { suspect: "", weapon: "", place: "" };
+      updateGuessButton();
       const guesserName = gameState.myCharacter ? `Vos (${gameState.myCharacter})` : "Vos";
       const suspect = document.getElementById('guess-suspect').value;
       const weapon  = document.getElementById('guess-weapon').value;
@@ -1042,30 +1007,43 @@
         logText += `<span class="text-red-600 font-bold">Nadie mostró carta.</span>`;
       } else {
         const details = [];
+        let shownCard = null;
+        let showerIdx = null;
+
+        // Encontrar quién mostró y qué carta
         gameState.players.forEach((p, idx) => {
           if (idx === 0) return;
           const resp = document.querySelector(`input[name="resp_${idx}"]:checked`)?.value;
-          if (resp === 'passed') {
+          if (resp === 'showed') {
+            shownCard = document.getElementById(`card-shown-${idx}`)?.value || null;
+            showerIdx = idx;
+          }
+        });
+
+        if (showerIdx !== null) {
+          // Alguien mostró: ✔️ al que mostró, ❌ al resto en ESA carta
+          if (shownCard) {
+            gameState.matrix[`${shownCard}_${showerIdx}`] = 2;
+            ensureSingleCheck(shownCard, showerIdx);
+            // ❌ al resto en la carta mostrada
+            gameState.players.forEach((_, idx) => {
+              if (idx === 0 || idx === showerIdx) return;
+              const key = `${shownCard}_${idx}`, cur = gameState.matrix[key] || 0;
+              if (cur === 0 || (cur >= 3 && cur <= 7)) gameState.matrix[key] = 1;
+            });
+            details.push(`${gameState.players[showerIdx]} mostró (${shownCard})`);
+          }
+        } else {
+          // Nadie mostró (todos pasaron): ❌ en las 3 cartas para todos
+          gameState.players.forEach((p, idx) => {
+            if (idx === 0) return;
             askedCards.forEach(card => {
               const key = `${card}_${idx}`, cur = gameState.matrix[key] || 0;
               if (cur === 0 || (cur >= 3 && cur <= 7)) gameState.matrix[key] = 1;
             });
             details.push(`${p} pasó`);
-          } else if (resp === 'showed') {
-            const cardVal = document.getElementById(`card-shown-${idx}`)?.value || "Desconocida";
-            details.push(`${p} mostró (${cardVal})`);
-            if (cardVal !== "Desconocida") {
-              if (!(idx === 0 && gameState.handLocked)) {
-                gameState.matrix[`${cardVal}_${idx}`] = 2;
-                ensureSingleCheck(cardVal, idx);
-              }
-              askedCards.filter(c => c !== cardVal).forEach(card => {
-                const k = `${card}_${idx}`, cur = gameState.matrix[k] || 0;
-                if (cur === 0 || (cur >= 3 && cur <= 7)) gameState.matrix[k] = 1;
-              });
-            }
-          }
-        });
+          });
+        }
         logText += details.join(', ') + '.';
       }
       gameState.history.unshift(logText);
@@ -1131,8 +1109,11 @@
             const envBadge = inEnvelope
               ? ` <span class="text-[9px] sm:text-[10px] bg-amber-200 text-amber-900 px-1 rounded font-bold">✉️</span>`
               : '';
-            let rowHtml = `<tr class="border-b border-slate-100 hover:bg-amber-50/50 ${inEnvelope ? 'bg-amber-100/80 font-semibold' : ''}">
-              <td class="p-1 sm:p-2 text-[11px] sm:text-sm font-medium sticky-col bg-white border-r border-slate-200 shadow-sm leading-tight max-w-[90px] sm:max-w-none">${card}${envBadge}</td>`;
+            const cat = getCategoryForCard(card);
+            const isSelected = cat && guessSelection[cat] === card;
+            const selBadge = isSelected ? ` <span class="text-blue-500">🔍</span>` : '';
+            let rowHtml = `<tr class="border-b border-slate-100 hover:bg-amber-50/50 ${inEnvelope ? 'bg-amber-100/80 font-semibold' : ''} ${isSelected ? 'bg-blue-50' : ''}">
+              <td onclick="selectForGuess('${card}')" class="p-1 sm:p-2 text-[11px] sm:text-sm font-medium sticky-col bg-white border-r border-slate-200 shadow-sm leading-tight max-w-[90px] sm:max-w-none cursor-pointer select-none ${isSelected ? '!bg-blue-50' : ''}">${card}${envBadge}${selBadge}</td>`;
 
             gameState.players.forEach((p, pIdx) => {
               const key = `${card}_${pIdx}`;
