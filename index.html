@@ -42,6 +42,17 @@
     }
     .solved-modal-content { animation: slideDown 2s ease-out forwards; }
 
+    @keyframes borderPulse {
+      0%   { border-color: #facc15; }
+      50%  { border-color: #16a34a; }
+      100% { border-color: #facc15; }
+    }
+    .table-border-solved {
+      animation: borderPulse 0.8s ease-in-out infinite !important;
+      border-width: 4px !important;
+    }
+
+
     /* ── ANIMACIÓN TITILANTE (PULSO DE TAMAÑO / ESCALA PURA - SIN CAMBIO DE COLOR) ── */
     @keyframes pulseEnvelopeScale {
       0%, 100% { transform: scale(1); }
@@ -200,7 +211,7 @@
   <main class="max-w-5xl mx-auto p-2 sm:p-4">
     <div id="desktop-layout">
       <div>
-        <div class="bg-white rounded-xl shadow-lg border-2 border-yellow-500 overflow-hidden">
+        <div id="table-wrapper" class="bg-white rounded-xl shadow-lg border-2 border-yellow-500" style="overflow: hidden;">
           <div style="overflow: auto; max-height: 65dvh; -webkit-overflow-scrolling: touch;">
             <table class="w-full border-collapse text-left text-xs sm:text-sm">
               <thead style="position: sticky; top: 0; z-index: 10;">
@@ -271,6 +282,7 @@
     </div>
   </div>
 
+  <!-- ═══ OVERLAY CASO RESUELTO ═══ -->
   <!-- ═══ MODAL CASO RESUELTO ═══ -->
   <div id="solved-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="solved-modal-content bg-emerald-500 text-white rounded-2xl border-4 border-emerald-700 p-6 sm:p-8 w-full max-w-md shadow-2xl text-center space-y-4">
@@ -317,6 +329,11 @@
           <button onclick="closeEnvelopeModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
         </div>
         <p class="text-xs text-slate-600 mb-3">Cartas deducidas automáticamente:</p>
+        <!-- Mis cartas (solo si mano bloqueada) -->
+        <div id="envelope-mycards" class="hidden mb-3 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <p class="text-xs font-bold text-emerald-700 mb-1">🎴 Mis cartas</p>
+          <p id="envelope-mycards-list" class="text-xs text-emerald-800"></p>
+        </div>
         <div class="space-y-3">
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">👤 Sospechoso</label>
@@ -418,7 +435,7 @@
         <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
           © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
           Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
-          <span class="not-italic font-semibold text-slate-400">v38 — 02/09/2026</span>
+          <span class="not-italic font-semibold text-slate-400">v38 beta3 — 03/09/2026</span>
         </div>
         <div class="flex justify-end pt-2 border-t">
           <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
@@ -513,6 +530,10 @@
       places:   ["Asilo Springfield","Bolerama","El Calabozo del Androide","Casa de los Simpsons","Estudios Krustylu","El Holandés Frito","Kwik-E-Mart","Mansión Burns","Planta Nuclear"]
     };
     const ALL_CARDS_FLAT = [...CARDS.suspects, ...CARDS.weapons, ...CARDS.places];
+    const CARD_CATEGORY = {};
+    CARDS.suspects.forEach(c => CARD_CATEGORY[c] = 'suspect');
+    CARDS.weapons.forEach(c  => CARD_CATEGORY[c] = 'weapon');
+    CARDS.places.forEach(c   => CARD_CATEGORY[c] = 'place');
 
     const STATES = [
       { code: 0, symbol: "",   bg: "bg-white",      text: "text-slate-300" },
@@ -636,7 +657,8 @@
     function allCrossedForCard(card) {
       return gameState.players.every((_, pIdx) => {
         const val = gameState.matrix[`${card}_${pIdx}`] || 0;
-        return val === 1 || val === 8;
+        if (pIdx === 0) return val === 1; // "Vos": solo ❌ cuenta
+        return val === 1 || val === 8;    // otros: ❌ o 👁️ cuentan
       });
     }
     function updateEnvelopeFromCrosses() {
@@ -654,8 +676,10 @@
       if (solved) {
         btnDesk?.classList.add('envelope-glow');
         btnNav?.classList.add('envelope-glow');
+        document.getElementById('table-wrapper')?.classList.add('table-border-solved');
       } else {
         btnDesk?.classList.remove('envelope-glow');
+        document.getElementById('table-wrapper')?.classList.remove('table-border-solved');
         btnNav?.classList.remove('envelope-glow');
       }
     }
@@ -678,9 +702,8 @@
       const cur = gameState.matrix[key] || 0;
 
       if (isMyCard && playerIdx !== 0) {
-        const seqMine = [1, 8, 1];
-        const idx = seqMine.indexOf(cur);
-        gameState.matrix[key] = idx >= 0 ? seqMine[idx + 1] ?? 1 : 1;
+        // Ciclo: cualquier estado → ❌ → 👁️ → ❌ → ...
+        gameState.matrix[key] = (cur === 8) ? 1 : 8;
         refreshState(); return;
       }
 
@@ -694,17 +717,24 @@
     }
 
     // ── STORAGE ───────────────────────────────────────────────────────────
-    function saveState() { localStorage.setItem('simpsons_clue_state', JSON.stringify(gameState)); }
+    function saveState() {
+      localStorage.setItem('simpsons_clue_state', JSON.stringify(gameState));
+      localStorage.setItem('simpsons_clue_guess', JSON.stringify(guessSelection));
+    }
     function loadState() {
       const saved = localStorage.getItem('simpsons_clue_state');
       if (saved) {
         try {
           gameState = JSON.parse(saved);
-          if (!gameState.envelope)             gameState.envelope = { suspect:"", weapon:"", place:"" };
+          if (!gameState.envelope)               gameState.envelope = { suspect:"", weapon:"", place:"" };
           if (gameState.handLocked === undefined) gameState.handLocked = false;
           if (gameState.myCardsCount === undefined) gameState.myCardsCount = null;
           if (gameState.myCharacter === undefined) gameState.myCharacter = "";
         } catch(e) { console.error(e); }
+      }
+      const savedGuess = localStorage.getItem('simpsons_clue_guess');
+      if (savedGuess) {
+        try { guessSelection = JSON.parse(savedGuess); } catch(e) {}
       }
     }
 
@@ -756,15 +786,17 @@
       for (let i = 1; i < count; i++) newPlayers.push(`J${i+1}`);
       const myCardsSelect = document.getElementById('my-cards-count-select');
       gameState.myCardsCount = myCardsSelect ? parseInt(myCardsSelect.value) : null;
-      gameState.started = true; gameState.handLocked = false;
+      gameState.started = true; gameState.handLocked = false; gameState.myCharacter = "";
       gameState.players = newPlayers; gameState.matrix = {};
       gameState.envelope = { suspect:"", weapon:"", place:"" }; gameState.history = [];
+      guessSelection = { suspect: "", weapon: "", place: "" };
+      updateGuessButton();
       saveState(); renderAll(); closeConfigModal(); openMyHandModal();
     }
 
     function updatePlayerName(index, newName) {
       gameState.players[index] = newName.trim() || `J${index+1}`;
-      saveState(); renderHistory();
+      saveState(); renderAll();
     }
 
     function toggleCollapse(category) {
@@ -837,10 +869,7 @@
     function saveMyHand() {
       const allotted = getMyEffectiveCardCount();
       const checkboxes = document.querySelectorAll('input[name="myhand-card"]:checked');
-      if (checkboxes.length !== allotted) {
-        alert(`Tenés que seleccionar exactamente ${allotted} cartas para tu mano.`);
-        return;
-      }
+      if (checkboxes.length !== allotted) return; // no debería llegar acá con el botón deshabilitado
       ALL_CARDS_FLAT.forEach(card => {
         if (gameState.matrix[`${card}_0`] === 2) gameState.matrix[`${card}_0`] = 0;
       });
@@ -878,6 +907,16 @@
         }
       }
       openSheet('envelope-modal');
+      // Mostrar mis cartas si la mano está confirmada
+      const myCardsDiv  = document.getElementById('envelope-mycards');
+      const myCardsList = document.getElementById('envelope-mycards-list');
+      if (gameState.handLocked) {
+        const mine = ALL_CARDS_FLAT.filter(c => gameState.matrix[`${c}_0`] === 2 || gameState.matrix[`${c}_0`] === 8);
+        myCardsList.textContent = mine.length ? mine.join(', ') : '—';
+        myCardsDiv.classList.remove('hidden');
+      } else {
+        myCardsDiv.classList.add('hidden');
+      }
     }
     function closeEnvelopeModal() { closeSheet('envelope-modal'); }
 
@@ -887,10 +926,7 @@
 
     // ── GUESS MODAL ───────────────────────────────────────────────────────
     function getCategoryForCard(card) {
-      if (CARDS.suspects.includes(card)) return 'suspect';
-      if (CARDS.weapons.includes(card))  return 'weapon';
-      if (CARDS.places.includes(card))   return 'place';
-      return null;
+      return CARD_CATEGORY[card] || null;
     }
 
     function updateGuessButton() {
@@ -914,6 +950,7 @@
       if (!cat) return;
       guessSelection[cat] = (guessSelection[cat] === card) ? "" : card;
       updateGuessButton();
+      saveState();
       renderAll();
     }
 
@@ -1031,7 +1068,7 @@
               const key = `${shownCard}_${idx}`, cur = gameState.matrix[key] || 0;
               if (cur === 0 || (cur >= 3 && cur <= 7)) gameState.matrix[key] = 1;
             });
-            details.push(`${gameState.players[showerIdx]} mostró (${shownCard})`);
+            details.push(`${gameState.players[showerIdx]} mostró <span class="text-emerald-600 font-bold">${shownCard}</span>`);
           }
         } else {
           // Nadie mostró (todos pasaron): ❌ en las 3 cartas para todos
@@ -1146,6 +1183,7 @@
     // ── INICIALIZACIÓN ───────────────────────────────────────────────────
     window.addEventListener('DOMContentLoaded', () => {
       loadState();
+      updateGuessButton();
       if (!gameState.started) {
         openConfigModal();
       } else {
