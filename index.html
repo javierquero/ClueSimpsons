@@ -340,7 +340,7 @@
             <p id="envelope-display-suspect" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">🔫 Arma</label>
+            <label class="block text-xs font-bold text-slate-700 mb-1">🔪 Arma</label>
             <p id="envelope-display-weapon" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
           </div>
           <div>
@@ -435,7 +435,7 @@
         <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
           © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
           Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
-          <span class="not-italic font-semibold text-slate-400">v38 beta3 — 03/09/2026</span>
+          <span class="not-italic font-semibold text-slate-400">v39 — 05/09/2026</span>
         </div>
         <div class="flex justify-end pt-2 border-t">
           <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
@@ -488,7 +488,7 @@
         <!-- Cartas seleccionadas (solo display) -->
         <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-3 space-y-1 text-sm">
           <div class="flex justify-between"><span class="text-slate-500 font-bold">👤</span><span id="guess-display-suspect" class="font-semibold text-slate-800">—</span></div>
-          <div class="flex justify-between"><span class="text-slate-500 font-bold">🔫</span><span id="guess-display-weapon" class="font-semibold text-slate-800">—</span></div>
+          <div class="flex justify-between"><span class="text-slate-500 font-bold">🔪</span><span id="guess-display-weapon" class="font-semibold text-slate-800">—</span></div>
           <div class="flex justify-between"><span class="text-slate-500 font-bold">🏠</span><span id="guess-display-place" class="font-semibold text-slate-800">—</span></div>
         </div>
         <input type="hidden" id="guess-suspect">
@@ -846,7 +846,7 @@
       container.innerHTML = '';
       const sections = [
         { title: "👤 Sospechosos", cards: CARDS.suspects },
-        { title: "🔫 Armas",       cards: CARDS.weapons  },
+        { title: "🔪 Armas",       cards: CARDS.weapons  },
         { title: "🏠 Lugares",     cards: CARDS.places   }
       ];
       sections.forEach(sec => {
@@ -1126,16 +1126,16 @@
       const tbody = document.getElementById('table-body');
       tbody.innerHTML = '';
       const sections = [
-        { key: "suspect", name: "SOSPECHOSOS", items: CARDS.suspects },
-        { key: "weapon",  name: "ARMAS",       items: CARDS.weapons  },
-        { key: "place",   name: "LUGARES",     items: CARDS.places   }
+        { key: "suspect", name: "SOSPECHOSOS", items: CARDS.suspects, color: "bg-yellow-200 border-yellow-400 text-yellow-950" },
+        { key: "weapon",  name: "ARMAS",       items: CARDS.weapons,  color: "bg-yellow-200 border-yellow-400 text-yellow-950" },
+        { key: "place",   name: "LUGARES",     items: CARDS.places,   color: "bg-yellow-200 border-yellow-400 text-yellow-950" }
       ];
 
       sections.forEach(sec => {
         const isCollapsed = viewSettings.collapsed[sec.key];
         tbody.innerHTML += `
-          <tr class="bg-yellow-200 border-y border-yellow-400 cursor-pointer" onclick="toggleCollapse('${sec.key}')">
-            <td colspan="${totalPlayers + 1}" class="p-1.5 sm:p-2 font-black text-xs sm:text-sm text-yellow-950 tracking-wider uppercase bg-yellow-200">
+          <tr class="${sec.color} border-y cursor-pointer" onclick="toggleCollapse('${sec.key}')">
+            <td colspan="${totalPlayers + 1}" class="p-1.5 sm:p-2 font-black text-xs sm:text-sm tracking-wider uppercase ${sec.color} border-t-2 border-yellow-400">
               ${isCollapsed ? '▶' : '▼'} ${sec.name}
             </td>
           </tr>`;
@@ -1150,7 +1150,7 @@
             const isSelected = cat && guessSelection[cat] === card;
             const selBadge = isSelected ? ` <span class="text-blue-500">🔍</span>` : '';
             let rowHtml = `<tr class="border-b border-slate-100 hover:bg-amber-50/50 ${inEnvelope ? 'bg-amber-100/80 font-semibold' : ''} ${isSelected ? 'bg-blue-50' : ''}">
-              <td onclick="selectForGuess('${card}')" class="p-1 sm:p-2 text-[11px] sm:text-sm font-medium sticky-col bg-white border-r border-slate-200 shadow-sm leading-tight max-w-[90px] sm:max-w-none cursor-pointer select-none ${isSelected ? '!bg-blue-50' : ''}">${card}${envBadge}${selBadge}</td>`;
+              <td onclick="selectForGuess('${card}')" class="h-12 sm:h-10 px-1 sm:px-2 text-[11px] sm:text-sm font-medium sticky-col bg-white border-r border-slate-200 shadow-sm leading-tight max-w-[90px] sm:max-w-none cursor-pointer select-none ${isSelected ? '!bg-blue-50' : ''}">${card}${envBadge}${selBadge}</td>`;
 
             gameState.players.forEach((p, pIdx) => {
               const key = `${card}_${pIdx}`;
@@ -1168,7 +1168,7 @@
                 st = getStateInfo(stateCode); cursorClass = 'cursor-pointer';
                 clickHandler = `onclick="cycleCell('${card}', ${pIdx})"`;
               }
-              rowHtml += `<td ${clickHandler} class="p-1 sm:p-2 text-center text-sm sm:text-base select-none border-r border-slate-200 ${st.bg} ${st.text} ${cursorClass} transition-colors min-w-[38px] sm:min-w-0">${st.symbol}</td>`;
+              rowHtml += `<td ${clickHandler} class="h-12 sm:h-10 px-1 sm:px-2 text-center text-sm sm:text-base select-none border-r border-slate-200 ${st.bg} ${st.text} ${cursorClass} transition-colors min-w-[44px] sm:min-w-0">${st.symbol}</td>`;
             });
             rowHtml += `</tr>`;
             tbody.innerHTML += rowHtml;
