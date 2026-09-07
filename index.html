@@ -427,7 +427,7 @@
         <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
           © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
           Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
-          <span class="not-italic font-semibold text-slate-400">v40 — 06/09/2026</span>
+          <span class="not-italic font-semibold text-slate-400">v41 — 07/09/2026</span>
         </div>
         <div class="flex justify-end pt-2 border-t">
           <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
@@ -970,20 +970,22 @@
     function renderGuessResponses() {
       const container = document.getElementById('guess-responses-container');
       container.innerHTML = '';
+      const myCards = new Set(ALL_CARDS_FLAT.filter(c => gameState.matrix[`${c}_0`] === 2 || gameState.matrix[`${c}_0`] === 8));
       const suspect = document.getElementById('guess-suspect').value;
       const weapon  = document.getElementById('guess-weapon').value;
       const place   = document.getElementById('guess-place').value;
       gameState.players.forEach((p, idx) => {
         if (idx === 0) return;
+        const optSuspect = !myCards.has(suspect) ? `<option value="${suspect}">${suspect}</option>` : '';
+        const optWeapon  = !myCards.has(weapon)  ? `<option value="${weapon}">${weapon}</option>` : '';
+        const optPlace   = !myCards.has(place)   ? `<option value="${place}">${place}</option>` : '';
         container.innerHTML += `
           <div class="flex items-center gap-2 p-2 border rounded-lg bg-slate-50">
             <span class="text-xs font-bold text-slate-700 w-16 shrink-0">${p}</span>
             <select id="card-shown-${idx}" onchange="enforceOneShown(${idx})" class="flex-1 border rounded p-1.5 text-xs text-slate-700 bg-white">
               <option value="passed">Pasó</option>
               <option value="none" selected>No mostró</option>
-              <option value="${suspect}">${suspect}</option>
-              <option value="${weapon}">${weapon}</option>
-              <option value="${place}">${place}</option>
+              ${optSuspect}${optWeapon}${optPlace}
             </select>
           </div>`;
       });
@@ -1040,9 +1042,15 @@
             });
             details.push(`${p} no mostró`);
           } else if (val) {
-            // Mostró una carta: solo ✔️ en esa carta para este jugador
+            // Mostró una carta: ✔️ en esa carta para este jugador
             gameState.matrix[`${val}_${idx}`] = 2;
             ensureSingleCheck(val, idx);
+            // ❌ al resto de jugadores en esa misma carta
+            gameState.players.forEach((_, otherIdx) => {
+              if (otherIdx === 0 || otherIdx === idx) return;
+              const key = `${val}_${otherIdx}`, cur = gameState.matrix[key] || 0;
+              if (cur === 0 || (cur >= 3 && cur <= 7)) gameState.matrix[key] = 1;
+            });
             details.push(`${p} mostró <span class="text-emerald-600 font-bold">${val}</span>`);
           }
         });
