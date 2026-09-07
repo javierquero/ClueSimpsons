@@ -12,40 +12,43 @@ Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para
 
 ## ✨ Funcionalidades
 
-- **Tabla de anotaciones** con todas las cartas del juego (sospechosos, armas y lugares), organizada por categoría y colapsable por sección
-- **Ciclo de estados por celda** al tocar/hacer clic: Sin marcar → ❌ No tiene → ✔️ Tiene → Notas 1–5 → 👁️ Observado
-- **Registro de mano inicial** (Mis Cartas): selección de cartas propias al inicio, que se bloquea automáticamente y propaga cruces al resto de jugadores
-- **Sobre Confidencial**: se actualiza automáticamente cuando por descarte lógico se puede determinar qué carta está en el sobre. Muestra animación y sonido al resolver el caso
-- **Modal de Suposición**: registro de cada suposición con respuesta por jugador (pasó / mostró carta), con actualización automática de la tabla
-- **Historial de suposiciones**: registro cronológico de todas las suposiciones realizadas durante la partida
-- **Pantalla de bloqueo**: oculta el anotador con imagen de la caja del juego para cuando otro jugador mira la pantalla
-- **Persistencia local**: el estado del juego se guarda automáticamente en `localStorage` y sobrevive recarga de página
-- **Soporte de 3 a 6 jugadores** con nombres editables directamente en la tabla
-- **Reglas del juego** integradas en la app
+- **Tabla de anotaciones** con todas las cartas del juego (sospechosos, armas y lugares), organizada por categoría y colapsable por sección. Primera fila y primera columna fijas al hacer scroll.
+- **Ciclo de estados por celda** al tocar/hacer clic: Sin marcar → ❌ No tiene → ✔️ Tiene → ? Desconocido → Notas 1–3 → vacío
+- **Selección de cartas para suposición**: tocá el nombre de una carta en la tabla para marcarla con 🔍. Una por categoría (sospechoso, arma y lugar). El botón Suposición se habilita solo al tener las 3 seleccionadas.
+- **Registro de mano inicial** (Mis Cartas): selección de cartas propias al inicio, que se bloquea automáticamente. En la fila propia se puede marcar con 👁️ a quién le mostraste cada carta.
+- **Sobre Confidencial**: se actualiza automáticamente cuando por descarte lógico se puede determinar qué carta está en el sobre. Al resolverse, el borde de la tabla titila en verde y suena una alerta con síntesis de voz.
+- **Modal de Suposición**: registro de cada suposición con selector por jugador (Pasó / No mostró / carta específica). Las cartas propias no aparecen en el desplegable para evitar errores. Incluye historial de suposiciones previas.
+- **Pantalla de bloqueo**: oculta el anotador con imagen de la caja del juego para cuando otro jugador mira la pantalla.
+- **Selector de personaje**: tocá "Vos" en el header de la tabla para elegir tu personaje del juego. Se muestra en la columna de cartas.
+- **Persistencia local**: el estado del juego (incluyendo lupas seleccionadas) se guarda automáticamente en `localStorage` y sobrevive recarga de página.
+- **Soporte de 3 a 6 jugadores** con nombres editables directamente en la tabla.
+- **Reglas del juego** integradas en la app.
+- **PWA instalable**: se puede instalar en Android como app desde Chrome.
 
 ---
 
 ## 📱 Diseño Responsive
 
 ### Mobile
-- Bottom navigation fija con acceso rápido a todas las acciones
-- Modales como **bottom sheets** que suben desde abajo
-- Tabla compacta con columna de cartas fija (sticky)
+- Bottom navigation fija con acceso rápido a todas las acciones (Sobre, Suposición, Reglas, Bloquear, Opciones)
+- Modales como **bottom sheets** que suben desde abajo con animación
+- Tabla compacta con columna de cartas y fila de nombres fijas (sticky)
+- Celdas con altura generosa para facilitar el toque con el dedo
 - Zoom deshabilitado para evitar saltos al enfocar inputs
 
 ### Desktop
-- Header con todos los botones en la parte superior
+- Header con todos los botones en la parte superior, mismo orden que mobile
 - Tabla amplia con nombres de jugadores editables inline
 
 ---
 
 ## 🃏 Cartas del juego
 
-| Categoría     | Cartas |
-|---------------|--------|
-| Sospechosos   | Srita. Escarlata, Sra. Blanco, Profesor Moradillo, Coronel Mostaza, Sra. Azulino, Sr. Verdi |
-| Armas         | Collar, Honda, Saxofón, Guante extensible, Barra de Plutonio, Dona envenenada |
-| Lugares       | Kwik-E-Mart, El Calabozo del Androide, Asilo Springfield, Bolerama, Mansión Burns, Estudios Krustylu, Casa de los Simpsons, El Holandés Frito, Planta Nuclear |
+| Categoría     | Cartas (en orden del talonario original) |
+|---------------|------------------------------------------|
+| Sospechosos   | Coronel Mostaza, Profesor Moradillo, Sr. Verdi, Sra. Azulino, Srita. Escarlata, Sra. Blanco |
+| Armas         | Collar, Barra de Plutonio, Honda, Saxofón, Guante extensible, Dona envenenada |
+| Lugares       | Asilo Springfield, Bolerama, El Calabozo del Androide, Casa de los Simpsons, Estudios Krustylu, El Holandés Frito, Kwik-E-Mart, Mansión Burns, Planta Nuclear |
 
 ---
 
@@ -54,7 +57,11 @@ Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para
 ```
 ClueSimpsons/
 ├── index.html                  # App completa (HTML + CSS + JS en un solo archivo)
+├── manifest.json               # Manifiesto PWA
+├── sw.js                       # Service Worker (caché offline)
 ├── dona.png                    # Ícono de dona (favicon y logo)
+├── icon-192.png                # Ícono PWA 192x192
+├── icon-512.png                # Ícono PWA 512x512
 ├── caja-clue-simpsons.png      # Imagen de la caja (pantalla de bloqueo)
 ├── Homer_Simpson_Revised.ttf   # Fuente temática del header
 └── README.md
@@ -66,7 +73,13 @@ ClueSimpsons/
 
 Al ser un archivo estático, no requiere servidor ni dependencias externas más allá de Tailwind CSS (cargado desde CDN). Para usar localmente, basta con abrir `index.html` en cualquier navegador moderno.
 
-Para desplegarlo en GitHub Pages, simplemente pusheá los archivos a la rama principal del repositorio y activá Pages desde la configuración del repo.
+Para desplegarlo en GitHub Pages, pusheá los archivos a la rama principal del repositorio y activá Pages desde la configuración del repo.
+
+### Instalación como PWA (Android)
+
+1. Abrí Chrome y entrá a [javierquero.github.io/ClueSimpsons](https://javierquero.github.io/ClueSimpsons/)
+2. Menú (⋮) → "Instalar app" o "Agregar a pantalla de inicio"
+3. Se instala con el ícono de la dona, sin barra del navegador
 
 ---
 
@@ -76,6 +89,8 @@ Para desplegarlo en GitHub Pages, simplemente pusheá los archivos a la rama pri
 - [Tailwind CSS](https://tailwindcss.com/) (via CDN)
 - `localStorage` para persistencia del estado
 - Web Audio API para el sonido de caso resuelto
+- Web Speech API para síntesis de voz al resolver el caso
+- Service Worker para funcionamiento offline
 
 ---
 
