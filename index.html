@@ -212,7 +212,7 @@
     <div id="desktop-layout">
       <div>
         <div id="table-wrapper" class="bg-white rounded-xl shadow-lg border-2 border-yellow-500" style="overflow: hidden;">
-          <div style="overflow: auto; max-height: 65dvh; -webkit-overflow-scrolling: touch;">
+          <div style="overflow: auto; max-height: calc(100dvh - 140px); -webkit-overflow-scrolling: touch;">
             <table class="w-full border-collapse text-left text-xs sm:text-sm">
               <thead style="position: sticky; top: 0; z-index: 10;">
                 <tr class="bg-yellow-200 border-b border-yellow-400" id="table-header">
@@ -223,16 +223,8 @@
             </table>
           </div>
         </div>
-
-        <!-- Historial -->
-        <div class="mt-4 bg-white border-2 border-yellow-400 rounded-xl p-4 shadow-md">
-          <div class="flex justify-between items-center mb-3">
-            <h2 class="font-bold text-slate-800 flex items-center text-sm sm:text-base">📜 Historial de Suposiciones</h2>
-          </div>
-          <div id="history-list" class="space-y-2 text-xs sm:text-sm max-h-48 overflow-y-auto">
-            <p class="text-slate-400 italic">No hay suposiciones registradas aún.</p>
-          </div>
-        </div>
+        <!-- history-list se mantiene oculto para que renderHistory() no falle -->
+        <div id="history-list" class="hidden"></div>
       </div>
     </div>
   </main>
@@ -435,7 +427,7 @@
         <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
           © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
           Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
-          <span class="not-italic font-semibold text-slate-400">v39 — 05/09/2026</span>
+          <span class="not-italic font-semibold text-slate-400">v40 — 06/09/2026</span>
         </div>
         <div class="flex justify-end pt-2 border-t">
           <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
@@ -494,15 +486,16 @@
         <input type="hidden" id="guess-suspect">
         <input type="hidden" id="guess-weapon">
         <input type="hidden" id="guess-place">
+        <input type="hidden" id="guess-nobody">
         <div class="pt-1 border-t">
-          <div class="flex items-center justify-between mb-2">
-            <span class="font-bold text-slate-800 text-sm">Respuestas</span>
-            <label class="flex items-center space-x-1 text-xs text-slate-600">
-              <input type="checkbox" id="guess-nobody" onchange="toggleNobodyShow(this.checked)" class="rounded border-yellow-400">
-              <span>Nadie mostró carta</span>
-            </label>
+          <span class="font-bold text-slate-800 text-sm">Respuestas</span>
+          <div id="guess-responses-container" class="space-y-2 max-h-52 overflow-y-auto pr-1 mt-2"></div>
+        </div>
+        <div class="border-t pt-3">
+          <p class="text-xs font-bold text-slate-600 mb-2">📜 Historial</p>
+          <div id="guess-modal-history" class="space-y-1.5 max-h-36 overflow-y-auto text-xs text-slate-700">
+            <p class="text-slate-400 italic">No hay suposiciones aún.</p>
           </div>
-          <div id="guess-responses-container" class="space-y-2 max-h-52 overflow-y-auto pr-1"></div>
         </div>
         <div class="flex justify-end space-x-2 pt-3 border-t">
           <button onclick="closeGuessModal()" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm">Cancelar</button>
@@ -964,13 +957,18 @@
       document.getElementById('guess-display-place').textContent   = guessSelection.place   || '—';
       document.getElementById('guess-nobody').checked = false;
       renderGuessResponses();
+      const modalHistory = document.getElementById('guess-modal-history');
+      if (modalHistory) {
+        modalHistory.innerHTML = gameState.history?.length
+          ? gameState.history.map(item => `<div class="p-1.5 bg-yellow-50 border border-yellow-200 rounded leading-snug">${item}</div>`).join('')
+          : `<p class="text-slate-400 italic">No hay suposiciones aún.</p>`;
+      }
       openSheet('guess-modal');
     }
     function closeGuessModal() { closeSheet('guess-modal'); }
 
     function renderGuessResponses() {
       const container = document.getElementById('guess-responses-container');
-      const isNobody  = document.getElementById('guess-nobody').checked;
       container.innerHTML = '';
       const suspect = document.getElementById('guess-suspect').value;
       const weapon  = document.getElementById('guess-weapon').value;
@@ -978,45 +976,27 @@
       gameState.players.forEach((p, idx) => {
         if (idx === 0) return;
         container.innerHTML += `
-          <div class="p-2.5 border rounded-lg bg-slate-50 space-y-1.5">
-            <div class="flex justify-between items-center text-xs font-bold text-slate-700">
-              <span>${p}</span>
-              <div class="space-x-3">
-                <label class="inline-flex items-center space-x-1 cursor-pointer">
-                  <input type="radio" name="resp_${idx}" value="passed" checked onchange="toggleCardDropdown(${idx})" class="text-yellow-500">
-                  <span>Pasó</span>
-                </label>
-                <label class="inline-flex items-center space-x-1 cursor-pointer">
-                  <input type="radio" name="resp_${idx}" value="showed" ${isNobody ? 'disabled' : ''} onchange="toggleCardDropdown(${idx})" class="text-yellow-500">
-                  <span>Mostró</span>
-                </label>
-              </div>
-            </div>
-            <div id="card-select-wrapper-${idx}" class="hidden pt-1">
-              <select id="card-shown-${idx}" class="w-full border rounded p-1.5 text-xs text-slate-700 bg-white">
-                <option value="${suspect}">${suspect}</option>
-                <option value="${weapon}">${weapon}</option>
-                <option value="${place}">${place}</option>
-              </select>
-            </div>
+          <div class="flex items-center gap-2 p-2 border rounded-lg bg-slate-50">
+            <span class="text-xs font-bold text-slate-700 w-16 shrink-0">${p}</span>
+            <select id="card-shown-${idx}" onchange="enforceOneShown(${idx})" class="flex-1 border rounded p-1.5 text-xs text-slate-700 bg-white">
+              <option value="passed">Pasó</option>
+              <option value="none" selected>No mostró</option>
+              <option value="${suspect}">${suspect}</option>
+              <option value="${weapon}">${weapon}</option>
+              <option value="${place}">${place}</option>
+            </select>
           </div>`;
       });
     }
-    function toggleNobodyShow(checked) { renderGuessResponses(); }
-    function toggleCardDropdown(pIdx) {
-      const showed = document.querySelector(`input[name="resp_${pIdx}"]:checked`)?.value === 'showed';
-      const wrapper = document.getElementById(`card-select-wrapper-${pIdx}`);
-      if (wrapper) wrapper.classList.toggle('hidden', !showed);
-
-      // Si mostró, poner todos los demás en "Pasó"
-      if (showed) {
-        gameState.players.forEach((_, otherIdx) => {
-          if (otherIdx === 0 || otherIdx === pIdx) return;
-          const passedRadio = document.querySelector(`input[name="resp_${otherIdx}"][value="passed"]`);
-          if (passedRadio) {
-            passedRadio.checked = true;
-            const otherWrapper = document.getElementById(`card-select-wrapper-${otherIdx}`);
-            if (otherWrapper) otherWrapper.classList.add('hidden');
+    function enforceOneShown(changedIdx) {
+      const changedVal = document.getElementById(`card-shown-${changedIdx}`)?.value;
+      // Si eligió una carta (no pasó ni no mostró), resetear los demás a "No mostró"
+      if (changedVal && changedVal !== 'passed' && changedVal !== 'none') {
+        gameState.players.forEach((_, idx) => {
+          if (idx === 0 || idx === changedIdx) return;
+          const sel = document.getElementById(`card-shown-${idx}`);
+          if (sel && sel.value !== 'passed' && sel.value !== 'none') {
+            sel.value = 'none';
           }
         });
       }
@@ -1044,43 +1024,28 @@
         logText += `<span class="text-red-600 font-bold">Nadie mostró carta.</span>`;
       } else {
         const details = [];
-        let shownCard = null;
-        let showerIdx = null;
 
-        // Encontrar quién mostró y qué carta
+        // Procesar cada jugador de forma independiente
         gameState.players.forEach((p, idx) => {
           if (idx === 0) return;
-          const resp = document.querySelector(`input[name="resp_${idx}"]:checked`)?.value;
-          if (resp === 'showed') {
-            shownCard = document.getElementById(`card-shown-${idx}`)?.value || null;
-            showerIdx = idx;
-          }
-        });
-
-        if (showerIdx !== null) {
-          // Alguien mostró: ✔️ al que mostró, ❌ al resto en ESA carta
-          if (shownCard) {
-            gameState.matrix[`${shownCard}_${showerIdx}`] = 2;
-            ensureSingleCheck(shownCard, showerIdx);
-            // ❌ al resto en la carta mostrada
-            gameState.players.forEach((_, idx) => {
-              if (idx === 0 || idx === showerIdx) return;
-              const key = `${shownCard}_${idx}`, cur = gameState.matrix[key] || 0;
-              if (cur === 0 || (cur >= 3 && cur <= 7)) gameState.matrix[key] = 1;
-            });
-            details.push(`${gameState.players[showerIdx]} mostró <span class="text-emerald-600 font-bold">${shownCard}</span>`);
-          }
-        } else {
-          // Nadie mostró (todos pasaron): ❌ en las 3 cartas para todos
-          gameState.players.forEach((p, idx) => {
-            if (idx === 0) return;
+          const val = document.getElementById(`card-shown-${idx}`)?.value;
+          if (val === 'passed') {
+            // Pasó: no se hace nada
+            details.push(`${p} pasó`);
+          } else if (val === 'none') {
+            // No mostró: ❌ en las 3 cartas para este jugador
             askedCards.forEach(card => {
               const key = `${card}_${idx}`, cur = gameState.matrix[key] || 0;
               if (cur === 0 || (cur >= 3 && cur <= 7)) gameState.matrix[key] = 1;
             });
-            details.push(`${p} pasó`);
-          });
-        }
+            details.push(`${p} no mostró`);
+          } else if (val) {
+            // Mostró una carta: solo ✔️ en esa carta para este jugador
+            gameState.matrix[`${val}_${idx}`] = 2;
+            ensureSingleCheck(val, idx);
+            details.push(`${p} mostró <span class="text-emerald-600 font-bold">${val}</span>`);
+          }
+        });
         logText += details.join(', ') + '.';
       }
       gameState.history.unshift(logText);
