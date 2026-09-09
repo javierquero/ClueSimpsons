@@ -414,6 +414,734 @@
           <p class="font-bold text-sm text-slate-900 mb-1">🔍 Cómo hacer una Suposición</p>
           <p>Cuando entrés a un Lugar, hacé una Suposición nombrando las tres tarjetas que creés que están en el sobre. Primero decís el Sospechoso, luego el Lugar (donde estás), y después el Arma.</p>
           <p class="mt-1">El jugador a tu izquierda revisa sus tarjetas. Si tiene alguna de las mencionadas, te la muestra en secreto (solo una). Si no tiene ninguna, pasa al siguiente jugador.</p>
+          <p class="mt-1 fon      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(3px);
+    }
+    .bottom-sheet.hidden { display: none; }
+    .bottom-sheet-inner {
+      background: #fffdf0;
+      border-radius: 20px 20px 0 0;
+      border-top: 4px solid #facc15;
+      max-height: 85dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 0 env(safe-area-inset-bottom, 16px);
+      animation: sheetSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    @keyframes sheetSlideUp {
+      from { transform: translateY(100%); opacity: 0.6; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .sheet-handle {
+      width: 40px; height: 4px;
+      background: #d1d5db;
+      border-radius: 2px;
+      margin: 10px auto 4px;
+      animation: handlePulse 0.6s ease-out 0.2s both;
+    }
+    @keyframes handlePulse {
+      0%   { width: 24px; background: #facc15; }
+      60%  { width: 48px; background: #fbbf24; }
+      100% { width: 40px; background: #d1d5db; }
+    }
+    .sheet-content { padding: 0 16px 16px; }
+    .sheet-title {
+      display: inline-block;
+      padding-bottom: 4px;
+      border-bottom: 3px solid #facc15;
+    }
+
+    /* ── BOTTOM NAV (mobile) ── */
+    #bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 40;
+      background: #fef08a;
+      border-top: 3px solid #ca8a04;
+      display: flex;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    #bottom-nav button {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 8px 2px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #713f12;
+      background: none;
+      border: none;
+      cursor: pointer;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #bottom-nav button:active { background: #fde68a; }
+    #bottom-nav button .nav-icon { font-size: 20px; line-height: 1; }
+
+    /* ── Select no-zoom iOS ── */
+    select, input[type="text"] { font-size: 16px; }
+
+    /* ── DESKTOP: hide bottom nav ── */
+    @media (min-width: 768px) {
+      #bottom-nav { display: none !important; }
+      body { padding-bottom: 0 !important; }
+    }
+    /* ── MOBILE: hide desktop header buttons, show bottom nav ── */
+    @media (max-width: 767px) {
+      .desktop-only { display: none !important; }
+      body { padding-bottom: 72px; }
+    }
+
+    /* ── Table compact on mobile ── */
+    @media (max-width: 767px) {
+      .cell-td { padding: 6px 4px !important; font-size: 14px; min-width: 38px; }
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { simpson: ['HomerSimpson', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-amber-100 min-h-screen text-slate-800 font-sans overflow-x-hidden">
+
+  <!-- ═══ TOP HEADER ═══ -->
+  <header class="bg-yellow-400 border-b-4 border-yellow-600 px-2 sm:px-4 py-2 sm:py-3 sticky top-0 z-30 shadow-md">
+    <div class="max-w-5xl mx-auto flex items-center justify-center sm:justify-between gap-1">
+      <div class="flex items-center justify-center w-full sm:w-auto sm:justify-start space-x-2 shrink-0">
+        <img src="dona.png" alt="Dona" class="w-6 h-6 sm:w-8 sm:h-8">
+        <h1 class="font-simpson text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl text-yellow-950 tracking-wide">Clue Simpsons</h1>
+        <img src="dona.png" alt="Dona" class="w-6 h-6 sm:w-8 sm:h-8">
+      </div>
+      <div class="desktop-only flex items-center space-x-1 sm:space-x-2 shrink-0 flex-wrap">
+        <button id="btn-myhand" onclick="openMyHandModal()" style="display:none !important;"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+          🎴 <span class="ml-1">Mis Cartas</span>
+        </button>
+        <button onclick="openEnvelopeModal()" id="btn-envelope"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28 transition-all">
+          ✉️ <span class="ml-1">Sobre</span>
+        </button>
+        <button id="btn-guess-desktop" onclick="openGuessModal()" disabled
+          class="font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28 bg-slate-300 text-slate-400 cursor-not-allowed transition-colors">
+          🔍 <span class="ml-1">Suposición</span>
+        </button>
+        <button onclick="openRulesModal()"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28">
+          📖 <span class="ml-1">Reglas</span>
+        </button>
+        <div class="w-px h-7 bg-yellow-600 mx-1 self-center"></div>
+        <button onclick="toggleLock(true)"
+          class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-1.5 px-2 rounded-lg text-sm flex items-center justify-center shadow w-28">
+          🔒 <span class="ml-1">Bloquear</span>
+        </button>
+        <button onclick="openConfigModal()"
+          class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-10">
+          ⚙️
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="max-w-5xl mx-auto p-2 sm:p-4">
+    <div id="desktop-layout">
+      <div>
+        <div id="table-wrapper" class="bg-white rounded-xl shadow-lg border-2 border-yellow-500" style="overflow: hidden;">
+          <div style="overflow: auto; max-height: calc(100dvh - 140px); -webkit-overflow-scrolling: touch;">
+            <table class="w-full border-collapse text-left text-xs sm:text-sm">
+              <thead style="position: sticky; top: 0; z-index: 10;">
+                <tr class="bg-yellow-200 border-b border-yellow-400" id="table-header">
+                  <th id="th-cards-header" class="p-1.5 sm:p-3 font-bold text-slate-800 sticky-col bg-yellow-200 min-w-[90px] sm:min-w-[150px] border-r border-yellow-300">Cartas</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- history-list se mantiene oculto para que renderHistory() no falle -->
+        <div id="history-list" class="hidden"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══ BOTTOM NAV (mobile only) ═══ -->
+  <nav id="bottom-nav">
+    <button onclick="openMyHandModal()" id="nav-btn-myhand" style="display:none !important;">
+      <span class="nav-icon">🎴</span>Mis Cartas
+    </button>
+    <button onclick="openEnvelopeModal()" id="nav-btn-envelope" class="transition-all">
+      <span class="nav-icon">✉️</span>Sobre
+    </button>
+    <button id="btn-guess-mobile" onclick="openGuessModal()" disabled style="opacity: 0.4;">
+      <span class="nav-icon">🔍</span>Suposición
+    </button>
+    <button onclick="openRulesModal()">
+      <span class="nav-icon">📖</span>Reglas
+    </button>
+    <button onclick="toggleLock(true)">
+      <span class="nav-icon">🔒</span>Bloquear
+    </button>
+    <button onclick="openConfigModal()">
+      <span class="nav-icon">⚙️</span>Opciones
+    </button>
+  </nav>
+
+  <!-- ═══ MODAL SELECCIONAR MI PERSONAJE ═══ -->
+  <div id="character-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'character-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">Seleccionar mi personaje</h2>
+          <button onclick="closeCharacterModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <p class="text-xs text-slate-600 mb-3">Elige el personaje con el que estás jugando en el tablero:</p>
+        <div id="character-options" class="space-y-2"></div>
+        <div class="flex justify-between pt-3 border-t mt-4">
+          <button onclick="selectMyCharacter('')" class="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-xs">
+            Ninguno (Mostrar "Cartas")
+          </button>
+          <button onclick="closeCharacterModal()" class="px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-xs shadow">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ OVERLAY CASO RESUELTO ═══ -->
+  <!-- ═══ MODAL CASO RESUELTO ═══ -->
+  <div id="solved-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="solved-modal-content bg-emerald-500 text-white rounded-2xl border-4 border-emerald-700 p-6 sm:p-8 w-full max-w-md shadow-2xl text-center space-y-4">
+      <div class="text-5xl">🎉</div>
+      <h2 class="text-2xl font-extrabold">¡CASO RESUELTO!</h2>
+      <!-- Imágenes de las 3 cartas -->
+      <div class="flex justify-center gap-3" id="solved-cards-images"></div>
+      <p class="text-sm sm:text-base" id="solved-text-modal"></p>
+      <button onclick="closeSolvedModal()" class="mt-2 px-6 py-2 bg-white text-emerald-700 font-extrabold rounded-lg shadow hover:bg-emerald-50">
+        ¡Excelente!
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL MIS CARTAS ═══ -->
+  <div id="myhand-modal" class="bottom-sheet hidden">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">🎴 Mis cartas</h2>
+        </div>
+        <div class="flex justify-between items-center bg-yellow-50 p-2 rounded border border-yellow-300 mb-2">
+          <p class="text-xs text-slate-700 font-semibold">Selecciona tus cartas:</p>
+          <span id="myhand-counter" class="text-xs font-bold px-2 py-0.5 rounded bg-yellow-300 text-yellow-950">0/0</span>
+        </div>
+        <p class="text-xs text-red-600 font-bold mb-3">⚠️ Una vez confirmadas no se podrán modificar.</p>
+        <div id="myhand-options" class="space-y-3"></div>
+        <div class="flex justify-end pt-3 border-t mt-3 sticky bottom-0 bg-white">
+          <button id="btn-confirm-hand" onclick="saveMyHand()" disabled
+            class="px-5 py-2.5 rounded-xl font-extrabold text-sm shadow bg-slate-300 text-slate-400 cursor-not-allowed transition-colors">
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL SOBRE CONFIDENCIAL ═══ -->
+  <div id="envelope-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'envelope-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">✉️ Sobre Confidencial</h2>
+          <button onclick="closeEnvelopeModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <p class="text-xs text-slate-600 mb-3">Cartas deducidas automáticamente:</p>
+        <!-- Mis cartas (solo si mano bloqueada) -->
+        <div id="envelope-mycards" class="hidden mb-3 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <p class="text-xs font-bold text-emerald-700 mb-1">🎴 Mis cartas</p>
+          <p id="envelope-mycards-list" class="text-xs text-emerald-800"></p>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">👤 Sospechoso</label>
+            <p id="envelope-display-suspect" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">🔪 Arma</label>
+            <p id="envelope-display-weapon" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">🏠 Lugar</label>
+            <p id="envelope-display-place" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
+          </div>
+        </div>
+        <div class="flex justify-between items-center pt-4 border-t mt-4 gap-2">
+          <button id="btn-show-solved" onclick="triggerSolvedFromEnvelope()" disabled
+            class="px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow bg-gray-300 text-gray-500 cursor-not-allowed transition-all">
+            🎉 Caso Resuelto
+          </button>
+          <button onclick="closeEnvelopeModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-xs sm:text-sm shadow">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL REGLAS ═══ -->
+  <div id="rules-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'rules-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-2xl sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content text-xs sm:text-sm text-slate-700 leading-relaxed space-y-4">
+        <div class="flex justify-between items-center border-b pb-2 sticky top-0 bg-white z-10 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">📋 Instrucciones — Clue: Los Simpsons</h2>
+          <button onclick="closeRulesModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-1">✕</button>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🎯 Objetivo</p>
+          <p>El Jefe Wiggum encuentra muerto al empresario Charles Montgomery Burns. Los sospechosos disfrazados de su CLUE-personaje favorito intentan averiguar quién mató al Sr. Burns. Tenés que descubrir: ¿Quién lo hizo? ¿Dónde? ¿Con qué arma?</p>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">📦 Incluye</p>
+          <ul class="list-disc ml-5 space-y-0.5">
+            <li>Tablero Clue con 9 lugares de Springfield</li>
+            <li>6 fichas de sospechosos: Homero, Marge, Bart, Lisa, Krusty y Waylon Smithers</li>
+            <li>6 armas: Guante extensible, Dona envenenada, Collar, Saxofón, Barra de Plutonio, Honda</li>
+            <li>36 tarjetas (6 sospechosos, 6 armas, 9 lugares, más otras)</li>
+            <li>Block de hojas de Detective</li>
+            <li>1 sobre confidencial</li>
+            <li>2 dados</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">⚙️ Preparación</p>
+          <ul class="list-disc ml-5 space-y-1">
+            <li>Buscar el espacio SALIDA del sospechoso más cercano a cada jugador y colocar su ficha ahí.</li>
+            <li>Colocar cada Arma en distintos Lugares. Seleccionar seis de los nueve que hay en total.</li>
+            <li>Colocar en el tablero el sobre vacío rotulado "CONFIDENCIAL, Archivo del Caso".</li>
+            <li>Dividir el mazo en tres grupos: Sospechosos, Lugares y Armas. Mezclar cada grupo y poner una carta boca abajo en el sobre. Nadie puede verlas.</li>
+            <li>Juntar y mezclar los tres grupos restantes. Repartirlos boca abajo empezando por el lado derecho.</li>
+            <li>Tomar una hoja del block de Detective y doblarla para que nadie vea las anotaciones.</li>
+            <li>Lisa Simpson siempre tira primero si nadie juega con ella.</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🎮 Cómo jugar</p>
+          <div class="space-y-2">
+            <div>
+              <p class="font-semibold text-slate-800">Mover la ficha</p>
+              <ul class="list-disc ml-5 space-y-0.5">
+                <li>Tirar los dados y mover la ficha tantas casillas como marquen.</li>
+                <li>Podés mover horizontal o verticalmente, hacia adelante o atrás, pero nunca en diagonal.</li>
+                <li>No podés entrar al mismo cuadro dos veces durante la misma jugada.</li>
+                <li>No podés entrar, saltar o caer en un cuadro ocupado por otro Sospechoso.</li>
+              </ul>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-800">Pasadizos Secretos</p>
+              <p class="ml-1">Los Lugares en las esquinas están interconectados por Pasadizos Secretos. Si te encontrás en alguno de esos Lugares, podés usar el pasadizo en lugar de tirar los dados.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🔍 Cómo hacer una Suposición</p>
+          <p>Cuando entrés a un Lugar, hacé una Suposición nombrando las tres tarjetas que creés que están en el sobre. Primero decís el Sospechoso, luego el Lugar (donde estás), y después el Arma.</p>
+          <p class="mt-1">El jugador a tu izquierda revisa sus tarjetas. Si tiene alguna de las mencionadas, te la muestra en secreto (solo una). Si no tiene ninguna, pasa al siguiente jugador.</p>
+          <p class="mt-1 fon
+    @keyframes slideDown {
+      0%   { transform: translateY(-100%); opacity: 0; }
+      80%  { transform: translateY(5%);    opacity: 1; }
+      100% { transform: translateY(0);     opacity: 1; }
+    }
+    .solved-modal-content { animation: slideDown 2s ease-out forwards; }
+
+    @keyframes borderPulse {
+      0%   { border-color: #facc15; }
+      50%  { border-color: #16a34a; }
+      100% { border-color: #facc15; }
+    }
+    .table-border-solved {
+      animation: borderPulse 0.8s ease-in-out infinite !important;
+      border-width: 4px !important;
+    }
+
+
+    /* ── ANIMACIÓN TITILANTE (PULSO DE TAMAÑO / ESCALA PURA - SIN CAMBIO DE COLOR) ── */
+    @keyframes pulseEnvelopeScale {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .envelope-glow {
+      animation: pulseEnvelopeScale 1s infinite ease-in-out !important;
+    }
+
+    /* ── BOTTOM SHEET (mobile modals) ── */
+    .bottom-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(3px);
+    }
+    .bottom-sheet.hidden { display: none; }
+    .bottom-sheet-inner {
+      background: #fffdf0;
+      border-radius: 20px 20px 0 0;
+      border-top: 4px solid #facc15;
+      max-height: 85dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 0 env(safe-area-inset-bottom, 16px);
+      animation: sheetSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    @keyframes sheetSlideUp {
+      from { transform: translateY(100%); opacity: 0.6; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .sheet-handle {
+      width: 40px; height: 4px;
+      background: #d1d5db;
+      border-radius: 2px;
+      margin: 10px auto 4px;
+      animation: handlePulse 0.6s ease-out 0.2s both;
+    }
+    @keyframes handlePulse {
+      0%   { width: 24px; background: #facc15; }
+      60%  { width: 48px; background: #fbbf24; }
+      100% { width: 40px; background: #d1d5db; }
+    }
+    .sheet-content { padding: 0 16px 16px; }
+    .sheet-title {
+      display: inline-block;
+      padding-bottom: 4px;
+      border-bottom: 3px solid #facc15;
+    }
+
+    /* ── BOTTOM NAV (mobile) ── */
+    #bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 40;
+      background: #fef08a;
+      border-top: 3px solid #ca8a04;
+      display: flex;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    #bottom-nav button {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 8px 2px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #713f12;
+      background: none;
+      border: none;
+      cursor: pointer;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #bottom-nav button:active { background: #fde68a; }
+    #bottom-nav button .nav-icon { font-size: 20px; line-height: 1; }
+
+    /* ── Select no-zoom iOS ── */
+    select, input[type="text"] { font-size: 16px; }
+
+    /* ── DESKTOP: hide bottom nav ── */
+    @media (min-width: 768px) {
+      #bottom-nav { display: none !important; }
+      body { padding-bottom: 0 !important; }
+    }
+    /* ── MOBILE: hide desktop header buttons, show bottom nav ── */
+    @media (max-width: 767px) {
+      .desktop-only { display: none !important; }
+      body { padding-bottom: 72px; }
+    }
+
+    /* ── Table compact on mobile ── */
+    @media (max-width: 767px) {
+      .cell-td { padding: 6px 4px !important; font-size: 14px; min-width: 38px; }
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { simpson: ['HomerSimpson', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-amber-100 min-h-screen text-slate-800 font-sans overflow-x-hidden">
+
+  <!-- ═══ TOP HEADER ═══ -->
+  <header class="bg-yellow-400 border-b-4 border-yellow-600 px-2 sm:px-4 py-2 sm:py-3 sticky top-0 z-30 shadow-md">
+    <div class="max-w-5xl mx-auto flex items-center justify-center sm:justify-between gap-1">
+      <div class="flex items-center justify-center w-full sm:w-auto sm:justify-start space-x-2 shrink-0">
+        <img src="dona.png" alt="Dona" class="w-6 h-6 sm:w-8 sm:h-8">
+        <h1 class="font-simpson text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl text-yellow-950 tracking-wide">Clue Simpsons</h1>
+        <img src="dona.png" alt="Dona" class="w-6 h-6 sm:w-8 sm:h-8">
+      </div>
+      <div class="desktop-only flex items-center space-x-1 sm:space-x-2 shrink-0 flex-wrap">
+        <button id="btn-myhand" onclick="openMyHandModal()" style="display:none !important;"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+          🎴 <span class="ml-1">Mis Cartas</span>
+        </button>
+        <button onclick="openEnvelopeModal()" id="btn-envelope"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28 transition-all">
+          ✉️ <span class="ml-1">Sobre</span>
+        </button>
+        <button id="btn-guess-desktop" onclick="openGuessModal()" disabled
+          class="font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28 bg-slate-300 text-slate-400 cursor-not-allowed transition-colors">
+          🔍 <span class="ml-1">Suposición</span>
+        </button>
+        <button onclick="openRulesModal()"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28">
+          📖 <span class="ml-1">Reglas</span>
+        </button>
+        <div class="w-px h-7 bg-yellow-600 mx-1 self-center"></div>
+        <button onclick="toggleLock(true)"
+          class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-1.5 px-2 rounded-lg text-sm flex items-center justify-center shadow w-28">
+          🔒 <span class="ml-1">Bloquear</span>
+        </button>
+        <button onclick="openConfigModal()"
+          class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-10">
+          ⚙️
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="max-w-5xl mx-auto p-2 sm:p-4">
+    <div id="desktop-layout">
+      <div>
+        <div id="table-wrapper" class="bg-white rounded-xl shadow-lg border-2 border-yellow-500" style="overflow: hidden;">
+          <div style="overflow: auto; max-height: calc(100dvh - 140px); -webkit-overflow-scrolling: touch;">
+            <table class="w-full border-collapse text-left text-xs sm:text-sm">
+              <thead style="position: sticky; top: 0; z-index: 10;">
+                <tr class="bg-yellow-200 border-b border-yellow-400" id="table-header">
+                  <th id="th-cards-header" class="p-1.5 sm:p-3 font-bold text-slate-800 sticky-col bg-yellow-200 min-w-[90px] sm:min-w-[150px] border-r border-yellow-300">Cartas</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- history-list se mantiene oculto para que renderHistory() no falle -->
+        <div id="history-list" class="hidden"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══ BOTTOM NAV (mobile only) ═══ -->
+  <nav id="bottom-nav">
+    <button onclick="openMyHandModal()" id="nav-btn-myhand" style="display:none !important;">
+      <span class="nav-icon">🎴</span>Mis Cartas
+    </button>
+    <button onclick="openEnvelopeModal()" id="nav-btn-envelope" class="transition-all">
+      <span class="nav-icon">✉️</span>Sobre
+    </button>
+    <button id="btn-guess-mobile" onclick="openGuessModal()" disabled style="opacity: 0.4;">
+      <span class="nav-icon">🔍</span>Suposición
+    </button>
+    <button onclick="openRulesModal()">
+      <span class="nav-icon">📖</span>Reglas
+    </button>
+    <button onclick="toggleLock(true)">
+      <span class="nav-icon">🔒</span>Bloquear
+    </button>
+    <button onclick="openConfigModal()">
+      <span class="nav-icon">⚙️</span>Opciones
+    </button>
+  </nav>
+
+  <!-- ═══ MODAL SELECCIONAR MI PERSONAJE ═══ -->
+  <div id="character-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'character-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">Seleccionar mi personaje</h2>
+          <button onclick="closeCharacterModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <p class="text-xs text-slate-600 mb-3">Elige el personaje con el que estás jugando en el tablero:</p>
+        <div id="character-options" class="space-y-2"></div>
+        <div class="flex justify-between pt-3 border-t mt-4">
+          <button onclick="selectMyCharacter('')" class="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-xs">
+            Ninguno (Mostrar "Cartas")
+          </button>
+          <button onclick="closeCharacterModal()" class="px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-xs shadow">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ OVERLAY CASO RESUELTO ═══ -->
+  <!-- ═══ MODAL CASO RESUELTO ═══ -->
+  <div id="solved-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="solved-modal-content bg-emerald-500 text-white rounded-2xl border-4 border-emerald-700 p-6 sm:p-8 w-full max-w-md shadow-2xl text-center space-y-4">
+      <div class="text-5xl">🎉</div>
+      <h2 class="text-2xl font-extrabold">¡CASO RESUELTO!</h2>
+      <!-- Imágenes de las 3 cartas -->
+      <div class="flex justify-center gap-3" id="solved-cards-images"></div>
+      <p class="text-sm sm:text-base" id="solved-text-modal"></p>
+      <button onclick="closeSolvedModal()" class="mt-2 px-6 py-2 bg-white text-emerald-700 font-extrabold rounded-lg shadow hover:bg-emerald-50">
+        ¡Excelente!
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL MIS CARTAS ═══ -->
+  <div id="myhand-modal" class="bottom-sheet hidden">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">🎴 Mis cartas</h2>
+        </div>
+        <div class="flex justify-between items-center bg-yellow-50 p-2 rounded border border-yellow-300 mb-2">
+          <p class="text-xs text-slate-700 font-semibold">Selecciona tus cartas:</p>
+          <span id="myhand-counter" class="text-xs font-bold px-2 py-0.5 rounded bg-yellow-300 text-yellow-950">0/0</span>
+        </div>
+        <p class="text-xs text-red-600 font-bold mb-3">⚠️ Una vez confirmadas no se podrán modificar.</p>
+        <div id="myhand-options" class="space-y-3"></div>
+        <div class="flex justify-end pt-3 border-t mt-3 sticky bottom-0 bg-white">
+          <button id="btn-confirm-hand" onclick="saveMyHand()" disabled
+            class="px-5 py-2.5 rounded-xl font-extrabold text-sm shadow bg-slate-300 text-slate-400 cursor-not-allowed transition-colors">
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL SOBRE CONFIDENCIAL ═══ -->
+  <div id="envelope-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'envelope-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">✉️ Sobre Confidencial</h2>
+          <button onclick="closeEnvelopeModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <p class="text-xs text-slate-600 mb-3">Cartas deducidas automáticamente:</p>
+        <!-- Mis cartas (solo si mano bloqueada) -->
+        <div id="envelope-mycards" class="hidden mb-3 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <p class="text-xs font-bold text-emerald-700 mb-1">🎴 Mis cartas</p>
+          <p id="envelope-mycards-list" class="text-xs text-emerald-800"></p>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">👤 Sospechoso</label>
+            <p id="envelope-display-suspect" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">🔪 Arma</label>
+            <p id="envelope-display-weapon" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">🏠 Lugar</label>
+            <p id="envelope-display-place" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
+          </div>
+        </div>
+        <div class="flex justify-between items-center pt-4 border-t mt-4 gap-2">
+          <button id="btn-show-solved" onclick="triggerSolvedFromEnvelope()" disabled
+            class="px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow bg-gray-300 text-gray-500 cursor-not-allowed transition-all">
+            🎉 Caso Resuelto
+          </button>
+          <button onclick="closeEnvelopeModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-xs sm:text-sm shadow">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL REGLAS ═══ -->
+  <div id="rules-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'rules-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-2xl sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content text-xs sm:text-sm text-slate-700 leading-relaxed space-y-4">
+        <div class="flex justify-between items-center border-b pb-2 sticky top-0 bg-white z-10 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">📋 Instrucciones — Clue: Los Simpsons</h2>
+          <button onclick="closeRulesModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-1">✕</button>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🎯 Objetivo</p>
+          <p>El Jefe Wiggum encuentra muerto al empresario Charles Montgomery Burns. Los sospechosos disfrazados de su CLUE-personaje favorito intentan averiguar quién mató al Sr. Burns. Tenés que descubrir: ¿Quién lo hizo? ¿Dónde? ¿Con qué arma?</p>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">📦 Incluye</p>
+          <ul class="list-disc ml-5 space-y-0.5">
+            <li>Tablero Clue con 9 lugares de Springfield</li>
+            <li>6 fichas de sospechosos: Homero, Marge, Bart, Lisa, Krusty y Waylon Smithers</li>
+            <li>6 armas: Guante extensible, Dona envenenada, Collar, Saxofón, Barra de Plutonio, Honda</li>
+            <li>36 tarjetas (6 sospechosos, 6 armas, 9 lugares, más otras)</li>
+            <li>Block de hojas de Detective</li>
+            <li>1 sobre confidencial</li>
+            <li>2 dados</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">⚙️ Preparación</p>
+          <ul class="list-disc ml-5 space-y-1">
+            <li>Buscar el espacio SALIDA del sospechoso más cercano a cada jugador y colocar su ficha ahí.</li>
+            <li>Colocar cada Arma en distintos Lugares. Seleccionar seis de los nueve que hay en total.</li>
+            <li>Colocar en el tablero el sobre vacío rotulado "CONFIDENCIAL, Archivo del Caso".</li>
+            <li>Dividir el mazo en tres grupos: Sospechosos, Lugares y Armas. Mezclar cada grupo y poner una carta boca abajo en el sobre. Nadie puede verlas.</li>
+            <li>Juntar y mezclar los tres grupos restantes. Repartirlos boca abajo empezando por el lado derecho.</li>
+            <li>Tomar una hoja del block de Detective y doblarla para que nadie vea las anotaciones.</li>
+            <li>Lisa Simpson siempre tira primero si nadie juega con ella.</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🎮 Cómo jugar</p>
+          <div class="space-y-2">
+            <div>
+              <p class="font-semibold text-slate-800">Mover la ficha</p>
+              <ul class="list-disc ml-5 space-y-0.5">
+                <li>Tirar los dados y mover la ficha tantas casillas como marquen.</li>
+                <li>Podés mover horizontal o verticalmente, hacia adelante o atrás, pero nunca en diagonal.</li>
+                <li>No podés entrar al mismo cuadro dos veces durante la misma jugada.</li>
+                <li>No podés entrar, saltar o caer en un cuadro ocupado por otro Sospechoso.</li>
+              </ul>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-800">Pasadizos Secretos</p>
+              <p class="ml-1">Los Lugares en las esquinas están interconectados por Pasadizos Secretos. Si te encontrás en alguno de esos Lugares, podés usar el pasadizo en lugar de tirar los dados.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🔍 Cómo hacer una Suposición</p>
+          <p>Cuando entrés a un Lugar, hacé una Suposición nombrando las tres tarjetas que creés que están en el sobre. Primero decís el Sospechoso, luego el Lugar (donde estás), y después el Arma.</p>
+          <p class="mt-1">El jugador a tu izquierda revisa sus tarjetas. Si tiene alguna de las mencionadas, te la muestra en secreto (solo una). Si no tiene ninguna, pasa al siguiente jugador.</p>
           <p class="mt-1 fon
     @keyframes slideDown {
       0%   { transform: translateY(-100%); opacity: 0; }
