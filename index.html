@@ -42,6 +42,34 @@
     }
     .solved-modal-content { animation: slideDown 2s ease-out forwards; }
 
+    .card-flip-container {
+      perspective: 800px;
+      width: 96px;
+    }
+    .card-flip-inner {
+      position: relative;
+      width: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.7s ease-in-out;
+    }
+    .card-flip-inner.flipped {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 12px;
+      border: 4px solid white;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      width: 96px;
+    }
+    .card-back {
+      position: absolute;
+      top: 0; left: 0;
+    }
+    .card-front {
+      transform: rotateY(180deg);
+    }
     @keyframes borderPulse {
       0%   { border-color: #facc15; }
       50%  { border-color: #16a34a; }
@@ -649,12 +677,22 @@
       // Mostrar imágenes de las 3 cartas
       const imgContainer = document.getElementById('solved-cards-images');
       if (imgContainer) {
-        imgContainer.innerHTML = [env.suspect, env.weapon, env.place].map(card => {
+        imgContainer.innerHTML = [env.suspect, env.weapon, env.place].map((card, i) => {
           const src = CARD_IMAGE[card];
-          return src
-            ? `<img src="${src}" alt="${card}" class="w-24 h-36 sm:w-28 sm:h-40 object-cover rounded-xl border-4 border-white shadow-xl">`
-            : `<div class="w-24 h-36 sm:w-28 sm:h-40 bg-emerald-600 rounded-xl border-4 border-white flex items-center justify-center text-xs font-bold p-2">${card}</div>`;
+          return `
+            <div class="card-flip-container">
+              <div class="card-flip-inner" id="card-flip-${i}">
+                <img class="card-back" src="Cartas/Dorso.PNG" alt="Dorso">
+                <img class="card-front" src="${src || ''}" alt="${card}">
+              </div>
+            </div>`;
         }).join('');
+        // Dar vuelta las 3 cartas juntas
+        setTimeout(() => {
+          [0, 1, 2].forEach(i => {
+            document.getElementById(`card-flip-${i}`)?.classList.add('flipped');
+          });
+        }, 800);
       }
       modal.classList.remove('hidden');
       const content = modal.querySelector('.solved-modal-content');
