@@ -1,4 +1,4 @@
-const CACHE_NAME = 'clue-simpsons-v41';
+const CACHE_NAME = 'clue-simpsons-v42';
 const ASSETS = [
   './index.html',
   './manifest.json',
