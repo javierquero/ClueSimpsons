@@ -457,7 +457,7 @@
         <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
           © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
           Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
-          <span class="not-italic font-semibold text-slate-400">v42 — 09/09/2026</span>
+          <span class="not-italic font-semibold text-slate-400">v41 — 08/09/2026</span>
         </div>
         <div class="flex justify-end pt-2 border-t">
           <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
@@ -646,27 +646,27 @@
 
     // ── SOLVED MODAL ──────────────────────────────────────────────────────
     const CARD_IMAGE = {
-      "Coronel Mostaza":          "Cartas/AsiloSpringfield.PNG",
-      "Profesor Moradillo":       "Cartas/Azulino.PNG",
-      "Sr. Verdi":                "Cartas/BarradePlutonio.PNG",
-      "Sra. Azulino":             "Cartas/Blanco.PNG",
-      "Srita. Escarlata":         "Cartas/Bolerama.PNG",
-      "Sra. Blanco":              "Cartas/CasadelosSimpsons.PNG",
+      "Coronel Mostaza":          "Cartas/Mostaza.PNG",
+      "Profesor Moradillo":       "Cartas/Moradillo.PNG",
+      "Sr. Verdi":                "Cartas/Verdi.PNG",
+      "Sra. Azulino":             "Cartas/Azulino.PNG",
+      "Srita. Escarlata":         "Cartas/Escarlata.PNG",
+      "Sra. Blanco":              "Cartas/Blanco.PNG",
       "Collar":                   "Cartas/Collar.PNG",
-      "Barra de Plutonio":        "Cartas/DonaEnvenenada.PNG",
-      "Honda":                    "Cartas/Dorso.PNG",
-      "Saxofón":                  "Cartas/ELHolandesFrito.PNG",
-      "Guante extensible":        "Cartas/ElCalabozodelAndroide.PNG",
-      "Dona envenenada":          "Cartas/Escarlata.PNG",
-      "Asilo Springfield":        "Cartas/EstudiosKrustilu.PNG",
-      "Bolerama":                 "Cartas/GuanteExtensible.PNG",
-      "El Calabozo del Androide": "Cartas/Honda.PNG",
-      "Casa de los Simpsons":     "Cartas/KwikEMart.PNG",
-      "Estudios Krustylu":        "Cartas/MansionBurns.PNG",
-      "El Holandés Frito":        "Cartas/Moradillo.PNG",
-      "Kwik-E-Mart":              "Cartas/Mostaza.PNG",
-      "Mansión Burns":            "Cartas/PlantaNuclear.PNG",
-      "Planta Nuclear":           "Cartas/Saxofon.PNG"
+      "Barra de Plutonio":        "Cartas/BarradePlutonio.PNG",
+      "Honda":                    "Cartas/Honda.PNG",
+      "Saxofón":                  "Cartas/Saxofon.PNG",
+      "Guante extensible":        "Cartas/GuanteExtensible.PNG",
+      "Dona envenenada":          "Cartas/DonaEnvenenada.PNG",
+      "Asilo Springfield":        "Cartas/AsiloSpringfield.PNG",
+      "Bolerama":                 "Cartas/Bolerama.PNG",
+      "El Calabozo del Androide": "Cartas/ElCalabozodelAndroide.PNG",
+      "Casa de los Simpsons":     "Cartas/CasadelosSimpsons.PNG",
+      "Estudios Krustylu":        "Cartas/EstudiosKrustilu.PNG",
+      "El Holandés Frito":        "Cartas/ELHolandesFrito.PNG",
+      "Kwik-E-Mart":              "Cartas/KwikEMart.PNG",
+      "Mansión Burns":            "Cartas/MansionBurns.PNG",
+      "Planta Nuclear":           "Cartas/PlantaNuclear.PNG"
     };
 
     function showSolvedModal() {
@@ -682,17 +682,17 @@
           return `
             <div class="card-flip-container">
               <div class="card-flip-inner" id="card-flip-${i}">
-                <img class="card-back" src="Cartas/Verdi.PNG" alt="Dorso">
+                <img class="card-back" src="Cartas/Dorso.PNG" alt="Dorso">
                 <img class="card-front" src="${src || ''}" alt="${card}">
               </div>
             </div>`;
         }).join('');
-        // Dar vuelta las 3 cartas juntas cuando termina el slideDown
+        // Dar vuelta las 3 cartas juntas
         setTimeout(() => {
           [0, 1, 2].forEach(i => {
             document.getElementById(`card-flip-${i}`)?.classList.add('flipped');
           });
-        }, 2200);
+        }, 800);
       }
       modal.classList.remove('hidden');
       const content = modal.querySelector('.solved-modal-content');
