@@ -308,9 +308,8 @@
     <div class="solved-modal-content bg-emerald-500 text-white rounded-2xl border-4 border-emerald-700 p-6 sm:p-8 w-full max-w-md shadow-2xl text-center space-y-4">
       <div class="text-5xl">🎉</div>
       <h2 class="text-2xl font-extrabold">¡CASO RESUELTO!</h2>
-      <!-- Imágenes de las 3 cartas -->
-      <div class="flex justify-center gap-3" id="solved-cards-images"></div>
-      <p class="text-sm sm:text-base" id="solved-text-modal"></p>
+      <!-- Imágenes de las 3 cartas apiladas -->
+      <div class="flex flex-col items-center gap-3" id="solved-cards-images"></div>
       <button onclick="closeSolvedModal()" class="mt-2 px-6 py-2 bg-white text-emerald-700 font-extrabold rounded-lg shadow hover:bg-emerald-50">
         ¡Excelente!
       </button>
@@ -673,16 +672,15 @@
       const modal = document.getElementById('solved-modal');
       const text  = document.getElementById('solved-text-modal');
       const env = gameState.envelope;
-      text.innerHTML = `<b>Asesino:</b> ${env.suspect}<br><b>Arma:</b> ${env.weapon}<br><b>Lugar:</b> ${env.place}`;
       const imgContainer = document.getElementById('solved-cards-images');
       if (imgContainer) {
         imgContainer.innerHTML = [env.suspect, env.weapon, env.place].map((card, i) => {
           const src = CARD_IMAGE[card];
           return `
-            <div class="card-flip-container">
+            <div class="card-flip-container" style="width:180px;">
               <div class="card-flip-inner" id="card-flip-${i}">
-                <img class="card-back" src="Cartas/Dorso.PNG" alt="Dorso">
-                <img class="card-front" src="${src || ''}" alt="${card}">
+                <img class="card-back" src="Cartas/Dorso.PNG" alt="Dorso" style="width:180px;">
+                <img class="card-front" src="${src || ''}" alt="${card}" style="width:180px;">
               </div>
             </div>`;
         }).join('');
