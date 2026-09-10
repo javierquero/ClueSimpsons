@@ -1,5 +1,4 @@
 <h1 align="center">
-  <img src="dona.png" width="40" height="40" alt="Dona Simpsons">
   Anotador Clue: Los Simpson
   <img src="dona.png" width="40" height="40" alt="Dona Simpsons">
 </h1>
