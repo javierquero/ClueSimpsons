@@ -674,7 +674,6 @@
       const text  = document.getElementById('solved-text-modal');
       const env = gameState.envelope;
       text.innerHTML = `<b>Asesino:</b> ${env.suspect}<br><b>Arma:</b> ${env.weapon}<br><b>Lugar:</b> ${env.place}`;
-      // Mostrar imágenes de las 3 cartas
       const imgContainer = document.getElementById('solved-cards-images');
       if (imgContainer) {
         imgContainer.innerHTML = [env.suspect, env.weapon, env.place].map((card, i) => {
@@ -687,18 +686,17 @@
               </div>
             </div>`;
         }).join('');
-        // Dar vuelta las 3 cartas juntas
-        setTimeout(() => {
-          [0, 1, 2].forEach(i => {
-            document.getElementById(`card-flip-${i}`)?.classList.add('flipped');
-          });
-        }, 800);
       }
       modal.classList.remove('hidden');
       const content = modal.querySelector('.solved-modal-content');
       content.style.animation = 'none';
       content.offsetHeight;
       content.style.animation = 'slideDown 2s ease-out forwards';
+      content.addEventListener('animationend', () => {
+        [0, 1, 2].forEach(i => {
+          document.getElementById(`card-flip-${i}`)?.classList.add('flipped');
+        });
+      }, { once: true });
       playSolvedSound();
       speakSolution(env.suspect, env.weapon, env.place);
     }
