@@ -59,7 +59,7 @@
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
       border-radius: 12px;
-      border: 4px solid white;
+      border: 4px solid #facc15;
       box-shadow: 0 8px 24px rgba(0,0,0,0.3);
       width: 96px;
     }
@@ -675,10 +675,10 @@
         const cards = [env.suspect, env.weapon, env.place];
         const cardHTML = (card, i) => {
           const src = CARD_IMAGE[card];
-          return `<div class="card-flip-container" style="width: min(120px, 32vw);">
+          return `<div class="card-flip-container" style="width: min(140px, 38vw);">
               <div class="card-flip-inner" id="card-flip-${i}">
-                <img class="card-back" src="Cartas/Dorso.PNG" alt="Dorso" style="width: min(120px, 32vw);">
-                <img class="card-front" src="${src || ''}" alt="${card}" style="width: min(120px, 32vw);">
+                <img class="card-back" src="Cartas/Dorso.PNG" alt="Dorso" style="width: min(140px, 38vw);">
+                <img class="card-front" src="${src || ''}" alt="${card}" style="width: min(140px, 38vw);">
               </div>
             </div>`;
         };
@@ -696,13 +696,13 @@
       content.style.animation = 'none';
       content.offsetHeight;
       content.style.animation = 'slideDown 2s ease-out forwards';
+      playSolvedSound();
+      speakSolution(env.suspect, env.weapon, env.place);
       content.addEventListener('animationend', () => {
         [0, 1, 2].forEach(i => {
           document.getElementById(`card-flip-${i}`)?.classList.add('flipped');
         });
       }, { once: true });
-      playSolvedSound();
-      speakSolution(env.suspect, env.weapon, env.place);
     }
     function closeSolvedModal() {
       document.getElementById('solved-modal').classList.add('hidden');
