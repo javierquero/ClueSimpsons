@@ -305,7 +305,7 @@
   <!-- ═══ OVERLAY CASO RESUELTO ═══ -->
   <!-- ═══ MODAL CASO RESUELTO ═══ -->
   <div id="solved-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="solved-modal-content bg-emerald-500 text-white rounded-2xl border-4 border-emerald-700 p-6 sm:p-8 w-full max-w-md shadow-2xl text-center space-y-4">
+    <div class="solved-modal-content bg-emerald-500 text-white rounded-2xl border-4 border-emerald-700 p-4 w-full max-w-md shadow-2xl text-center space-y-3 max-h-[90dvh] overflow-y-auto">
       <div class="text-5xl">🎉</div>
       <h2 class="text-2xl font-extrabold">¡CASO RESUELTO!</h2>
       <!-- Imágenes de las 3 cartas apiladas -->
@@ -677,10 +677,10 @@
         imgContainer.innerHTML = [env.suspect, env.weapon, env.place].map((card, i) => {
           const src = CARD_IMAGE[card];
           return `
-            <div class="card-flip-container" style="width:180px;">
+            <div class="card-flip-container" style="width: min(160px, 42vw);">
               <div class="card-flip-inner" id="card-flip-${i}">
-                <img class="card-back" src="Cartas/Dorso.PNG" alt="Dorso" style="width:180px;">
-                <img class="card-front" src="${src || ''}" alt="${card}" style="width:180px;">
+                <img class="card-back" src="Cartas/Dorso.PNG" alt="Dorso" style="width: min(160px, 42vw);">
+                <img class="card-front" src="${src || ''}" alt="${card}" style="width: min(160px, 42vw);">
               </div>
             </div>`;
         }).join('');
