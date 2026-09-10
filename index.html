@@ -638,7 +638,7 @@
         if (soundInterval) { clearInterval(soundInterval); soundInterval = null; }
       };
       utterance.onend = () => {};
-      setTimeout(() => window.speechSynthesis.speak(utterance), 800);
+      setTimeout(() => window.speechSynthesis.speak(utterance), 0);
     }
 
     // ── SOLVED MODAL ──────────────────────────────────────────────────────
