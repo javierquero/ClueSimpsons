@@ -1,5 +1,5 @@
 <h1 align="center">
-  Anotador Clue: Los Simpson
+  Anotador Clue: Los Simpson 
 </h1>
 
 Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para jugar sin papel ni lápiz. Funciona como una web app de una sola página, sin instalación ni conexión a internet requerida durante el juego.
