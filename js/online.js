@@ -14,6 +14,7 @@
     joinCode: "", joinName: "", selectedSeat: null, selectedFirst: "random",
     error: "", busy: false, socket: null, reconnectTimer: null, open: false,
     handSelection: [], responseChoice: "", expectedHandCount: 0, handCountChoice: null,
+    lastNotificationKey: "",
     annotatorActive: false, conventionalSnapshot: null, onlineAnnotationKey: "",
     originalSaveState: null, originalSaveActionStacks: null, historyWrapperInstalled: false
   };
@@ -306,6 +307,81 @@
     }
   }
 
+
+
+  function notificationPermissionState() {
+    if (!("Notification" in window)) return "unsupported";
+    return Notification.permission;
+  }
+
+  async function enableNotifications() {
+    if (!("Notification" in window)) {
+      state.error = "Este navegador no admite notificaciones del sistema.";
+      render();
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        localStorage.setItem("clue_online_notifications", "1");
+        state.error = "Notificaciones activadas en este dispositivo.";
+      } else if (permission === "denied") {
+        state.error = "Las notificaciones están bloqueadas en la configuración del navegador.";
+      } else {
+        state.error = "No se concedió permiso para las notificaciones.";
+      }
+    } catch {
+      state.error = "No se pudo solicitar el permiso de notificaciones.";
+    }
+    render();
+  }
+
+  function notifyPlayer(room) {
+    const me = room?.players?.find(player => player.id === state.session?.playerId);
+    if (!me || room.status !== "playing") return;
+    const suggestion = room.suggestion;
+    let key = "";
+    let body = "";
+
+    if (suggestion && !suggestion.completed && suggestion.currentResponderId === me.id) {
+      key = suggestion.id + ":respond:" + me.id;
+      body = suggestion.byPlayerName + " hizo una suposición. Te corresponde responder.";
+    } else if (suggestion && suggestion.completed && suggestion.byPlayerId === me.id &&
+               suggestion.outcome === "shown") {
+      key = suggestion.id + ":shown:" + me.id;
+      body = "Te mostraron una carta. Entrá a la partida para verla.";
+    } else if (room.turnPlayerId === me.id && (!suggestion || suggestion.completed)) {
+      key = "turn:" + me.id + ":" + room.turnPlayerId + ":" + (suggestion?.id || "first");
+      body = "Es tu turno. Podés realizar una suposición.";
+    }
+
+    if (!key || key === state.lastNotificationKey) return;
+    state.lastNotificationKey = key;
+
+    const permission = notificationPermissionState();
+    if (document.visibilityState === "visible") {
+      if (!state.open && typeof window.showToast === "function") window.showToast(body);
+      return;
+    }
+    if (permission !== "granted") return;
+
+    const options = {
+      body,
+      icon: "./icon-192.png",
+      badge: "./icon-192.png",
+      tag: "clue-online-turn",
+      renotify: true,
+      data: { roomCode: room.code }
+    };
+    if (navigator.serviceWorker?.ready) {
+      navigator.serviceWorker.ready
+        .then(registration => registration.showNotification("ClueSimpsons", options))
+        .catch(() => { try { new Notification("ClueSimpsons", options); } catch {} });
+    } else {
+      try { new Notification("ClueSimpsons", options); } catch {}
+    }
+  }
+
   function renderHome() {
     const resume = state.session
       ? '<button class="online-button online-button-primary" data-action="resume">Reanudar partida ' + escapeHtml(state.session.code) + '</button>'
@@ -540,6 +616,12 @@
 
     const handPanel = renderHandPanel(room, me);
     const suggestionPanel = renderSuggestionPanel(room, me);
+    const notificationState = notificationPermissionState();
+    const notificationControl = notificationState === "granted"
+      ? '<p class="online-notification-ready">Notificaciones del sistema activadas en este dispositivo.</p>'
+      : notificationState === "unsupported"
+        ? '<p class="online-muted">Este navegador no admite notificaciones del sistema.</p>'
+        : '<button class="online-button online-button-light online-full-button" data-action="enable-notifications">Activar notificaciones de turno</button>';
     let turnPanel = "";
     if (room.status === "playing") {
       const current = room.players.find(player => player.id === room.turnPlayerId);
@@ -562,7 +644,7 @@
       '<p class="online-muted">Organiza ' + escapeHtml(room.hostName) + ' · ' + players.length + '/6 jugadores · Código para compartir</p>' +
       (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">La mesa quedó cerrada: ya comenzó la carga de cartas y no se pueden mover los asientos.</p>' : "") +
       '<div class="online-seat-grid online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer +
-      handPanel + firstControl + turnPanel + suggestionPanel +
+      handPanel + firstControl + turnPanel + suggestionPanel + notificationControl +
       '<div class="online-actions online-room-actions"><button class="online-button online-button-light" data-action="refresh">Actualizar sala</button>' +
       '<button class="online-button online-button-secondary" data-action="show-annotator">Ver anotador</button>' +
       '<button class="online-button online-button-light" data-action="home">Salir de esta vista</button></div></section>';
@@ -590,6 +672,7 @@
             state.room = payload.room;
             activateOnlineAnnotator(state.room);
             applyCompletedSuggestion(state.room);
+            notifyPlayer(state.room);
             if (state.open && state.screen === "room") render();
           }
         } catch {}
@@ -624,6 +707,7 @@
       state.error = "";
       activateOnlineAnnotator(state.room);
       applyCompletedSuggestion(state.room);
+      notifyPlayer(state.room);
       render();
       connectSocket();
       return true;
@@ -860,6 +944,7 @@
     else if (action === "resume") await restoreSession();
     else if (action === "start") await startGame();
     else if (action === "submit-hand") await submitHand();
+    else if (action === "enable-notifications") await enableNotifications();
     else if (action === "edit-hand") {
       state.editingHand = true;
       state.handSelection = [...(state.room?.private?.ownCards || [])];
