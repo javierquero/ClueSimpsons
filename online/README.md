@@ -14,7 +14,7 @@ Backend independiente para partidas multijugador. El anotador convencional conse
 
 - Crear sala e ingresar mediante código de seis dígitos.
 - El organizador puede jugar o limitarse a administrar la sala.
-- Cada jugador elige un asiento libre; el organizador puede cambiar los asientos e intercambiar posiciones mientras la partida siga en lobby.
+- Cada jugador elige un asiento libre; el organizador puede cambiar los asientos e intercambiar posiciones mientras la partida siga en lobby. Las columnas del anotador se reordenan por ID de jugador para conservar las marcas locales al cambiar los asientos.
 - La primera carga de cartas cierra el ingreso de nuevos participantes, pero no bloquea los cambios de asiento del organizador.
 - Cada jugador carga sus propias cartas. El servidor valida que sean cartas válidas, que no se repitan y que la distribución completa contenga las 18 cartas de jugador, dejando una carta por categoría en la solución.
 - El organizador elige quién comienza o solicita un sorteo aleatorio.
