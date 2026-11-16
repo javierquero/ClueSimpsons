@@ -1155,7 +1155,7 @@
     // Habilita la instalación y el uso sin conexión de la aplicación.
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=69', { updateViaCache: 'none' })
+        navigator.serviceWorker.register('./sw.js?v=70', { updateViaCache: 'none' })
           .then(watchForAppUpdates)
           .catch(error => console.warn('No se pudo registrar el Service Worker:', error));
       });
@@ -1166,3 +1166,36 @@
         }
       });
     }
+
+
+// v70: pantalla completa bajo petición explícita del usuario.
+window.toggleFullscreen = async function () {
+  const button = document.getElementById('btn-fullscreen');
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+      return;
+    }
+    if (!document.documentElement.requestFullscreen) {
+      if (typeof showToast === 'function') {
+        showToast('Este navegador no permite pantalla completa desde la página.');
+      }
+      return;
+    }
+    await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+  } catch (error) {
+    console.warn('No se pudo activar pantalla completa:', error);
+    if (typeof showToast === 'function') {
+      showToast('El navegador no permitió activar pantalla completa.');
+    }
+  }
+};
+
+document.addEventListener('fullscreenchange', () => {
+  const button = document.getElementById('btn-fullscreen');
+  if (!button) return;
+  const active = Boolean(document.fullscreenElement);
+  button.textContent = active ? '⤢' : '⛶';
+  button.setAttribute('aria-label', active ? 'Salir de pantalla completa' : 'Activar pantalla completa');
+  button.title = active ? 'Salir de pantalla completa' : 'Activar pantalla completa';
+});
