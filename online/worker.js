@@ -208,6 +208,7 @@ export class GameRoom extends DurableObject {
     if (!actor || actor.role !== "player") return snapshot;
     const privateData = {};
     const hand = room.hands?.[actor.playerId] || [];
+    if (hand.length) privateData.ownCards = hand;
     if (room.suggestion && !room.suggestion.completed && room.suggestion.currentResponderId === actor.playerId) {
       privateData.matchingCards = room.suggestion.cards.filter(card => hand.includes(card));
       privateData.mustRespond = true;
