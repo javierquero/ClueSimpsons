@@ -134,6 +134,9 @@ export default {
 export class GameRoom extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
+    // Serializar mutaciones de la sala: evita que dos respuestas simultáneas
+    // lean el mismo estado y pisen cambios entre sí.
+    this.requestQueue = Promise.resolve();
   }
 
   async loadRoom() {
@@ -266,7 +269,13 @@ export class GameRoom extends DurableObject {
     return null;
   }
 
-  async fetch(request) {
+  fetch(request) {
+    const result = this.requestQueue.then(() => this.handleRequest(request));
+    this.requestQueue = result.then(() => undefined, () => undefined);
+    return result;
+  }
+
+  async handleRequest(request) {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
