@@ -1019,3 +1019,60 @@ body.online-panel-open { overflow: hidden; }
   from { transform: translateY(9px) rotate(-5deg) scale(.9); opacity: 0; }
   to { transform: translateY(0) rotate(0) scale(1); opacity: 1; }
 }
+
+
+/* Carta real y reverso animado en la secuencia de respuestas online. */
+.online-hidden-card,
+.online-revealed-card,
+.online-card-fallback {
+  position: relative;
+  display: inline-flex;
+  width: 62px;
+  flex: 0 0 62px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 7px;
+  box-shadow: 0 3px 9px rgba(15,23,42,.2);
+  animation: online-card-arrive .35s cubic-bezier(.2,.8,.2,1) both;
+}
+.online-hidden-card img,
+.online-revealed-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.online-hidden-card b {
+  position: absolute;
+  display: flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(120,53,15,.7);
+  border-radius: 50%;
+  background: rgba(255,251,235,.88);
+  color: #78350f;
+  font-size: 22px;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+}
+.online-revealed-card { width: 78px; flex-basis: 78px; }
+.online-card-fallback {
+  width: auto;
+  min-width: 62px;
+  flex-basis: auto;
+  padding: 8px;
+  border: 2px solid #facc15;
+  background: #fff;
+  color: #713f12;
+  font-size: 11px;
+  font-weight: 900;
+}
+.online-response-row .online-hidden-card { margin-left: auto; }
+.online-private-result .online-revealed-card { width: 100px; flex-basis: 100px; }
+@keyframes online-card-arrive {
+  from { transform: translateY(12px) rotateY(45deg) scale(.88); opacity: 0; }
+  to { transform: translateY(0) rotateY(0) scale(1); opacity: 1; }
+}
