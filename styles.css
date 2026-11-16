@@ -154,8 +154,9 @@
 
     /* ── BOTTOM NAV (mobile) ── */
     #bottom-nav {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
+      position: relative;
+      bottom: auto; left: auto; right: auto;
+      flex: 0 0 auto;
       z-index: 40;
       background: #fef08a;
       border-top: 3px solid #ca8a04;
@@ -229,14 +230,15 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    /* Reserva el alto real de la barra inferior, sin agrandarla. */
-    padding-bottom: calc(51px + env(safe-area-inset-bottom, 0px));
+    /* La barra inferior ocupa su propio espacio en el flujo; no se reserva altura estimada. */
   }
 
   #bottom-nav {
     box-sizing: border-box;
     height: auto;
     min-height: 0;
+    position: relative;
+    flex: 0 0 auto;
   }
 
   #desktop-layout,
