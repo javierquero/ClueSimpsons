@@ -561,7 +561,7 @@
             '<button class="online-button online-button-primary online-full-button" data-action="respond-none" ' +
             (state.busy ? "disabled" : "") + '>Confirmar: no tengo ninguna</button></div>';
         } else {
-          responseControl = '<div class="online-response-control"><p>Tenés más de una posibilidad? Elegí exactamente una carta para mostrar.</p>' +
+          responseControl = '<div class="online-response-control"><p>Tenés al menos una de estas cartas. Elegí cuál querés mostrar.</p>' +
             '<div class="online-matching-cards">' + matching.map(card =>
               '<label><input type="radio" name="online-response-card" value="' + escapeHtml(card) + '" ' +
               (state.responseChoice === card ? "checked" : "") + '><span>' + escapeHtml(card) + '</span></label>'
