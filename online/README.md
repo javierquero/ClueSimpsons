@@ -1,33 +1,49 @@
 # ClueSimpsons Online
 
-Backend independiente para salas de juego multijugador. No modifica la lógica del anotador convencional.
+Backend independiente para partidas multijugador. El anotador convencional conserva su lógica y su funcionamiento offline; el modo online coordina la partida y reutiliza el registro de suposiciones del anotador v72.
 
-## Componentes
+## Arquitectura
 
 - Cloudflare Worker: API HTTP y entrada WebSocket.
-- Durable Object \`GameRoom\`: un objeto SQLite por sala, con estado consistente.
-- WebSocket Hibernation API: sincronización de los estados públicos de la sala.
-- Los tokens de organizador y jugador se guardan como hashes SHA-256.
-- Las conexiones WebSocket usan tickets de un solo uso, con vencimiento de 60 segundos.
+- Durable Object `GameRoom`: un objeto por código de sala, con estado persistente y serialización de las mutaciones.
+- WebSockets: sincronizan la mesa, el turno y el avance de cada suposición.
+- Tokens aleatorios para organizador y jugadores; en el almacenamiento solo se conserva su hash SHA-256.
+- Tickets WebSocket de un solo uso, con vencimiento de 60 segundos.
 
-## Etapa inicial
+## Mecánica implementada
 
-Incluye creación de sala, ingreso por código, elección de asiento, cambio de asientos por el organizador (intercambia posiciones si están ocupadas), selección manual o aleatoria de primer jugador e inicio de sala.
+- Crear sala e ingresar mediante código de seis dígitos.
+- El organizador puede jugar o limitarse a administrar la sala.
+- Cada jugador elige un asiento libre; el organizador puede cambiar los asientos e intercambiar posiciones mientras la partida siga en lobby.
+- La primera carga de cartas cierra el ingreso de nuevos participantes, pero no bloquea los cambios de asiento del organizador.
+- Cada jugador carga sus propias cartas. El servidor valida que sean cartas válidas, que no se repitan y que la distribución completa contenga las 18 cartas de jugador, dejando una carta por categoría en la solución.
+- El organizador elige quién comienza o solicita un sorteo aleatorio.
+- Las suposiciones se consultan en orden de mesa. Cada jugador debe elegir una carta coincidente o confirmar expresamente que no tiene ninguna; nunca se responde automáticamente.
+- Todos ven quién supone, quién responde y si mostró una carta. La identidad de la carta se entrega únicamente al jugador que hizo la suposición.
+- Las respuestas completadas se incorporan al anotador local reutilizando `saveGuess()` y el marcado automático ya existente en `js/app.js?v=72`.
+- Acusación final: el resultado incorrecto es privado para quien acusa; ese jugador pierde la posibilidad de ganar, pero continúa respondiendo a los demás.
+- El organizador puede pausar y reanudar la partida; la sesión se conserva para volver a conectarse.
 
-El estado público no contiene cartas ni datos privados. El motor de suposiciones y el ingreso de cartas se incorporarán en una etapa posterior, integrándose con el anotador existente.
+## Privacidad
+
+El snapshot público no incluye manos ni la identidad de la carta mostrada. La mano, las cartas coincidentes del respondedor, el resultado de una acusación incorrecta y la carta mostrada se entregan solo al jugador autenticado correspondiente. Cuando una suposición se responde con una carta, los demás reciben únicamente el estado “mostró una carta”.
+
+Las notificaciones del navegador requieren permiso y una página conectada para procesar los cambios. La entrega push cuando el navegador está completamente cerrado no forma parte de esta etapa.
 
 ## Desarrollo y despliegue
 
 Desde esta carpeta:
 
-\`\`\`sh
+```sh
 npx wrangler deploy --config wrangler.jsonc
-\`\`\`
+```
 
-El Worker esperado es \`https://cluesimpsons-online.jappstore.workers.dev\`.
+Worker publicado: `https://cluesimpsons-online.jappstore.workers.dev`.
 
-La URL de la API se declara en \`js/online.js\` del frontend. Para pruebas locales se pueden agregar orígenes explícitos a \`ALLOWED_ORIGINS\` en \`worker.js\`.
+La URL de API está declarada en `js/online.js`. Para pruebas locales, agregá explícitamente los orígenes de desarrollo a `ALLOWED_ORIGINS` en `worker.js`.
 
-## Estado
+Comprobación de servicio: `GET /health`.
 
-Etapa 1: salas y turnos iniciales. La partida permanece en lobby hasta que el organizador la inicia. En esta etapa el indicador muestra quién comienza y el siguiente asiento; el avance de turnos se conectará a las suposiciones digitales en la etapa de juego, no mediante botones manuales.
+## Límite entre modos
+
+El módulo online mantiene su propia sesión y una copia local del anotador por jugador. Al salir del panel de una partida se restaura el estado convencional. El archivo `js/app.js` no se modifica para incorporar el modo online; la capa de integración utiliza sus funciones públicas existentes.
