@@ -638,6 +638,7 @@
   background: rgba(255,255,255,.55); color: #713f12; font-weight: 900; font-size: 20px;
 }
 .online-content {
+  display: block;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
