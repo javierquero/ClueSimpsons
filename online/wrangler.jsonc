@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cluesimpsons-online",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-16",
+  "observability": { "enabled": true },
+  "durable_objects": {
+    "bindings": [
+      { "name": "GAME_ROOMS", "class_name": "GameRoom" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GameRoom"] }
+  ]
+}
