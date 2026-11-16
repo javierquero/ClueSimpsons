@@ -13,7 +13,7 @@
     screen: "home", session: null, room: null, joinLookup: null,
     joinCode: "", joinName: "", selectedSeat: null, selectedFirst: "random",
     error: "", busy: false, socket: null, reconnectTimer: null, open: false,
-    handSelection: [], responseChoice: "", expectedHandCount: 0,
+    handSelection: [], responseChoice: "", expectedHandCount: 0, handCountChoice: null,
     annotatorActive: false, conventionalSnapshot: null, onlineAnnotationKey: "",
     originalSaveState: null, originalSaveActionStacks: null, historyWrapperInstalled: false
   };
@@ -73,12 +73,16 @@
   }
 
   function expectedHandCount(room = state.room) {
-    const ordered = [...(room?.players || [])].sort((a, b) => a.seat - b.seat);
-    const absoluteIndex = ordered.findIndex(player => player.id === state.session?.playerId);
-    if (absoluteIndex < 0 || !ordered.length) return 0;
-    const base = Math.floor(18 / ordered.length);
-    const remainder = 18 % ordered.length;
-    return base + (absoluteIndex < remainder ? 1 : 0);
+    const count = room?.players?.length || 0;
+    return count >= 3 ? Math.floor(18 / count) : 0;
+  }
+
+  function allowedHandCounts(room = state.room) {
+    const count = room?.players?.length || 0;
+    if (count < 3) return [];
+    const base = Math.floor(18 / count);
+    const larger = Math.ceil(18 / count);
+    return [...new Set([base, larger])];
   }
 
   function onlineAnnotationStorageKey() {
@@ -146,6 +150,8 @@
       };
       state.onlineAnnotationKey = key;
       state.expectedHandCount = expectedHandCount(room);
+      const allowedCounts = allowedHandCounts(room);
+      if (!allowedCounts.includes(state.handCountChoice)) state.handCountChoice = allowedCounts[0] || null;
 
       let saved = null;
       try { saved = JSON.parse(localStorage.getItem(key) || "null"); } catch {}
@@ -158,7 +164,7 @@
         gameState = createDefaultGameState();
         gameState.started = true;
         gameState.handLocked = false;
-        gameState.myCardsCount = state.expectedHandCount;
+        gameState.myCardsCount = state.handCountChoice || state.expectedHandCount;
         gameState.players = localOrder.map(player => player.name);
         gameState.matrix = {};
         gameState.envelope = { suspect: "", weapon: "", place: "" };
@@ -173,7 +179,7 @@
       state.expectedHandCount = expectedHandCount(room);
       if (!room.rosterLocked && !gameState.handLocked) {
         gameState.players = localOrder.map(player => player.name);
-        gameState.myCardsCount = state.expectedHandCount;
+        gameState.myCardsCount = state.handCountChoice || state.expectedHandCount;
       }
     }
 
@@ -358,7 +364,14 @@
       return '<section class="online-hand-panel"><p class="online-eyebrow">CARGA DE CARTAS</p>' +
         '<strong>Esperando al menos 3 jugadores</strong><p class="online-muted">Cuando estén todos sentados, vas a poder cargar tus cartas.</p></section>';
     }
-    const count = state.expectedHandCount || expectedHandCount(room);
+    const allowedCounts = allowedHandCounts(room);
+    const count = state.handCountChoice || allowedCounts[0] || expectedHandCount(room);
+    const countPicker = allowedCounts.length > 1
+      ? '<label class="online-label" for="online-hand-count">Cantidad de cartas que recibiste</label>' +
+        '<select id="online-hand-count" class="online-input">' +
+        allowedCounts.map(value => '<option value="' + value + '" ' + (count === value ? "selected" : "") + '>' + value + ' cartas</option>').join("") +
+        '</select>'
+      : '<p class="online-muted">La distribución corresponde a ' + count + ' cartas por jugador.</p>';
     const groups = [
       { title: "Sospechosos", cards: CARDS.suspects },
       { title: "Armas", cards: CARDS.weapons },
@@ -370,7 +383,7 @@
       '</div></div>').join("");
     return '<section class="online-hand-panel"><p class="online-eyebrow">CARGÁ TUS CARTAS</p><h4>Tu mano privada</h4>' +
       '<p>Según tu asiento, te corresponden <strong>' + count + ' cartas</strong>. Solo vos vas a poder consultar cuáles cargaste.</p>' +
-      '<div class="online-hand-counter">' + state.handSelection.length + ' / ' + count + ' seleccionadas</div>' +
+      countPicker + '<div class="online-hand-counter">' + state.handSelection.length + ' / ' + count + ' seleccionadas</div>' +
       choices + '<button class="online-button online-button-primary online-full-button" data-action="submit-hand" ' +
       (state.handSelection.length === count && !state.busy ? "" : "disabled") + '>' +
       (state.busy ? "Guardando cartas…" : "Confirmar mi mano") + '</button>' +
@@ -660,7 +673,7 @@
 
   async function submitHand() {
     const selected = [...content.querySelectorAll("[data-online-card]:checked")].map(input => input.value);
-    const expected = state.expectedHandCount || expectedHandCount(state.room);
+    const expected = Number(state.handCountChoice || state.expectedHandCount || expectedHandCount(state.room));
     if (selected.length !== expected) return setError("Seleccioná exactamente " + expected + " cartas.");
     state.busy = true;
     state.error = "";
@@ -672,6 +685,7 @@
       });
       state.room = data.room;
       activateOnlineAnnotator(state.room);
+      gameState.myCardsCount = selected.length;
       // El marcado de la mano se procesa mediante la función existente de v72.
       window.openMyHandModal();
       document.querySelectorAll('#myhand-options input[name="myhand-card"]').forEach(input => {
@@ -834,7 +848,12 @@
     if (target.dataset.action === "host-seat") await changeSeat(target.dataset.playerId, target.value, true);
     else if (target.dataset.action === "self-seat") await changeSeat(state.session.playerId, target.value, false);
     else if (target.id === "online-first-player") state.selectedFirst = target.value;
-    else if (target.hasAttribute("data-online-card")) {
+    else if (target.id === "online-hand-count") {
+      state.handCountChoice = Number(target.value);
+      state.expectedHandCount = expectedHandCount(state.room);
+      if (state.annotatorActive && !gameState.handLocked) gameState.myCardsCount = state.handCountChoice;
+      render();
+    } else if (target.hasAttribute("data-online-card")) {
       state.handSelection = [...content.querySelectorAll("[data-online-card]:checked")].map(input => input.value);
       render();
     } else if (target.name === "online-response-card") {
