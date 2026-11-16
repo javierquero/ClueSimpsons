@@ -955,3 +955,67 @@ body.online-panel-open { overflow: hidden; }
   font-weight: 800;
 }
 .online-notification-ready::before { content: "● "; }
+
+
+/* v75: acusación final privada y estado de partida terminada. */
+.online-accusation-details {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #bfdbfe;
+}
+.online-accusation-details summary {
+  cursor: pointer;
+  color: #1e40af;
+  font-size: 12px;
+  font-weight: 900;
+}
+.online-accusation-details[open] summary { margin-bottom: 8px; }
+.online-accusation-details > .online-muted { margin: 8px 0 12px; }
+.online-accusation-confirm {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  background: #fff1f2;
+  color: #881337;
+}
+.online-accusation-confirm > strong { font-size: 13px; }
+.online-accusation-confirm > p { margin: 7px 0; font-size: 12px; font-weight: 800; }
+.online-finished-panel {
+  margin-top: 18px;
+  padding: 17px;
+  border: 2px solid #16a34a;
+  border-radius: 14px;
+  background: #f0fdf4;
+  color: #166534;
+  text-align: center;
+}
+.online-finished-panel h4 { margin: 6px 0; color: #166534; font-size: 20px; font-weight: 900; }
+.online-finished-panel > p:not(.online-eyebrow) { font-size: 13px; }
+.online-private-accusation {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #fca5a5;
+  border-radius: 11px;
+  background: #fff1f2;
+  color: #9f1239;
+}
+.online-private-accusation strong { font-size: 13px; }
+.online-private-accusation p { margin-top: 4px; font-size: 12px; }
+.online-paused-banner {
+  margin-top: 12px;
+  padding: 11px;
+  border: 1px solid #fbbf24;
+  border-radius: 9px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 800;
+}
+.online-card-back {
+  animation: online-card-arrive .32s ease-out both;
+}
+@keyframes online-card-arrive {
+  from { transform: translateY(9px) rotate(-5deg) scale(.9); opacity: 0; }
+  to { transform: translateY(0) rotate(0) scale(1); opacity: 1; }
+}
