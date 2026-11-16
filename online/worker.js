@@ -11,6 +11,10 @@ const ALLOWED_ORIGINS = new Set([
 const ROOM_CODE_PATTERN = /^\d{6}$/;
 const MAX_PLAYERS = 6;
 const MIN_PLAYERS = 3;
+const SUSPECT_CARDS = ["Coronel Mostaza","Profesor Moradillo","Sr. Verdi","Sra. Azulino","Srita. Escarlata","Sra. Blanco"];
+const WEAPON_CARDS = ["Collar","Barra de Plutonio","Honda","Saxofón","Guante extensible","Dona envenenada"];
+const PLACE_CARDS = ["Asilo Springfield","Bolerama","El Calabozo del Androide","Casa de los Simpsons","Estudios Krustylu","El Holandés Frito","Kwik-E-Mart","Mansión Burns","Planta Nuclear"];
+const ALL_GAME_CARDS = [...SUSPECT_CARDS, ...WEAPON_CARDS, ...PLACE_CARDS];
 
 function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -103,12 +107,12 @@ async function requestJson(request, url, env) {
     return withCors(json({ error: "No se pudo generar un código disponible. Intentá nuevamente." }, 503), origin);
   }
 
-  const match = path.match(/^\/api\/rooms\/(\d{6})(?:\/(join|seat|start|socket-ticket|ws))?$/);
+  const match = path.match(/^\/api\/rooms\/(\d{6})(?:\/(join|seat|hand|start|suggestions|responses|socket-ticket|ws))?$/);
   if (!match) return withCors(json({ error: "Ruta no encontrada." }, 404), origin);
 
   const code = match[1];
   const action = match[2] || (request.method === "GET" ? "snapshot" : "");
-  if (!["snapshot", "join", "seat", "start", "socket-ticket", "ws"].includes(action)) {
+  if (!["snapshot", "join", "seat", "hand", "start", "suggestions", "responses", "socket-ticket", "ws"].includes(action)) {
     return withCors(json({ error: "Operación no permitida." }, 405), origin);
   }
 
@@ -166,7 +170,8 @@ export class GameRoom extends DurableObject {
       .sort((a, b) => (a.seat ?? 99) - (b.seat ?? 99))
       .map(({ id, name, seat }) => ({
         id, name, seat,
-        connected: onlineIds.has(id)
+        connected: onlineIds.has(id),
+        handSubmitted: Boolean(room.hands?.[id])
       }));
 
     return {
@@ -179,19 +184,60 @@ export class GameRoom extends DurableObject {
       players,
       firstPlayerId: room.firstPlayerId,
       turnPlayerId: room.turnPlayerId,
+      suggestion: room.suggestion ? {
+        id: room.suggestion.id,
+        byPlayerId: room.suggestion.byPlayerId,
+        byPlayerName: room.players.find(player => player.id === room.suggestion.byPlayerId)?.name || "Jugador",
+        cards: room.suggestion.cards,
+        responderOrder: room.suggestion.responderOrder,
+        currentResponderId: room.suggestion.currentResponderId,
+        responses: room.suggestion.responses.map(response => ({
+          playerId: response.playerId,
+          playerName: room.players.find(player => player.id === response.playerId)?.name || "Jugador",
+          type: response.type
+        })),
+        completed: room.suggestion.completed,
+        outcome: room.suggestion.outcome
+      } : null,
       startedAt: room.startedAt
     };
+  }
+
+  snapshotFor(room, actor) {
+    const snapshot = this.publicSnapshot(room);
+    if (!actor || actor.role !== "player") return snapshot;
+    const privateData = {};
+    const hand = room.hands?.[actor.playerId] || [];
+    if (room.suggestion && !room.suggestion.completed && room.suggestion.currentResponderId === actor.playerId) {
+      privateData.matchingCards = room.suggestion.cards.filter(card => hand.includes(card));
+      privateData.mustRespond = true;
+    }
+    if (room.suggestion && room.suggestion.completed && room.suggestion.outcome === "shown" &&
+        room.suggestion.byPlayerId === actor.playerId) {
+      privateData.shownCard = room.suggestion.shownCard;
+      privateData.shownByPlayerId = room.suggestion.shownByPlayerId;
+    }
+    return { ...snapshot, private: privateData };
   }
 
   async broadcastSnapshot() {
     const room = await this.loadRoom();
     if (!room) return;
-    const payload = JSON.stringify({ type: "room.snapshot", room: this.publicSnapshot(room) });
     for (const socket of this.ctx.getWebSockets()) {
       try {
-        if (socket.readyState === WebSocket.OPEN) socket.send(payload);
+        if (socket.readyState !== WebSocket.OPEN) continue;
+        const attachment = socket.deserializeAttachment();
+        const actor = attachment?.role === "player" ? attachment : null;
+        socket.send(JSON.stringify({ type: "room.snapshot", room: this.snapshotFor(room, actor) }));
       } catch {}
     }
+  }
+
+  nextPlayerId(room, playerId) {
+    const ordered = [...room.players].sort((a, b) => a.seat - b.seat);
+    const index = ordered.findIndex(player => player.id === playerId);
+    if (index < 0 || !ordered.length) return null;
+    return ordered[(index + 1) % ordered.length].id;
   }
 
   async fetch(request) {
@@ -229,7 +275,14 @@ export class GameRoom extends DurableObject {
     if (!room) return json({ error: "No existe una partida con ese código." }, 404);
 
     if (method === "GET") {
-      return json({ room: this.publicSnapshot(room) });
+      const authHeader = request.headers.get("Authorization") || "";
+      const actor = authHeader ? await this.actorFor(request, room) : null;
+      if (authHeader && !actor) return json({ error: "Sesión no válida." }, 401);
+      if (path.endsWith("/hand")) {
+        if (!actor || actor.role !== "player") return json({ error: "Solo un jugador puede consultar su propia mano." }, 403);
+        return json({ cards: room.hands?.[actor.playerId] || [] });
+      }
+      return json({ room: this.snapshotFor(room, actor) });
     }
 
     if (path.endsWith("/join") && method === "POST") {
@@ -254,6 +307,31 @@ export class GameRoom extends DurableObject {
 
     const actor = await this.actorFor(request, room);
     if (!actor) return json({ error: "Sesión no válida. Volvé a ingresar a la partida." }, 401);
+
+    if (path.endsWith("/hand") && method === "POST") {
+      if (actor.role !== "player") return json({ error: "Solo los jugadores pueden cargar sus cartas." }, 403);
+      if (room.status !== "lobby") return json({ error: "Las cartas solo se pueden cargar antes de iniciar." }, 409);
+      if (room.hands?.[actor.playerId]) return json({ error: "Tus cartas ya fueron confirmadas y no se pueden cambiar." }, 409);
+      let body;
+      try { body = await readJson(request); }
+      catch (error) { return json({ error: error.message }, 400); }
+      const cards = Array.isArray(body.cards) ? body.cards : [];
+      if (cards.some(card => typeof card !== "string" || !ALL_GAME_CARDS.includes(card))) {
+        return json({ error: "La selección contiene cartas que no pertenecen al juego." }, 400);
+      }
+      if (new Set(cards).size !== cards.length) return json({ error: "No se pueden repetir cartas." }, 400);
+      const ordered = [...room.players].sort((a, b) => a.seat - b.seat);
+      const playerIndex = ordered.findIndex(player => player.id === actor.playerId);
+      const base = Math.floor(18 / ordered.length);
+      const remainder = 18 % ordered.length;
+      const expected = base + (playerIndex < remainder ? 1 : 0);
+      if (cards.length !== expected) return json({ error: "Te corresponden " + expected + " cartas según el orden de la mesa." }, 400);
+      room.hands = room.hands || {};
+      room.hands[actor.playerId] = cards;
+      await this.saveRoom(room);
+      await this.broadcastSnapshot();
+      return json({ saved: true, count: cards.length, room: this.snapshotFor(room, actor) });
+    }
 
     if (path.endsWith("/seat") && (method === "PATCH" || method === "POST")) {
       if (room.status !== "lobby") return json({ error: "Los asientos quedan bloqueados al comenzar." }, 409);
@@ -280,6 +358,86 @@ export class GameRoom extends DurableObject {
       return json({ room: this.publicSnapshot(room) });
     }
 
+    if (path.endsWith("/suggestions") && method === "POST") {
+      if (actor.role !== "player") return json({ error: "El organizador debe ingresar como jugador para hacer suposiciones." }, 403);
+      if (room.status !== "playing") return json({ error: "La partida todavía no está iniciada." }, 409);
+      if (room.turnPlayerId !== actor.playerId) return json({ error: "Todavía no es tu turno." }, 409);
+      if (room.suggestion && !room.suggestion.completed) return json({ error: "Hay una suposición esperando respuestas." }, 409);
+      let body;
+      try { body = await readJson(request); }
+      catch (error) { return json({ error: error.message }, 400); }
+      const suspect = body.suspect;
+      const weapon = body.weapon;
+      const place = body.place;
+      if (!SUSPECT_CARDS.includes(suspect) || !WEAPON_CARDS.includes(weapon) || !PLACE_CARDS.includes(place)) {
+        return json({ error: "La suposición debe incluir un sospechoso, un arma y un lugar válidos." }, 400);
+      }
+      const ordered = [...room.players].sort((a, b) => a.seat - b.seat);
+      const startIndex = ordered.findIndex(player => player.id === actor.playerId);
+      if (startIndex < 0) return json({ error: "No se pudo determinar tu lugar en la mesa." }, 409);
+      const responderOrder = Array.from({ length: ordered.length - 1 }, (_, offset) => ordered[(startIndex + offset + 1) % ordered.length].id);
+      room.suggestion = {
+        id: crypto.randomUUID(),
+        byPlayerId: actor.playerId,
+        cards: [suspect, weapon, place],
+        responderOrder,
+        responderIndex: 0,
+        currentResponderId: responderOrder[0] || null,
+        responses: [],
+        shownCard: null,
+        shownByPlayerId: null,
+        completed: false,
+        outcome: null,
+        createdAt: Date.now(),
+        completedAt: null
+      };
+      await this.saveRoom(room);
+      await this.broadcastSnapshot();
+      return json({ room: this.snapshotFor(room, actor) }, 201);
+    }
+
+    if (path.endsWith("/responses") && method === "POST") {
+      if (actor.role !== "player") return json({ error: "Solo los jugadores pueden responder." }, 403);
+      const suggestion = room.suggestion;
+      if (!suggestion || suggestion.completed) return json({ error: "No hay una suposición pendiente." }, 409);
+      if (suggestion.currentResponderId !== actor.playerId) return json({ error: "Todavía no te corresponde responder." }, 409);
+      let body;
+      try { body = await readJson(request); }
+      catch (error) { return json({ error: error.message }, 400); }
+      const selected = body.card;
+      const ownCards = room.hands?.[actor.playerId] || [];
+      if (selected === "none") {
+        if (suggestion.cards.some(card => ownCards.includes(card))) {
+          return json({ error: "Tenés al menos una de las cartas mencionadas y debés elegir cuál mostrar." }, 400);
+        }
+        suggestion.responses.push({ playerId: actor.playerId, type: "none" });
+        suggestion.responderIndex += 1;
+        if (suggestion.responderIndex >= suggestion.responderOrder.length) {
+          suggestion.completed = true;
+          suggestion.currentResponderId = null;
+          suggestion.outcome = "nobody";
+          suggestion.completedAt = Date.now();
+          room.turnPlayerId = this.nextPlayerId(room, suggestion.byPlayerId);
+        } else {
+          suggestion.currentResponderId = suggestion.responderOrder[suggestion.responderIndex];
+        }
+      } else {
+        if (!suggestion.cards.includes(selected)) return json({ error: "Elegí una de las tres cartas de la suposición." }, 400);
+        if (!ownCards.includes(selected)) return json({ error: "No tenés esa carta. Elegí una carta que tengas o indicá que no tenés ninguna." }, 400);
+        suggestion.responses.push({ playerId: actor.playerId, type: "shown" });
+        suggestion.shownCard = selected;
+        suggestion.shownByPlayerId = actor.playerId;
+        suggestion.currentResponderId = null;
+        suggestion.completed = true;
+        suggestion.outcome = "shown";
+        suggestion.completedAt = Date.now();
+        room.turnPlayerId = this.nextPlayerId(room, suggestion.byPlayerId);
+      }
+      await this.saveRoom(room);
+      await this.broadcastSnapshot();
+      return json({ room: this.snapshotFor(room, actor) });
+    }
+
     if (path.endsWith("/start") && method === "POST") {
       if (actor.role !== "host") return json({ error: "Solo el organizador puede iniciar la partida." }, 403);
       if (room.status !== "lobby") return json({ error: "La partida ya fue iniciada." }, 409);
@@ -288,6 +446,13 @@ export class GameRoom extends DurableObject {
       }
       if (room.players.some(player => !Number.isInteger(player.seat))) {
         return json({ error: "Todos los jugadores deben elegir un asiento." }, 409);
+      }
+      const orderedPlayers = [...room.players].sort((a, b) => a.seat - b.seat);
+      const allHands = orderedPlayers.map(player => room.hands?.[player.id] || []);
+      if (allHands.some(hand => !hand.length)) return json({ error: "Todos los jugadores deben cargar y confirmar sus cartas." }, 409);
+      const allCards = allHands.flat();
+      if (allCards.length !== 18 || new Set(allCards).size !== 18 || allCards.some(card => !ALL_GAME_CARDS.includes(card))) {
+        return json({ error: "La distribución debe contener exactamente las 18 cartas sin repetir ninguna." }, 409);
       }
       let body;
       try { body = await readJson(request); }
@@ -348,7 +513,7 @@ export class GameRoom extends DurableObject {
     const [client, server] = Object.values(new WebSocketPair());
     this.ctx.acceptWebSocket(server);
     server.serializeAttachment({ role: actor.role, playerId: actor.playerId });
-    server.send(JSON.stringify({ type: "room.snapshot", room: this.publicSnapshot(room) }));
+    server.send(JSON.stringify({ type: "room.snapshot", room: this.snapshotFor(room, actor) }));
     await this.broadcastSnapshot();
 
     return new Response(null, { status: 101, webSocket: client });
