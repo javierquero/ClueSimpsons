@@ -1155,7 +1155,7 @@
     // Habilita la instalación y el uso sin conexión de la aplicación.
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=70', { updateViaCache: 'none' })
+        navigator.serviceWorker.register('./sw.js?v=71', { updateViaCache: 'none' })
           .then(watchForAppUpdates)
           .catch(error => console.warn('No se pudo registrar el Service Worker:', error));
       });
@@ -1199,3 +1199,37 @@ document.addEventListener('fullscreenchange', () => {
   button.setAttribute('aria-label', active ? 'Salir de pantalla completa' : 'Activar pantalla completa');
   button.title = active ? 'Salir de pantalla completa' : 'Activar pantalla completa';
 });
+
+
+// v71: sincroniza el alto de la aplicación con el viewport realmente visible
+// (incluye los cambios de las barras del navegador móvil).
+(function setupVisibleViewportHeight() {
+  const root = document.documentElement;
+  const updateHeight = () => {
+    if (!window.matchMedia('(max-width: 767px)').matches) {
+      root.style.removeProperty('--app-viewport-height');
+      return;
+    }
+    const viewport = window.visualViewport;
+    const height = viewport && viewport.height > 0
+      ? viewport.height
+      : window.innerHeight;
+    root.style.setProperty('--app-viewport-height', height + 'px');
+  };
+
+  updateHeight();
+  window.addEventListener('resize', updateHeight, { passive: true });
+  window.addEventListener('orientationchange', updateHeight, { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', updateHeight, { passive: true });
+    window.visualViewport.addEventListener('scroll', updateHeight, { passive: true });
+  }
+  if (window.matchMedia) {
+    const mobileQuery = window.matchMedia('(max-width: 767px)');
+    if (mobileQuery.addEventListener) {
+      mobileQuery.addEventListener('change', updateHeight);
+    } else if (mobileQuery.addListener) {
+      mobileQuery.addListener(updateHeight);
+    }
+  }
+})();
