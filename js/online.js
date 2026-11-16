@@ -291,9 +291,8 @@
       window.saveGuess();
       const latest = gameState.history?.[0];
       if (latest && shownResponse && !localIsSuggester) {
-        const response = latest.responses?.find(item =>
-          item.player === (localOrder.find(player => player.id === shownResponse.playerId)?.name || "")
-        );
+        const shownIndex = localOrder.findIndex(player => player.id === shownResponse.playerId);
+        const response = shownIndex > 0 ? latest.responses?.[shownIndex - 1] : null;
         if (response) {
           response.type = "shown";
           response.card = "?";
@@ -412,6 +411,10 @@
   function renderSuggestionPanel(room, me) {
     if (room.status !== "playing" || !me) return "";
     const suggestion = room.suggestion;
+    if (suggestion && state.responseTargetId !== suggestion.currentResponderId) {
+      state.responseChoice = "";
+      state.responseTargetId = suggestion.currentResponderId;
+    }
     const myTurn = room.turnPlayerId === me.id;
     let output = "";
 
