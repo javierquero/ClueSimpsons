@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Anotador Clue: Los Simpson</title>
   <link rel="icon" type="image/png" href="icon-192.png">
   <link rel="manifest" href="manifest.json">
@@ -13,12 +13,13 @@
   <meta name="apple-mobile-web-app-title" content="Clue Simpsons">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="tailwind.css">
-  <link rel="stylesheet" href="styles.css?v=69">
+  <link rel="stylesheet" href="styles.css?v=70">
 </head>
 <body class="bg-amber-100 min-h-screen text-slate-800 font-sans overflow-x-hidden">
 
   <!-- ═══ TOP HEADER ═══ -->
   <header class="app-header bg-yellow-400 border-b-4 border-yellow-600 px-2 sm:px-4 py-2 sm:py-3 sticky top-0 z-30 shadow-md">
+    <button id="btn-fullscreen" type="button" onclick="toggleFullscreen()" aria-label="Activar pantalla completa" title="Activar pantalla completa">⛶</button>
     <div class="max-w-5xl mx-auto flex items-center justify-center sm:justify-between gap-1">
       <div class="flex items-center justify-center w-full sm:w-auto sm:justify-start space-x-2 shrink-0">
         <img src="dona.webp" alt="" width="128" height="126" class="header-donut header-donut-left w-6 h-6 sm:w-8 sm:h-8">
@@ -444,6 +445,6 @@
       Desbloquear Pantalla
     </button>
   </div>
-  <script src="js/app.js?v=69" defer></script>
+  <script src="js/app.js?v=70" defer></script>
 </body>
 </html>
