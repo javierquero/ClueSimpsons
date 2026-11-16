@@ -200,6 +200,8 @@
   function restoreOwnHandFromServer(cards) {
     if (gameState.handLocked || !Array.isArray(cards) || !cards.length) return;
     try {
+      gameState.myCardsCount = cards.length;
+      state.handCountChoice = cards.length;
       window.openMyHandModal();
       const inputs = document.querySelectorAll('#myhand-options input[name="myhand-card"]');
       inputs.forEach(input => { input.checked = cards.includes(input.value); });
@@ -684,14 +686,10 @@
         body: { cards: selected }
       });
       state.room = data.room;
-      activateOnlineAnnotator(state.room);
       gameState.myCardsCount = selected.length;
-      // El marcado de la mano se procesa mediante la función existente de v72.
-      window.openMyHandModal();
-      document.querySelectorAll('#myhand-options input[name="myhand-card"]').forEach(input => {
-        input.checked = selected.includes(input.value);
-      });
-      window.saveMyHand();
+      // La restauración usa openMyHandModal/saveMyHand originales de v72.
+      if (!state.annotatorActive) activateOnlineAnnotator(state.room);
+      else restoreOwnHandFromServer(selected);
       state.handSelection = [];
       state.busy = false;
       state.error = "";
