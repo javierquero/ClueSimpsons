@@ -177,6 +177,7 @@ export class GameRoom extends DurableObject {
     return {
       code: room.code,
       status: room.status,
+      rosterLocked: Boolean(room.rosterLocked),
       hostName: room.hostName,
       hostOnline,
       createdAt: room.createdAt,
@@ -258,6 +259,7 @@ export class GameRoom extends DurableObject {
         hostName: cleanName(body.hostName),
         hostTokenHash: await sha256(hostToken),
         status: "lobby",
+        rosterLocked: false,
         players: [],
         firstPlayerId: null,
         turnPlayerId: null,
@@ -287,7 +289,7 @@ export class GameRoom extends DurableObject {
     }
 
     if (path.endsWith("/join") && method === "POST") {
-      if (room.status !== "lobby") return json({ error: "La partida ya comenzó y no admite nuevos jugadores." }, 409);
+      if (room.status !== "lobby" || room.rosterLocked) return json({ error: "La inscripción y los asientos ya fueron cerrados por la carga de cartas." }, 409);
       let body;
       try { body = await readJson(request); }
       catch (error) { return json({ error: error.message }, 400); }
@@ -329,13 +331,14 @@ export class GameRoom extends DurableObject {
       if (cards.length !== expected) return json({ error: "Te corresponden " + expected + " cartas según el orden de la mesa." }, 400);
       room.hands = room.hands || {};
       room.hands[actor.playerId] = cards;
+      room.rosterLocked = true;
       await this.saveRoom(room);
       await this.broadcastSnapshot();
       return json({ saved: true, count: cards.length, room: this.snapshotFor(room, actor) });
     }
 
     if (path.endsWith("/seat") && (method === "PATCH" || method === "POST")) {
-      if (room.status !== "lobby") return json({ error: "Los asientos quedan bloqueados al comenzar." }, 409);
+      if (room.status !== "lobby" || room.rosterLocked) return json({ error: "Los asientos quedan bloqueados cuando comienza la carga de cartas." }, 409);
       let body;
       try { body = await readJson(request); }
       catch (error) { return json({ error: error.message }, 400); }
