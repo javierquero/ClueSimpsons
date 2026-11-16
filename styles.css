@@ -468,3 +468,85 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
+
+
+/* v71: viewport móvil real y distribución única para navegador y app instalada. */
+@media (max-width: 767px) {
+  html,
+  body {
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--app-viewport-height, 100dvh);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0 !important;
+  }
+
+  body > .app-header {
+    position: relative;
+    flex: 0 0 auto;
+    order: 0;
+  }
+
+  body > main {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    overflow: hidden;
+    order: 1;
+  }
+
+  #desktop-layout,
+  #desktop-layout > div,
+  #table-wrapper {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #table-wrapper > div {
+    display: block;
+    flex: 1 1 0;
+    width: 100%;
+    height: 0;
+    min-height: 0;
+    max-height: none !important;
+    overflow-x: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body > #bottom-nav {
+    box-sizing: border-box;
+    position: relative !important;
+    inset: auto !important;
+    z-index: 100;
+    display: flex !important;
+    visibility: visible !important;
+    flex: 0 0 calc(58px + env(safe-area-inset-bottom, 0px));
+    width: 100%;
+    height: calc(58px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(58px + env(safe-area-inset-bottom, 0px));
+    margin: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    order: 2;
+  }
+
+  body > .bottom-sheet {
+    z-index: 120 !important;
+  }
+}
