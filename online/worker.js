@@ -65,7 +65,7 @@ async function sha256(value) {
   return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
-async function requestJson(request, url) {
+async function requestJson(request, url, env) {
   const path = url.pathname;
 
   if (request.method === "OPTIONS") {
@@ -223,6 +223,8 @@ export class GameRoom extends DurableObject {
       return json({ code: room.code, hostToken, room: this.publicSnapshot(room) }, 201);
     }
 
+    if (path.endsWith("/ws") && method === "GET") return this.upgradeWebSocket(request);
+
     const room = await this.loadRoom();
     if (!room) return json({ error: "No existe una partida con ese código." }, 404);
 
@@ -287,14 +289,14 @@ export class GameRoom extends DurableObject {
       if (room.players.some(player => !Number.isInteger(player.seat))) {
         return json({ error: "Todos los jugadores deben elegir un asiento." }, 409);
       }
+      let body;
+      try { body = await readJson(request); }
+      catch (error) { return json({ error: error.message }, 400); }
       let firstPlayerId = "";
-      if (bodyIsRandom(request)) {
+      if (body.firstPlayerId === "random") {
         const index = crypto.getRandomValues(new Uint32Array(1))[0] % room.players.length;
         firstPlayerId = room.players[index].id;
       } else {
-        let body;
-        try { body = await readJson(request); }
-        catch (error) { return json({ error: error.message }, 400); }
         firstPlayerId = String(body.firstPlayerId || "");
         if (!room.players.some(player => player.id === firstPlayerId)) {
           return json({ error: "Elegí quién comienza o seleccioná el sorteo aleatorio." }, 400);
@@ -371,6 +373,3 @@ export class GameRoom extends DurableObject {
   }
 }
 
-function bodyIsRandom(request) {
-  return request.headers.get("x-clue-first-player") === "random";
-}
