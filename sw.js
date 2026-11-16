@@ -1,4 +1,4 @@
-const CACHE_NAME = 'clue-simpsons-v64';
+const CACHE_NAME = 'clue-simpsons-v65';
 const APP_SHELL = './index.html';
 
 const ASSETS = [
