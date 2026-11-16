@@ -2,7 +2,7 @@
   Anotador Clue: Los Simpson 
 </h1>
 
-<p align="center"><strong>Versión actual: v74</strong></p>
+<p align="center"><strong>Versión actual: v75</strong></p>
 
 Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para jugar sin papel ni lápiz. Funciona en el navegador o instalada como app y el modo convencional sigue funcionando sin conexión; el modo interactivo requiere Internet.
 
@@ -25,7 +25,9 @@ Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para
 - **Deshacer y Rehacer**: permite recorrer las últimas acciones, incluso después de refrescar la página.
 - **Soporte de 3 a 6 jugadores** con nombres editables directamente en la tabla.
 - **Reglas del juego** integradas en la app.
-- **Modo interactivo inicial (v73)**: creación de salas, ingreso con código, elección de asientos, cambios por el organizador y selección manual o aleatoria de quién comienza. La mecánica de suposiciones y el marcado automático del anotador existente permanecen reservados para la siguiente etapa de integración.
+- **Modo interactivo (v75)**: salas de 3 a 6 jugadores, ingreso por código, organizador independiente, elección de asientos y ajustes por el organizador hasta iniciar, carga privada de cartas, selección manual o aleatoria de quién comienza, indicador sincronizado de turnos, suposiciones en orden de mesa, respuestas explícitas y acusación final.
+- **Privacidad de cartas**: todos ven la suposición y quién responde, pero solo quien supone recibe la identidad de la carta mostrada. La mano de cada jugador queda privada.
+- **Integración con el anotador v72**: el modo interactivo reutiliza el marcado automático existente mediante la función original de registro de suposiciones. No se reemplazó ni modificó `js/app.js`; el modo convencional conserva su funcionamiento.
 - **Guía rápida inicial**: explica los gestos la primera vez y puede volver a abrirse desde Reglas.
 - **PWA instalable, offline y con actualización automática**: precarga los recursos y aplica las versiones nuevas al abrir o volver a la app.
 - **Accesibilidad**: admite zoom, teclado, foco visible, movimiento reducido y descripciones de cartas, jugadores y estados para lectores de pantalla.
