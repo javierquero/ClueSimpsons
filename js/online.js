@@ -140,6 +140,9 @@
     const localOrder = localPlayerOrder(room);
     if (!localOrder.length || !state.session?.playerId) return;
     const key = onlineAnnotationStorageKey();
+    if (state.annotatorActive && state.onlineAnnotationKey !== key) {
+      deactivateOnlineAnnotator();
+    }
     const signature = localOrder.map(player => player.id).join("|");
 
     if (!state.annotatorActive) {
