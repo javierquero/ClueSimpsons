@@ -358,9 +358,10 @@
 
   function renderHandPanel(room, me) {
     if (!me || room.status !== "lobby") return "";
-    if (me.handSubmitted) {
-      return '<section class="online-hand-panel"><p class="online-eyebrow">TUS CARTAS</p><strong>Mano confirmada</strong>' +
-        '<p class="online-muted">Tus cartas quedaron guardadas de forma privada. Los demás solo pueden ver que ya completaste la carga.</p></section>';
+    if (me.handSubmitted && !state.editingHand) {
+      return '<section class="online-hand-panel"><p class="online-eyebrow">TUS CARTAS</p><strong>Mano confirmada · ' +
+        me.handCount + ' cartas</strong><p class="online-muted">Tus cartas quedaron guardadas de forma privada. Los demás solo pueden ver cuántas cargaste.</p>' +
+        '<button class="online-button online-button-secondary online-full-button" data-action="edit-hand">Editar mis cartas</button></section>';
     }
     if (room.players.length < 3) {
       return '<section class="online-hand-panel"><p class="online-eyebrow">CARGA DE CARTAS</p>' +
@@ -686,11 +687,23 @@
         body: { cards: selected }
       });
       state.room = data.room;
-      gameState.myCardsCount = selected.length;
-      // La restauración usa openMyHandModal/saveMyHand originales de v72.
       if (!state.annotatorActive) activateOnlineAnnotator(state.room);
-      else restoreOwnHandFromServer(selected);
+      // Si estábamos corrigiendo la mano antes de iniciar, reiniciamos solo el
+      // tablero nuevo online y aplicamos otra vez el mecanismo original de v72.
+      if (gameState.handLocked) {
+        gameState.matrix = {};
+        gameState.envelope = { suspect: "", weapon: "", place: "" };
+        gameState.history = [];
+        gameState.handLocked = false;
+      }
+      gameState.myCardsCount = selected.length;
+      window.openMyHandModal();
+      document.querySelectorAll('#myhand-options input[name="myhand-card"]').forEach(input => {
+        input.checked = selected.includes(input.value);
+      });
+      window.saveMyHand();
       state.handSelection = [];
+      state.editingHand = false;
       state.busy = false;
       state.error = "";
       await refreshRoom(false);
@@ -833,7 +846,12 @@
     else if (action === "resume") await restoreSession();
     else if (action === "start") await startGame();
     else if (action === "submit-hand") await submitHand();
-    else if (action === "make-suggestion") await submitSuggestion();
+    else if (action === "edit-hand") {
+      state.editingHand = true;
+      state.handSelection = [...(state.room?.private?.ownCards || [])];
+      state.handCountChoice = state.handSelection.length || state.handCountChoice;
+      render();
+    } else if (action === "make-suggestion") await submitSuggestion();
     else if (action === "respond-none") await submitResponse("none");
     else if (action === "respond-card") await submitResponse(state.responseChoice);
     else if (action === "show-annotator") closePanel();
