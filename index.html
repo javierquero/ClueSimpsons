@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Anotador Clue: Los Simpson</title>
+  <title>Anotador Clue: Los Simpson — v73</title>
+  <meta name="application-version" content="v73">
   <link rel="icon" type="image/png" href="icon-192.png">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#ca8a04">
@@ -13,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Clue Simpsons">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="tailwind.css">
-  <link rel="stylesheet" href="styles.css?v=72">
+  <link rel="stylesheet" href="styles.css?v=73">
 </head>
 <body class="bg-amber-100 text-slate-800 font-sans overflow-x-hidden">
 
@@ -24,6 +25,7 @@
       <div class="flex items-center justify-center w-full sm:w-auto sm:justify-start space-x-2 shrink-0">
         <img src="dona.webp" alt="" width="128" height="126" class="header-donut header-donut-left w-6 h-6 sm:w-8 sm:h-8">
         <h1 class="font-simpson text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl text-yellow-950 tracking-wide">Clue Simpsons</h1>
+        <button id="btn-online" type="button" class="online-entry" aria-label="Partida online" title="Partida online"><span aria-hidden="true">🌐</span><span class="online-entry-label">Online</span></button>
         <img src="dona.webp" alt="" width="128" height="126" class="header-donut header-donut-right w-6 h-6 sm:w-8 sm:h-8">
       </div>
       <div class="desktop-only flex items-center space-x-1 sm:space-x-2 shrink-0 flex-wrap">
@@ -445,6 +447,20 @@
       Desbloquear Pantalla
     </button>
   </div>
+  <div id="online-panel" class="online-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="online-title">
+    <div class="online-shell">
+      <header class="online-topbar">
+        <div>
+          <p class="online-eyebrow">CLUE SIMPSONS</p>
+          <h2 id="online-title">Partida interactiva</h2>
+        </div>
+        <button id="online-close" type="button" aria-label="Cerrar partida online">✕</button>
+      </header>
+      <main id="online-content" class="online-content" aria-live="polite"></main>
+      <footer class="online-footer">El modo convencional y su anotador siguen funcionando por separado.</footer>
+    </div>
+  </div>
   <script src="js/app.js?v=72" defer></script>
+  <script src="js/online.js?v=73" defer></script>
 </body>
 </html>
