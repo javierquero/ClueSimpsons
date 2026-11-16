@@ -14,7 +14,7 @@
     joinCode: "", joinName: "", selectedSeat: null, selectedFirst: "random",
     error: "", busy: false, socket: null, reconnectTimer: null, open: false,
     handSelection: [], responseChoice: "", expectedHandCount: 0, handCountChoice: null,
-    lastNotificationKey: "",
+    lastNotificationKey: "", accusationDraft: null, accusationConfirmOpen: false,
     annotatorActive: false, conventionalSnapshot: null, onlineAnnotationKey: "",
     originalSaveState: null, originalSaveActionStacks: null, historyWrapperInstalled: false
   };
@@ -468,6 +468,41 @@
       '<p class="online-muted">La primera confirmación cierra la lista de participantes y bloquea los asientos para conservar la distribución.</p></section>';
   }
 
+  function renderAccusationComposer() {
+    const fields = [
+      { id: "online-accuse-suspect", label: "Sospechoso", cards: CARDS.suspects },
+      { id: "online-accuse-weapon", label: "Arma", cards: CARDS.weapons },
+      { id: "online-accuse-place", label: "Lugar", cards: CARDS.places }
+    ];
+    if (state.accusationConfirmOpen && state.accusationDraft) {
+      return '<div class="online-accusation-confirm"><strong>¿Confirmás esta acusación final?</strong>' +
+        '<p>' + escapeHtml(state.accusationDraft.suspect) + ' · ' + escapeHtml(state.accusationDraft.weapon) +
+        ' · ' + escapeHtml(state.accusationDraft.place) + '</p><p class="online-muted">Si es incorrecta, no podrás ganar, aunque seguirás respondiendo las suposiciones de los demás.</p>' +
+        '<div class="online-actions"><button class="online-button online-button-primary" data-action="confirm-accusation" ' +
+        (state.busy ? "disabled" : "") + '>Confirmar acusación</button><button class="online-button online-button-light" data-action="cancel-accusation">Volver</button></div></div>';
+    }
+    return '<details class="online-accusation-details"><summary>Hacer una acusación final</summary>' +
+      '<p class="online-muted">La acusación es privada. Solo vos verás si es incorrecta; si es correcta, se revelará la solución y terminará la partida.</p>' +
+      fields.map(field => '<label class="online-label" for="' + field.id + '">' + field.label + '</label>' +
+        '<select id="' + field.id + '" class="online-input"><option value="">Elegir…</option>' +
+        field.cards.map(card => '<option value="' + escapeHtml(card) + '">' + escapeHtml(card) + '</option>').join("") +
+        '</select>').join("") +
+      '<button class="online-button online-button-secondary online-full-button" data-action="prepare-accusation">Revisar acusación</button></details>';
+  }
+
+  function renderFinishedPanel(room) {
+    if (room.status !== "finished") return "";
+    const solution = room.solution || [];
+    if (room.winnerId) {
+      return '<section class="online-finished-panel"><p class="online-eyebrow">CASO RESUELTO</p><h4>Ganó ' +
+        escapeHtml(room.winnerName || "un jugador") + '</h4><p>La solución era:</p>' +
+        '<div class="online-suggestion-cards">' + solution.map(card => '<span>' + escapeHtml(card) + '</span>').join("") + '</div></section>';
+    }
+    return '<section class="online-finished-panel"><p class="online-eyebrow">PARTIDA FINALIZADA</p><h4>No quedan jugadores con posibilidad de ganar.</h4>' +
+      '<p>La solución era:</p><div class="online-suggestion-cards">' +
+      solution.map(card => '<span>' + escapeHtml(card) + '</span>').join("") + '</div></section>';
+  }
+
   function renderSuggestionComposer() {
     const fields = [
       { id: "online-suspect", label: "Sospechoso", cards: CARDS.suspects },
@@ -481,7 +516,8 @@
         '</select>').join("") +
       '<button class="online-button online-button-primary online-full-button" data-action="make-suggestion" ' +
       (state.busy ? "disabled" : "") + '>Enviar suposición</button>' +
-      '<p class="online-muted">Todos verán los tres elementos y el orden de respuestas. Las cartas que se muestren seguirán siendo privadas.</p></section>';
+      '<p class="online-muted">Todos verán los tres elementos y el orden de respuestas. Las cartas que se muestren seguirán siendo privadas.</p>' +
+      renderAccusationComposer() + '</section>';
   }
 
   function renderSuggestionPanel(room, me) {
@@ -549,8 +585,10 @@
 
     if (room.paused) {
       output += '<div class="online-paused-banner">Partida pausada por el organizador. No se puede responder ni avanzar hasta que se reanude.</div>';
-    } else if (myTurn) {
+    } else if (myTurn && room.private?.canWin !== false) {
       output += renderSuggestionComposer();
+    } else if (myTurn && room.private?.canWin === false) {
+      output += '<div class="online-paused-banner">Ya realizaste una acusación incorrecta. No podés ganar ni hacer nuevas suposiciones, pero seguís respondiendo cuando te consulten.</div>';
     } else if (!suggestion || suggestion.completed) {
       const current = room.players.find(player => player.id === room.turnPlayerId);
       output += '<p class="online-waiting-note">Turno de <strong>' + escapeHtml(current?.name || "otro jugador") + '</strong>.</p>';
@@ -619,6 +657,11 @@
 
     const handPanel = renderHandPanel(room, me);
     const suggestionPanel = renderSuggestionPanel(room, me);
+    const privateAccusationBanner = room.private?.lastAccusation
+      ? '<div class="online-private-accusation"><strong>Acusación incorrecta</strong><p>' +
+        escapeHtml(room.private.lastAccusation.message) + '</p></div>'
+      : '';
+    const finishedPanel = renderFinishedPanel(room);
     const pauseControl = isHost && room.status === "playing"
       ? '<button class="online-button ' + (room.paused ? "online-button-primary" : "online-button-light") +
         '" data-action="toggle-pause">' + (room.paused ? "Reanudar partida" : "Pausar partida") + '</button>'
@@ -644,14 +687,14 @@
         escapeHtml(responder?.name || "Nadie") + '</strong></div></div></section>';
     }
 
-    const statusText = room.status === "playing" ? "Partida iniciada" : "Esperando jugadores";
+    const statusText = room.status === "playing" ? "Partida iniciada" : room.status === "finished" ? "Partida finalizada" : "Esperando jugadores";
     return '<section class="online-card online-room-card"><div class="online-room-heading"><div><p class="online-eyebrow">' +
       escapeHtml(statusText) + '</p><h3>Sala ' + escapeHtml(room.code) + '</h3></div>' +
       '<button class="online-copy-button" data-action="copy-code">Copiar código</button></div>' +
       '<p class="online-muted">Organiza ' + escapeHtml(room.hostName) + ' · ' + players.length + '/6 jugadores · Código para compartir</p>' +
       (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">La mesa quedó cerrada: ya comenzó la carga de cartas y no se pueden mover los asientos.</p>' : "") +
       '<div class="online-seat-grid online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer +
-      handPanel + firstControl + turnPanel + pauseControl + suggestionPanel + notificationControl +
+      handPanel + firstControl + turnPanel + pauseControl + privateAccusationBanner + suggestionPanel + finishedPanel + notificationControl +
       '<div class="online-actions online-room-actions"><button class="online-button online-button-light" data-action="refresh">Actualizar sala</button>' +
       '<button class="online-button online-button-secondary" data-action="show-annotator">Ver anotador</button>' +
       '<button class="online-button online-button-light" data-action="home">Salir de esta vista</button></div></section>';
@@ -927,6 +970,38 @@
     } catch (error) { state.busy = false; setError(error.message); }
   }
 
+  async function prepareAccusation() {
+    const suspect = document.getElementById("online-accuse-suspect")?.value || "";
+    const weapon = document.getElementById("online-accuse-weapon")?.value || "";
+    const place = document.getElementById("online-accuse-place")?.value || "";
+    if (!suspect || !weapon || !place) return setError("Elegí un sospechoso, un arma y un lugar para acusar.");
+    state.accusationDraft = { suspect, weapon, place };
+    state.accusationConfirmOpen = true;
+    render();
+  }
+
+  async function sendAccusation() {
+    if (!state.accusationDraft) return;
+    state.busy = true;
+    state.error = "";
+    render();
+    try {
+      const data = await api("/api/rooms/" + state.session.code + "/accusations", {
+        method: "POST",
+        body: state.accusationDraft
+      });
+      state.room = data.room;
+      state.busy = false;
+      state.accusationConfirmOpen = false;
+      state.accusationDraft = null;
+      state.lastNotificationKey = "";
+      render();
+    } catch (error) {
+      state.busy = false;
+      setError(error.message);
+    }
+  }
+
   async function togglePause() {
     const paused = !state.room?.paused;
     state.busy = true;
@@ -989,6 +1064,9 @@
     } else if (action === "make-suggestion") await submitSuggestion();
     else if (action === "respond-none") await submitResponse("none");
     else if (action === "respond-card") await submitResponse(state.responseChoice);
+    else if (action === "prepare-accusation") await prepareAccusation();
+    else if (action === "confirm-accusation") await sendAccusation();
+    else if (action === "cancel-accusation") { state.accusationConfirmOpen = false; state.accusationDraft = null; render(); }
     else if (action === "show-annotator") hidePanelForAnnotator();
     else if (action === "refresh") await refreshRoom();
     else if (action === "copy-code") await copyCode();
