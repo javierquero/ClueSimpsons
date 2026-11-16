@@ -136,7 +136,7 @@
     }
   }
 
-  function activateOnlineAnnotator(room) {
+  function activateOnlineAnnotator(room, options = {}) {
     const localOrder = localPlayerOrder(room);
     if (!localOrder.length || !state.session?.playerId) return;
     const key = onlineAnnotationStorageKey();
@@ -192,7 +192,7 @@
     if (!gameState.handLocked) gameState.myCardsCount = state.expectedHandCount;
     renderAll();
     updateGuessButton();
-    if (!gameState.handLocked && Array.isArray(room.private?.ownCards) && room.private.ownCards.length) {
+    if (!options.skipHandRestore && !gameState.handLocked && Array.isArray(room.private?.ownCards) && room.private.ownCards.length) {
       restoreOwnHandFromServer(room.private.ownCards);
     }
     persistOnlineAnnotation();
@@ -431,6 +431,40 @@
       '</section>';
   }
 
+
+  const ONLINE_CARD_IMAGES = {
+    "Asilo Springfield": "AsiloSpringfield.png",
+    "Coronel Mostaza": "Mostaza.png",
+    "Profesor Moradillo": "Moradillo.png",
+    "Sr. Verdi": "Verdi.png",
+    "Sra. Azulino": "Azulino.png",
+    "Srita. Escarlata": "Escarlata.png",
+    "Sra. Blanco": "Blanco.png",
+    "Bolerama": "Bolerama.png",
+    "El Calabozo del Androide": "ElCalabozodelAndroide.png",
+    "Casa de los Simpsons": "CasadelosSimpsons.png",
+    "Estudios Krustylu": "EstudiosKrustilu.png",
+    "El Holandés Frito": "ELHolandesFrito.png",
+    "Kwik-E-Mart": "KwikEMart.png",
+    "Mansión Burns": "MansionBurns.png",
+    "Planta Nuclear": "PlantaNuclear.png",
+    "Collar": "Collar.png",
+    "Barra de Plutonio": "BarradePlutonio.png",
+    "Honda": "Honda.png",
+    "Saxofón": "Saxofon.png",
+    "Guante extensible": "GuanteExtensible.png",
+    "Dona envenenada": "DonaEnvenenada.png"
+  };
+
+  function cardImageMarkup(card, hidden = false) {
+    if (hidden) {
+      return '<span class="online-hidden-card"><img src="Cartas/Dorso.png" alt="Carta oculta"><b>?</b></span>';
+    }
+    const filename = ONLINE_CARD_IMAGES[card];
+    if (!filename) return '<span class="online-card-fallback">' + escapeHtml(card) + '</span>';
+    return '<span class="online-revealed-card"><img src="Cartas/' + filename + '" alt="' + escapeHtml(card) + '"></span>';
+  }
+
   function renderHandPanel(room, me) {
     if (!me || room.status !== "lobby") return "";
     if (me.handSubmitted && !state.editingHand) {
@@ -535,7 +569,7 @@
       const responseRows = suggestion.responses.map(response => {
         const status = response.type === "none"
           ? '<span class="online-response-none">No tiene ninguna</span>'
-          : '<span class="online-card-back" aria-label="Carta oculta">?</span><span class="online-response-shown">Mostró una carta</span>';
+          : cardImageMarkup('', true) + '<span class="online-response-shown">Mostró una carta</span>';
         return '<div class="online-response-row"><strong>' + escapeHtml(response.playerName) + '</strong>' + status + '</div>';
       }).join("");
       const responder = room.players.find(player => player.id === suggestion.currentResponderId);
@@ -545,10 +579,10 @@
         result = '<div class="online-suggestion-result">Ningún jugador tenía alguna de las tres cartas.</div>';
       } else if (suggestion.completed && suggestion.outcome === "shown") {
         if (suggestion.byPlayerId === localPlayerId && room.private?.shownCard) {
-          result = '<div class="online-suggestion-result online-private-result"><span>Te mostraron esta carta</span><strong>' +
-            escapeHtml(room.private.shownCard) + '</strong></div>';
+          result = '<div class="online-suggestion-result online-private-result"><span>Te mostraron esta carta</span>' +
+            cardImageMarkup(room.private.shownCard, false) + '<strong>' + escapeHtml(room.private.shownCard) + '</strong></div>';
         } else {
-          result = '<div class="online-suggestion-result"><span class="online-card-back" aria-label="Carta oculta">?</span>' +
+          result = '<div class="online-suggestion-result"><span>' + cardImageMarkup('', true) + '</span>' +
             '<strong>' + escapeHtml(shown?.playerName || "Un jugador") + ' mostró una carta</strong></div>';
         }
       }
@@ -856,7 +890,7 @@
         body: { cards: selected }
       });
       state.room = data.room;
-      if (!state.annotatorActive) activateOnlineAnnotator(state.room);
+      activateOnlineAnnotator(state.room, { skipHandRestore: true });
       // Si estábamos corrigiendo la mano antes de iniciar, reiniciamos solo el
       // tablero nuevo online y aplicamos otra vez el mecanismo original de v72.
       if (gameState.handLocked) {
@@ -864,6 +898,10 @@
         gameState.envelope = { suspect: "", weapon: "", place: "" };
         gameState.history = [];
         gameState.handLocked = false;
+        // Los deshacer/rehacer de la mano anterior no deben restaurar una
+        // distribución que ya fue reemplazada en el servidor.
+        undoStack = [];
+        redoStack = [];
       }
       gameState.myCardsCount = selected.length;
       window.openMyHandModal();
