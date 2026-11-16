@@ -565,6 +565,8 @@
           const payload = JSON.parse(event.data);
           if (payload.type === "room.snapshot" && payload.room) {
             state.room = payload.room;
+            activateOnlineAnnotator(state.room);
+            applyCompletedSuggestion(state.room);
             if (state.open && state.screen === "room") render();
           }
         } catch {}
@@ -597,6 +599,8 @@
       state.room = data.room;
       state.screen = "room";
       state.error = "";
+      activateOnlineAnnotator(state.room);
+      applyCompletedSuggestion(state.room);
       render();
       connectSocket();
       return true;
@@ -618,6 +622,7 @@
   }
 
   function closePanel() {
+    deactivateOnlineAnnotator();
     state.open = false;
     panel.classList.add("hidden");
     document.body.classList.remove("online-panel-open");
@@ -741,7 +746,9 @@
         playerId: data.playerId, playerToken: data.playerToken, playerName: state.joinName
       };
       saveSession(); state.room = data.room; state.screen = "room"; state.busy = false; state.error = "";
-      render(); connectSocket();
+      render();
+      await refreshRoom(false);
+      connectSocket();
     } catch (error) { state.busy = false; setError(error.message); }
   }
 
@@ -759,7 +766,11 @@
   async function refreshRoom(reconnect = true) {
     try {
       const data = await api("/api/rooms/" + state.session.code);
-      state.room = data.room; state.error = ""; render();
+      state.room = data.room;
+      activateOnlineAnnotator(state.room);
+      applyCompletedSuggestion(state.room);
+      state.error = "";
+      render();
       if (reconnect) connectSocket();
     } catch (error) { setError(error.message); }
   }
@@ -771,7 +782,9 @@
       const data = await api("/api/rooms/" + state.session.code + "/start", {
         method: "POST", host: true, body: { firstPlayerId }
       });
-      state.room = data.room; state.busy = false; state.screen = "room"; render();
+      state.room = data.room; state.busy = false; state.screen = "room";
+      await refreshRoom(false);
+      render();
     } catch (error) { state.busy = false; setError(error.message); }
   }
 
@@ -807,6 +820,11 @@
     } else if (action === "join-confirm") await joinRoom();
     else if (action === "resume") await restoreSession();
     else if (action === "start") await startGame();
+    else if (action === "submit-hand") await submitHand();
+    else if (action === "make-suggestion") await submitSuggestion();
+    else if (action === "respond-none") await submitResponse("none");
+    else if (action === "respond-card") await submitResponse(state.responseChoice);
+    else if (action === "show-annotator") closePanel();
     else if (action === "refresh") await refreshRoom();
     else if (action === "copy-code") await copyCode();
   });
@@ -816,6 +834,13 @@
     if (target.dataset.action === "host-seat") await changeSeat(target.dataset.playerId, target.value, true);
     else if (target.dataset.action === "self-seat") await changeSeat(state.session.playerId, target.value, false);
     else if (target.id === "online-first-player") state.selectedFirst = target.value;
+    else if (target.hasAttribute("data-online-card")) {
+      state.handSelection = [...content.querySelectorAll("[data-online-card]:checked")].map(input => input.value);
+      render();
+    } else if (target.name === "online-response-card") {
+      state.responseChoice = target.value;
+      render();
+    }
   });
 
   content.addEventListener("input", event => {
