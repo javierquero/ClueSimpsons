@@ -483,6 +483,8 @@
     const me = room.players.find(player => player.id === state.session?.playerId);
     const players = sortedPlayers();
     const handsReady = players.length >= 3 && players.every(player => player.handSubmitted);
+    const totalHandCards = players.reduce((sum, player) => sum + (player.handCount || 0), 0);
+    const handsValid = handsReady && totalHandCards === 18;
     const seatsLocked = room.status !== "lobby" || room.rosterLocked;
 
     const seats = Array.from({ length: MAX_SEATS }, (_, index) => {
@@ -515,7 +517,7 @@
       : "";
 
     const canStart = players.length >= 3 && players.length <= 6 &&
-      players.every(player => Number.isInteger(player.seat)) && handsReady;
+      players.every(player => Number.isInteger(player.seat)) && handsValid;
     const firstControl = isHost && room.status === "lobby"
       ? '<div class="online-start-controls"><label class="online-label" for="online-first-player">¿Quién comienza?</label>' +
         '<select id="online-first-player" class="online-input"><option value="random" ' +
@@ -525,7 +527,9 @@
         '<button class="online-button online-button-primary online-full-button" data-action="start" ' +
         (canStart && !state.busy ? "" : "disabled") + '>' + (state.busy ? "Iniciando…" : "Iniciar partida") + '</button>' +
         '<p class="online-muted">' + (players.length < 3 ? "Se necesitan al menos 3 jugadores." :
-          !handsReady ? "Todos los jugadores deben cargar y confirmar sus cartas." : "Al iniciar, los asientos quedan bloqueados.") + '</p></div>'
+          !handsReady ? "Todos los jugadores deben cargar y confirmar sus cartas." :
+          totalHandCards !== 18 ? "La mesa tiene " + totalHandCards + " de 18 cartas cargadas. Corrijan la cantidad de cartas antes de iniciar." :
+          "Distribución completa. Al iniciar, la partida comienza.") + '</p></div>'
       : "";
 
     const joinAsPlayer = isHost && !me && room.status === "lobby"
