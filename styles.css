@@ -336,3 +336,32 @@
     margin: 0;
   }
 }
+
+
+/* v68: los paneles abiertos desde la barra deben quedar por encima
+   de la propia barra en navegadores móviles. */
+@media (max-width: 767px) and (display-mode: browser) {
+  body > .bottom-sheet {
+    z-index: 120 !important;
+    isolation: isolate;
+  }
+
+  body > .bottom-sheet.confirmation-sheet {
+    z-index: 130 !important;
+  }
+
+  body > .bottom-sheet > .bottom-sheet-inner {
+    position: relative;
+    z-index: 1;
+    max-height: 85dvh;
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px));
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body > #bottom-nav {
+    z-index: 100 !important;
+  }
+}
