@@ -576,7 +576,7 @@
   }
 
   async function connectSocket() {
-    if (!state.session || !state.open) return;
+    if (!state.session || (!state.open && !state.annotatorActive)) return;
     if (state.socket) { try { state.socket.close(); } catch {} state.socket = null; }
     try {
       const ticketData = await api("/api/rooms/" + state.session.code + "/socket-ticket", { method: "POST", token: authToken() });
@@ -595,7 +595,7 @@
         } catch {}
       };
       socket.onclose = () => {
-        if (!state.open || !state.session || state.socket !== socket) return;
+        if (!state.session || state.socket !== socket) return;
         if (state.reconnectTimer) clearTimeout(state.reconnectTimer);
         state.reconnectTimer = setTimeout(connectSocket, 3500);
       };
@@ -642,6 +642,13 @@
     const restored = await restoreSession();
     if (!restored) { state.screen = "home"; render(); }
     closeButton?.focus();
+  }
+
+  function hidePanelForAnnotator() {
+    state.open = false;
+    panel.classList.add("hidden");
+    document.body.classList.remove("online-panel-open");
+    // La conexión queda activa para actualizar el anotador en segundo plano.
   }
 
   function closePanel() {
@@ -861,7 +868,7 @@
     } else if (action === "make-suggestion") await submitSuggestion();
     else if (action === "respond-none") await submitResponse("none");
     else if (action === "respond-card") await submitResponse(state.responseChoice);
-    else if (action === "show-annotator") closePanel();
+    else if (action === "show-annotator") hidePanelForAnnotator();
     else if (action === "refresh") await refreshRoom();
     else if (action === "copy-code") await copyCode();
   });
