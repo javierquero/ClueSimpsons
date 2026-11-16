@@ -338,7 +338,7 @@
 
   function notifyPlayer(room) {
     const me = room?.players?.find(player => player.id === state.session?.playerId);
-    if (!me || room.status !== "playing") return;
+    if (!me || room.status !== "playing" || room.paused) return;
     const suggestion = room.suggestion;
     let key = "";
     let body = "";
@@ -485,13 +485,14 @@
   }
 
   function renderSuggestionPanel(room, me) {
-    if (room.status !== "playing" || !me) return "";
+    if (room.status !== "playing") return "";
+    const localPlayerId = state.session?.playerId || null;
     const suggestion = room.suggestion;
     if (suggestion && state.responseTargetId !== suggestion.currentResponderId) {
       state.responseChoice = "";
       state.responseTargetId = suggestion.currentResponderId;
     }
-    const myTurn = room.turnPlayerId === me.id;
+    const myTurn = Boolean(localPlayerId && room.turnPlayerId === localPlayerId);
     let output = "";
 
     if (suggestion) {
@@ -507,7 +508,7 @@
       if (suggestion.completed && suggestion.outcome === "nobody") {
         result = '<div class="online-suggestion-result">Ningún jugador tenía alguna de las tres cartas.</div>';
       } else if (suggestion.completed && suggestion.outcome === "shown") {
-        if (suggestion.byPlayerId === me.id && room.private?.shownCard) {
+        if (suggestion.byPlayerId === localPlayerId && room.private?.shownCard) {
           result = '<div class="online-suggestion-result online-private-result"><span>Te mostraron esta carta</span><strong>' +
             escapeHtml(room.private.shownCard) + '</strong></div>';
         } else {
@@ -517,7 +518,7 @@
       }
 
       let responseControl = "";
-      if (!suggestion.completed && suggestion.currentResponderId === me.id) {
+      if (!room.paused && !suggestion.completed && suggestion.currentResponderId === localPlayerId && localPlayerId) {
         const matching = Array.isArray(room.private?.matchingCards) ? room.private.matchingCards : [];
         if (!matching.length) {
           responseControl = '<div class="online-response-control"><p>Revisaste tus cartas y no tenés ninguna de las tres.</p>' +
@@ -531,7 +532,7 @@
             ).join("") + '</div><button class="online-button online-button-primary online-full-button" data-action="respond-card" ' +
             (state.responseChoice && matching.includes(state.responseChoice) && !state.busy ? "" : "disabled") + '>Mostrar carta seleccionada</button></div>';
         }
-      } else if (!suggestion.completed && suggestion.byPlayerId === me.id) {
+      } else if (!room.paused && !suggestion.completed && suggestion.byPlayerId === localPlayerId && localPlayerId) {
         responseControl = '<p class="online-waiting-note">Esperando respuesta de <strong>' +
           escapeHtml(responder?.name || "el siguiente jugador") + '</strong>.</p>';
       }
@@ -546,7 +547,9 @@
         responseControl + result + '</section>';
     }
 
-    if (myTurn) {
+    if (room.paused) {
+      output += '<div class="online-paused-banner">Partida pausada por el organizador. No se puede responder ni avanzar hasta que se reanude.</div>';
+    } else if (myTurn) {
       output += renderSuggestionComposer();
     } else if (!suggestion || suggestion.completed) {
       const current = room.players.find(player => player.id === room.turnPlayerId);
@@ -616,6 +619,10 @@
 
     const handPanel = renderHandPanel(room, me);
     const suggestionPanel = renderSuggestionPanel(room, me);
+    const pauseControl = isHost && room.status === "playing"
+      ? '<button class="online-button ' + (room.paused ? "online-button-primary" : "online-button-light") +
+        '" data-action="toggle-pause">' + (room.paused ? "Reanudar partida" : "Pausar partida") + '</button>'
+      : "";
     const notificationState = notificationPermissionState();
     const notificationControl = notificationState === "granted"
       ? '<p class="online-notification-ready">Notificaciones del sistema activadas en este dispositivo.</p>'
@@ -644,7 +651,7 @@
       '<p class="online-muted">Organiza ' + escapeHtml(room.hostName) + ' · ' + players.length + '/6 jugadores · Código para compartir</p>' +
       (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">La mesa quedó cerrada: ya comenzó la carga de cartas y no se pueden mover los asientos.</p>' : "") +
       '<div class="online-seat-grid online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer +
-      handPanel + firstControl + turnPanel + suggestionPanel + notificationControl +
+      handPanel + firstControl + turnPanel + pauseControl + suggestionPanel + notificationControl +
       '<div class="online-actions online-room-actions"><button class="online-button online-button-light" data-action="refresh">Actualizar sala</button>' +
       '<button class="online-button online-button-secondary" data-action="show-annotator">Ver anotador</button>' +
       '<button class="online-button online-button-light" data-action="home">Salir de esta vista</button></div></section>';
@@ -920,6 +927,25 @@
     } catch (error) { state.busy = false; setError(error.message); }
   }
 
+  async function togglePause() {
+    const paused = !state.room?.paused;
+    state.busy = true;
+    state.error = "";
+    render();
+    try {
+      await api("/api/rooms/" + state.session.code + "/pause", {
+        method: "POST",
+        host: true,
+        body: { paused }
+      });
+      state.busy = false;
+      await refreshRoom(false);
+    } catch (error) {
+      state.busy = false;
+      setError(error.message);
+    }
+  }
+
   async function copyCode() {
     try {
       await navigator.clipboard.writeText(state.room.code);
@@ -952,6 +978,7 @@
     } else if (action === "join-confirm") await joinRoom();
     else if (action === "resume") await restoreSession();
     else if (action === "start") await startGame();
+    else if (action === "toggle-pause") await togglePause();
     else if (action === "submit-hand") await submitHand();
     else if (action === "enable-notifications") await enableNotifications();
     else if (action === "edit-hand") {
