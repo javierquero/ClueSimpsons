@@ -233,13 +233,21 @@
     /* La barra inferior ocupa su propio espacio en el flujo; no se reserva altura estimada. */
   }
 
-  #bottom-nav {
+  body > #bottom-nav {
     box-sizing: border-box;
-    height: auto;
-    min-height: 0;
+    display: flex !important;
+    visibility: visible !important;
     position: relative;
-    flex: 0 0 auto;
+    width: 100%;
+    height: 51px;
+    min-height: 51px;
+    flex: 0 0 51px;
+    margin: 0;
+    order: 2;
   }
+
+  body > main { order: 1; }
+  body > .app-header { order: 0; }
 
   #desktop-layout,
   #desktop-layout > div {
