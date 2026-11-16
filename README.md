@@ -2,7 +2,7 @@
   Anotador Clue: Los Simpson 
 </h1>
 
-<p align="center"><strong>Versión actual: v73</strong></p>
+<p align="center"><strong>Versión actual: v74</strong></p>
 
 Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para jugar sin papel ni lápiz. Funciona en el navegador o instalada como app y el modo convencional sigue funcionando sin conexión; el modo interactivo requiere Internet.
 
