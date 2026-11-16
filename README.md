@@ -2,9 +2,9 @@
   Anotador Clue: Los Simpson 
 </h1>
 
-<p align="center"><strong>Versión actual: v58</strong></p>
+<p align="center"><strong>Versión actual: v73</strong></p>
 
-Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para jugar sin papel ni lápiz. Funciona en el navegador o instalada como app y no necesita conexión a Internet durante el juego.
+Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para jugar sin papel ni lápiz. Funciona en el navegador o instalada como app y el modo convencional sigue funcionando sin conexión; el modo interactivo requiere Internet.
 
 🔗 **Online:** [javierquero.github.io/ClueSimpsons](https://javierquero.github.io/ClueSimpsons/)
 
@@ -25,6 +25,7 @@ Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para
 - **Deshacer y Rehacer**: permite recorrer las últimas acciones, incluso después de refrescar la página.
 - **Soporte de 3 a 6 jugadores** con nombres editables directamente en la tabla.
 - **Reglas del juego** integradas en la app.
+- **Modo interactivo inicial (v73)**: creación de salas, ingreso con código, elección de asientos, cambios por el organizador y selección manual o aleatoria de quién comienza. La mecánica de suposiciones y el marcado automático del anotador existente permanecen reservados para la siguiente etapa de integración.
 - **Guía rápida inicial**: explica los gestos la primera vez y puede volver a abrirse desde Reglas.
 - **PWA instalable, offline y con actualización automática**: precarga los recursos y aplica las versiones nuevas al abrir o volver a la app.
 - **Accesibilidad**: admite zoom, teclado, foco visible, movimiento reducido y descripciones de cartas, jugadores y estados para lectores de pantalla.
@@ -86,6 +87,9 @@ ClueSimpsons/
 ├── tailwind.config.js         # Configuración de Tailwind
 ├── styles.css                 # Diseño y animaciones
 ├── js/app.js                  # Lógica, estado y renderizado
+├── js/online.js               # Interfaz del modo de salas online
+├── online/worker.js           # API y Durable Object de partidas
+├── online/wrangler.jsonc      # Configuración Cloudflare
 ├── tests/test_app.py           # Pruebas automáticas con Playwright
 ├── manifest.json               # Manifiesto PWA
 ├── sw.js                       # Service Worker (caché offline)
@@ -119,7 +123,8 @@ Para desplegarlo en GitHub Pages, pusheá los archivos a la rama principal del r
 
 - HTML5 + CSS3 + JavaScript vanilla
 - [Tailwind CSS](https://tailwindcss.com/) compilado y reducido localmente
-- `localStorage` para persistencia del estado
+- `localStorage` para persistencia del estado y sesión de sala
+- Cloudflare Worker + Durable Objects + WebSockets para salas en tiempo real
 - Web Audio API para el sonido de caso resuelto
 - Web Speech API para síntesis de voz al resolver el caso
 - Service Worker para funcionamiento offline
