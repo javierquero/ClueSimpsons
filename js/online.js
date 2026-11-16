@@ -296,9 +296,11 @@
       const data = await api("/api/rooms/" + state.joinCode + "/join", {
         method: "POST", token: "", body: { name: state.joinName, seat: state.selectedSeat }
       });
+      const retainedOrganizerToken = state.session?.code === state.joinCode ? state.session.organizerToken : null;
+      const retainedHostName = state.session?.code === state.joinCode ? state.session.hostName : null;
       state.session = {
-        code: state.joinCode, organizerToken: null, playerId: data.playerId,
-        playerToken: data.playerToken, playerName: state.joinName
+        code: state.joinCode, organizerToken: retainedOrganizerToken, hostName: retainedHostName,
+        playerId: data.playerId, playerToken: data.playerToken, playerName: state.joinName
       };
       saveSession(); state.room = data.room; state.screen = "room"; state.busy = false; state.error = "";
       render(); connectSocket();
