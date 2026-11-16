@@ -987,4 +987,7 @@
   document.addEventListener("keydown", event => { if (event.key === "Escape" && state.open) closePanel(); });
   window.openOnlinePanel = openPanel;
   window.closeOnlinePanel = closePanel;
+  if (new URLSearchParams(window.location.search).get("online") === "1") {
+    window.addEventListener("DOMContentLoaded", () => openPanel(), { once: true });
+  }
 })();
