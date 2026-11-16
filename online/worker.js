@@ -190,6 +190,7 @@ export class GameRoom extends DurableObject {
       players,
       firstPlayerId: room.firstPlayerId,
       turnPlayerId: room.turnPlayerId,
+      nextTurnPlayerId: room.turnPlayerId ? this.nextEligiblePlayerId(room, room.turnPlayerId) : null,
       suggestion: room.suggestion ? {
         id: room.suggestion.id,
         byPlayerId: room.suggestion.byPlayerId,
@@ -370,7 +371,7 @@ export class GameRoom extends DurableObject {
     }
 
     if (path.endsWith("/seat") && (method === "PATCH" || method === "POST")) {
-      if (room.status !== "lobby" || room.rosterLocked) return json({ error: "Los asientos quedan bloqueados cuando comienza la carga de cartas." }, 409);
+      if (room.status !== "lobby") return json({ error: "Los asientos quedan bloqueados cuando comienza la partida." }, 409);
       let body;
       try { body = await readJson(request); }
       catch (error) { return json({ error: error.message }, 400); }
