@@ -12,7 +12,10 @@
   const state = {
     screen: "home", session: null, room: null, joinLookup: null,
     joinCode: "", joinName: "", selectedSeat: null, selectedFirst: "random",
-    error: "", busy: false, socket: null, reconnectTimer: null, open: false
+    error: "", busy: false, socket: null, reconnectTimer: null, open: false,
+    handSelection: [], responseChoice: "", expectedHandCount: 0,
+    annotatorActive: false, conventionalSnapshot: null, onlineAnnotationKey: "",
+    originalSaveState: null, originalSaveActionStacks: null, historyWrapperInstalled: false
   };
 
   function escapeHtml(value) {
@@ -58,6 +61,242 @@
   function setError(message) { state.error = message || ""; render(); }
   function sortedPlayers() {
     return [...(state.room?.players || [])].sort((a, b) => (a.seat || 99) - (b.seat || 99));
+  }
+
+
+  function localPlayerOrder(room = state.room) {
+    if (!room || !state.session?.playerId) return [];
+    const ordered = [...room.players].sort((a, b) => a.seat - b.seat);
+    const index = ordered.findIndex(player => player.id === state.session.playerId);
+    if (index < 0) return [];
+    return [...ordered.slice(index), ...ordered.slice(0, index)];
+  }
+
+  function expectedHandCount(room = state.room) {
+    const ordered = [...(room?.players || [])].sort((a, b) => a.seat - b.seat);
+    const absoluteIndex = ordered.findIndex(player => player.id === state.session?.playerId);
+    if (absoluteIndex < 0 || !ordered.length) return 0;
+    const base = Math.floor(18 / ordered.length);
+    const remainder = 18 % ordered.length;
+    return base + (absoluteIndex < remainder ? 1 : 0);
+  }
+
+  function onlineAnnotationStorageKey() {
+    return "clue_online_annotation_" + state.session.code + "_" + state.session.playerId;
+  }
+
+  function persistOnlineAnnotation() {
+    if (!state.annotatorActive || !state.session?.playerId) return false;
+    try {
+      const payload = {
+        gameState,
+        guessSelection,
+        undoStack,
+        redoStack
+      };
+      localStorage.setItem(state.onlineAnnotationKey, JSON.stringify(payload));
+      return true;
+    } catch (error) {
+      console.warn("No se pudo guardar el anotador online:", error);
+      return false;
+    }
+  }
+
+  function installOnlineAnnotationWrappers() {
+    if (state.originalSaveState === null && typeof window.saveState === "function") {
+      state.originalSaveState = window.saveState;
+      window.saveState = function(...args) {
+        return state.annotatorActive
+          ? persistOnlineAnnotation()
+          : state.originalSaveState.apply(this, args);
+      };
+    }
+    if (state.originalSaveActionStacks === null && typeof window.saveActionStacks === "function") {
+      state.originalSaveActionStacks = window.saveActionStacks;
+      window.saveActionStacks = function(...args) {
+        if (!state.annotatorActive) return state.originalSaveActionStacks.apply(this, args);
+        persistOnlineAnnotation();
+        if (typeof window.updateUndoButtons === "function") window.updateUndoButtons();
+      };
+    }
+    if (!state.historyWrapperInstalled && typeof window.historyItemsHtml === "function") {
+      const original = window.historyItemsHtml;
+      window.historyItemsHtml = function(...args) {
+        return original.apply(this, args).replace(
+          /mostró <b class="text-emerald-700">\\?<\\/b>/g,
+          "mostró una carta (oculta)"
+        );
+      };
+      state.historyWrapperInstalled = true;
+    }
+  }
+
+  function activateOnlineAnnotator(room) {
+    const localOrder = localPlayerOrder(room);
+    if (!localOrder.length || !state.session?.playerId) return;
+    const key = onlineAnnotationStorageKey();
+    const signature = localOrder.map(player => player.id).join("|");
+
+    if (!state.annotatorActive) {
+      state.conventionalSnapshot = {
+        gameState,
+        guessSelection,
+        undoStack,
+        redoStack
+      };
+      state.onlineAnnotationKey = key;
+      state.expectedHandCount = expectedHandCount(room);
+
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(key) || "null"); } catch {}
+      if (saved?.gameState && Array.isArray(saved.gameState.players)) {
+        gameState = saved.gameState;
+        guessSelection = saved.guessSelection || { suspect: "", weapon: "", place: "" };
+        undoStack = Array.isArray(saved.undoStack) ? saved.undoStack : [];
+        redoStack = Array.isArray(saved.redoStack) ? saved.redoStack : [];
+      } else {
+        gameState = createDefaultGameState();
+        gameState.started = true;
+        gameState.handLocked = false;
+        gameState.myCardsCount = state.expectedHandCount;
+        gameState.players = localOrder.map(player => player.name);
+        gameState.matrix = {};
+        gameState.envelope = { suspect: "", weapon: "", place: "" };
+        gameState.history = [];
+        guessSelection = { suspect: "", weapon: "", place: "" };
+        undoStack = [];
+        redoStack = [];
+      }
+      state.annotatorActive = true;
+      installOnlineAnnotationWrappers();
+    } else {
+      state.expectedHandCount = expectedHandCount(room);
+      if (!room.rosterLocked && !gameState.handLocked) {
+        gameState.players = localOrder.map(player => player.name);
+        gameState.myCardsCount = state.expectedHandCount;
+      }
+    }
+
+    if (gameState.players.length !== localOrder.length ||
+        gameState.players.some((name, index) => name !== localOrder[index].name)) {
+      gameState.players = localOrder.map(player => player.name);
+    }
+    gameState.started = true;
+    if (!gameState.handLocked) gameState.myCardsCount = state.expectedHandCount;
+    renderAll();
+    updateGuessButton();
+    if (!gameState.handLocked && Array.isArray(room.private?.ownCards) && room.private.ownCards.length) {
+      restoreOwnHandFromServer(room.private.ownCards);
+    }
+    persistOnlineAnnotation();
+  }
+
+  function restoreOwnHandFromServer(cards) {
+    if (gameState.handLocked || !Array.isArray(cards) || !cards.length) return;
+    try {
+      window.openMyHandModal();
+      const inputs = document.querySelectorAll('#myhand-options input[name="myhand-card"]');
+      inputs.forEach(input => { input.checked = cards.includes(input.value); });
+      window.saveMyHand();
+      state.handSelection = [];
+    } catch (error) {
+      console.warn("No se pudo restaurar la mano privada en el anotador:", error);
+    }
+  }
+
+  function deactivateOnlineAnnotator() {
+    if (!state.annotatorActive) return;
+    persistOnlineAnnotation();
+    const saved = state.conventionalSnapshot;
+    if (saved) {
+      gameState = saved.gameState;
+      guessSelection = saved.guessSelection;
+      undoStack = saved.undoStack;
+      redoStack = saved.redoStack;
+    }
+    state.conventionalSnapshot = null;
+    state.annotatorActive = false;
+    renderAll();
+    updateGuessButton();
+    if (typeof window.updateUndoButtons === "function") window.updateUndoButtons();
+  }
+
+  function markSuggestionAsProcessed(suggestionId) {
+    const key = "clue_online_processed_" + state.session.code + "_" + state.session.playerId;
+    let processed = [];
+    try { processed = JSON.parse(localStorage.getItem(key) || "[]"); } catch {}
+    if (!Array.isArray(processed)) processed = [];
+    if (processed.includes(suggestionId)) return false;
+    processed.push(suggestionId);
+    localStorage.setItem(key, JSON.stringify(processed.slice(-100)));
+    return true;
+  }
+
+  function hasProcessedSuggestion(suggestionId) {
+    const key = "clue_online_processed_" + state.session.code + "_" + state.session.playerId;
+    try {
+      const processed = JSON.parse(localStorage.getItem(key) || "[]");
+      return Array.isArray(processed) && processed.includes(suggestionId);
+    } catch { return false; }
+  }
+
+  function applyCompletedSuggestion(room) {
+    const suggestion = room?.suggestion;
+    if (!state.annotatorActive || !suggestion?.completed || !suggestion.id ||
+        hasProcessedSuggestion(suggestion.id)) return;
+
+    const localOrder = localPlayerOrder(room);
+    if (!localOrder.length) return;
+    gameState.players = localOrder.map(player => player.name);
+    const localIsSuggester = suggestion.byPlayerId === state.session.playerId;
+    const shownResponse = suggestion.responses.find(response => response.type === "shown");
+    const actualCard = localIsSuggester ? room.private?.shownCard : "";
+
+    const suspectInput = document.getElementById("guess-suspect");
+    const weaponInput = document.getElementById("guess-weapon");
+    const placeInput = document.getElementById("guess-place");
+    if (!suspectInput || !weaponInput || !placeInput || typeof window.saveGuess !== "function") return;
+
+    suspectInput.value = suggestion.cards[0];
+    weaponInput.value = suggestion.cards[1];
+    placeInput.value = suggestion.cards[2];
+    window.renderGuessResponses();
+
+    const responseById = new Map(suggestion.responses.map(response => [response.playerId, response]));
+    localOrder.forEach((player, index) => {
+      if (index === 0) return;
+      const select = document.getElementById("card-shown-" + index);
+      if (!select) return;
+      const response = responseById.get(player.id);
+      if (!response) {
+        select.value = "passed";
+      } else if (response.type === "none") {
+        select.value = "none";
+      } else if (response.type === "shown") {
+        select.value = localIsSuggester && actualCard && shownResponse?.playerId === player.id
+          ? actualCard
+          : "passed";
+      }
+    });
+
+    try {
+      window.saveGuess();
+      const latest = gameState.history?.[0];
+      if (latest && shownResponse && !localIsSuggester) {
+        const response = latest.responses?.find(item =>
+          item.player === (localOrder.find(player => player.id === shownResponse.playerId)?.name || "")
+        );
+        if (response) {
+          response.type = "shown";
+          response.card = "?";
+        }
+        if (typeof window.renderHistory === "function") window.renderHistory();
+      }
+      markSuggestionAsProcessed(suggestion.id);
+      persistOnlineAnnotation();
+    } catch (error) {
+      console.error("No se pudo incorporar la suposición al anotador existente:", error);
+    }
   }
 
   function renderHome() {
