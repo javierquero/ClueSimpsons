@@ -676,13 +676,25 @@
     if (room.status === "playing") {
       const current = room.players.find(player => player.id === room.turnPlayerId);
       const currentIndex = players.findIndex(player => player.id === room.turnPlayerId);
-      const next = currentIndex >= 0 && players.length ? players[(currentIndex + 1) % players.length] : null;
       const responder = room.suggestion?.currentResponderId
         ? room.players.find(player => player.id === room.suggestion.currentResponderId)
         : null;
+      let next = null;
+      let nextLabel = "Próximo turno";
+      if (responder && room.suggestion?.responderOrder) {
+        const responderIndex = room.suggestion.responderOrder.indexOf(responder.id);
+        const nextResponderId = responderIndex >= 0
+          ? room.suggestion.responderOrder[responderIndex + 1]
+          : null;
+        next = nextResponderId ? room.players.find(player => player.id === nextResponderId) : null;
+        nextLabel = "Próximo en responder";
+      } else if (currentIndex >= 0 && players.length) {
+        const candidate = players[(currentIndex + 1) % players.length];
+        next = candidate?.id === room.turnPlayerId ? null : candidate;
+      }
       turnPanel = '<section class="online-turn-panel"><p class="online-eyebrow">INDICADOR DE TURNO</p>' +
         '<div class="online-turn-grid"><div class="online-turn-current"><span>Turno actual</span><strong>' +
-        escapeHtml(current?.name || "Sin definir") + '</strong></div><div><span>Próximo turno</span><strong>' +
+        escapeHtml(current?.name || "Sin definir") + '</strong></div><div><span>' + nextLabel + '</span><strong>' +
         escapeHtml(next?.name || "—") + '</strong></div><div><span>Debe responder</span><strong>' +
         escapeHtml(responder?.name || "Nadie") + '</strong></div></div></section>';
     }
