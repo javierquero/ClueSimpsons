@@ -18,7 +18,7 @@
     lastNotificationKey: "", accusationDraft: null, accusationConfirmOpen: false,
     annotatorActive: false, conventionalSnapshot: null, onlineAnnotationKey: "",
     originalSaveState: null, originalSaveActionStacks: null, historyWrapperInstalled: false,
-    originalOpenGuessModal: null
+    originalOpenGuessModal: null, annotationPlayerOrderIds: []
   };
 
   function escapeHtml(value) {
@@ -99,7 +99,8 @@
         gameState,
         guessSelection,
         undoStack,
-        redoStack
+        redoStack,
+        playerOrderIds: state.annotationPlayerOrderIds
       };
       localStorage.setItem(state.onlineAnnotationKey, JSON.stringify(payload));
       return true;
@@ -153,6 +154,45 @@
     }
   }
 
+  function syncOnlineAnnotationPlayerOrder(localOrder) {
+    const nextIds = localOrder.map(player => player.id);
+    const nextNames = localOrder.map(player => player.name);
+    const oldNames = Array.isArray(gameState.players) ? [...gameState.players] : [];
+    const oldIds = Array.isArray(state.annotationPlayerOrderIds) ? [...state.annotationPlayerOrderIds] : [];
+    let oldIndexes;
+
+    if (oldIds.length) {
+      const indexes = new Map(oldIds.map((id, index) => [id, index]));
+      oldIndexes = nextIds.map(id => indexes.has(id) ? indexes.get(id) : -1);
+    } else if (oldNames.length && new Set(oldNames).size === oldNames.length) {
+      // Compatibilidad con anotaciones creadas antes de guardar los ID de jugador.
+      const indexes = new Map(oldNames.map((name, index) => [name, index]));
+      oldIndexes = nextNames.map(name => indexes.has(name) ? indexes.get(name) : -1);
+    } else {
+      // Si no hay identidad recuperable, conserva las columnas existentes por posición.
+      oldIndexes = nextNames.map((_, index) => index < oldNames.length ? index : -1);
+    }
+
+    const orderChanged = nextIds.length !== oldIds.length || nextIds.some((id, index) => id !== oldIds[index]);
+    if (orderChanged) {
+      const remappedMatrix = {};
+      ALL_CARDS_FLAT.forEach(card => {
+        nextIds.forEach((_, newIndex) => {
+          const oldIndex = oldIndexes[newIndex];
+          if (oldIndex < 0) return;
+          const oldKey = card + "_" + oldIndex;
+          if (Object.prototype.hasOwnProperty.call(gameState.matrix, oldKey)) {
+            remappedMatrix[card + "_" + newIndex] = gameState.matrix[oldKey];
+          }
+        });
+      });
+      gameState.matrix = remappedMatrix;
+    }
+
+    gameState.players = nextNames;
+    state.annotationPlayerOrderIds = nextIds;
+  }
+
   function activateOnlineAnnotator(room, options = {}) {
     const localOrder = localPlayerOrder(room);
     if (!localOrder.length || !state.session?.playerId) return;
@@ -181,12 +221,14 @@
         guessSelection = saved.guessSelection || { suspect: "", weapon: "", place: "" };
         undoStack = Array.isArray(saved.undoStack) ? saved.undoStack : [];
         redoStack = Array.isArray(saved.redoStack) ? saved.redoStack : [];
+        state.annotationPlayerOrderIds = Array.isArray(saved.playerOrderIds) ? saved.playerOrderIds : [];
       } else {
         gameState = createDefaultGameState();
         gameState.started = true;
         gameState.handLocked = false;
         gameState.myCardsCount = state.handCountChoice || state.expectedHandCount;
         gameState.players = localOrder.map(player => player.name);
+        state.annotationPlayerOrderIds = localOrder.map(player => player.id);
         gameState.matrix = {};
         gameState.envelope = { suspect: "", weapon: "", place: "" };
         gameState.history = [];
@@ -199,15 +241,11 @@
     } else {
       state.expectedHandCount = expectedHandCount(room);
       if (!room.rosterLocked && !gameState.handLocked) {
-        gameState.players = localOrder.map(player => player.name);
         gameState.myCardsCount = state.handCountChoice || state.expectedHandCount;
       }
     }
 
-    if (gameState.players.length !== localOrder.length ||
-        gameState.players.some((name, index) => name !== localOrder[index].name)) {
-      gameState.players = localOrder.map(player => player.name);
-    }
+    syncOnlineAnnotationPlayerOrder(localOrder);
     gameState.started = true;
     if (!gameState.handLocked) gameState.myCardsCount = state.expectedHandCount;
     renderAll();
@@ -245,6 +283,7 @@
     }
     state.conventionalSnapshot = null;
     state.annotatorActive = false;
+    state.annotationPlayerOrderIds = [];
     renderAll();
     updateGuessButton();
     if (typeof window.updateUndoButtons === "function") window.updateUndoButtons();
