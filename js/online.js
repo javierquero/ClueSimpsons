@@ -895,6 +895,7 @@
     state.open = false;
     panel.classList.add("hidden");
     document.body.classList.remove("online-panel-open");
+    updateLiveIndicator(state.room);
     // La conexión queda activa para actualizar el anotador en segundo plano.
   }
 
