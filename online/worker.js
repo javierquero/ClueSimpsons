@@ -107,12 +107,12 @@ async function requestJson(request, url, env) {
     return withCors(json({ error: "No se pudo generar un código disponible. Intentá nuevamente." }, 503), origin);
   }
 
-  const match = path.match(/^\/api\/rooms\/(\d{6})(?:\/(join|seat|hand|start|pause|suggestions|responses|socket-ticket|ws))?$/);
+  const match = path.match(/^\/api\/rooms\/(\d{6})(?:\/(join|seat|hand|start|pause|suggestions|responses|accusations|socket-ticket|ws))?$/);
   if (!match) return withCors(json({ error: "Ruta no encontrada." }, 404), origin);
 
   const code = match[1];
   const action = match[2] || (request.method === "GET" ? "snapshot" : "");
-  if (!["snapshot", "join", "seat", "hand", "start", "pause", "suggestions", "responses", "socket-ticket", "ws"].includes(action)) {
+  if (!["snapshot", "join", "seat", "hand", "start", "pause", "suggestions", "responses", "accusations", "socket-ticket", "ws"].includes(action)) {
     return withCors(json({ error: "Operación no permitida." }, 405), origin);
   }
 
@@ -202,7 +202,13 @@ export class GameRoom extends DurableObject {
         completed: room.suggestion.completed,
         outcome: room.suggestion.outcome
       } : null,
-      startedAt: room.startedAt
+      startedAt: room.startedAt,
+      winnerId: room.status === "finished" ? room.winnerId : null,
+      winnerName: room.status === "finished" && room.winnerId
+        ? room.players.find(player => player.id === room.winnerId)?.name || null
+        : null,
+      finishReason: room.status === "finished" ? room.finishReason || null : null,
+      solution: room.status === "finished" ? room.solution || null : null
     };
   }
 
@@ -212,6 +218,10 @@ export class GameRoom extends DurableObject {
     const privateData = {};
     const hand = room.hands?.[actor.playerId] || [];
     if (hand.length) privateData.ownCards = hand;
+    privateData.canWin = !(room.ineligibleToWin || []).includes(actor.playerId);
+    if (room.privateAccusations?.[actor.playerId]) {
+      privateData.lastAccusation = room.privateAccusations[actor.playerId];
+    }
     if (room.suggestion && !room.suggestion.completed && room.suggestion.currentResponderId === actor.playerId) {
       privateData.matchingCards = room.suggestion.cards.filter(card => hand.includes(card));
       privateData.mustRespond = true;
@@ -242,6 +252,18 @@ export class GameRoom extends DurableObject {
     const index = ordered.findIndex(player => player.id === playerId);
     if (index < 0 || !ordered.length) return null;
     return ordered[(index + 1) % ordered.length].id;
+  }
+
+  nextEligiblePlayerId(room, playerId) {
+    const ordered = [...room.players].sort((a, b) => a.seat - b.seat);
+    const index = ordered.findIndex(player => player.id === playerId);
+    if (index < 0 || !ordered.length) return null;
+    const ineligible = new Set(room.ineligibleToWin || []);
+    for (let offset = 1; offset <= ordered.length; offset++) {
+      const candidate = ordered[(index + offset) % ordered.length];
+      if (!ineligible.has(candidate.id)) return candidate.id;
+    }
+    return null;
   }
 
   async fetch(request) {
@@ -380,6 +402,9 @@ export class GameRoom extends DurableObject {
       if (actor.role !== "player") return json({ error: "El organizador debe ingresar como jugador para hacer suposiciones." }, 403);
       if (room.status !== "playing") return json({ error: "La partida todavía no está iniciada." }, 409);
       if (room.paused) return json({ error: "La partida está pausada por el organizador." }, 409);
+      if ((room.ineligibleToWin || []).includes(actor.playerId)) {
+        return json({ error: "Ya no podés realizar suposiciones, pero seguís participando como respondedor." }, 403);
+      }
       if (room.turnPlayerId !== actor.playerId) return json({ error: "Todavía no es tu turno." }, 409);
       if (room.suggestion && !room.suggestion.completed) return json({ error: "Hay una suposición esperando respuestas." }, 409);
       let body;
@@ -415,6 +440,61 @@ export class GameRoom extends DurableObject {
       return json({ room: this.snapshotFor(room, actor) }, 201);
     }
 
+    if (path.endsWith("/accusations") && method === "POST") {
+      if (actor.role !== "player") return json({ error: "Solo los jugadores pueden acusar." }, 403);
+      if (room.status !== "playing") return json({ error: "La partida no está activa." }, 409);
+      if (room.paused) return json({ error: "La partida está pausada por el organizador." }, 409);
+      if ((room.ineligibleToWin || []).includes(actor.playerId)) {
+        return json({ error: "Ya perdiste la posibilidad de ganar con una acusación anterior." }, 403);
+      }
+      if (room.turnPlayerId !== actor.playerId) return json({ error: "Solo podés acusar durante tu turno." }, 409);
+      if (room.suggestion && !room.suggestion.completed) return json({ error: "Primero debe terminar la suposición pendiente." }, 409);
+      let body;
+      try { body = await readJson(request); }
+      catch (error) { return json({ error: error.message }, 400); }
+      const suspect = body.suspect;
+      const weapon = body.weapon;
+      const place = body.place;
+      if (!SUSPECT_CARDS.includes(suspect) || !WEAPON_CARDS.includes(weapon) || !PLACE_CARDS.includes(place)) {
+        return json({ error: "La acusación debe incluir un sospechoso, un arma y un lugar válidos." }, 400);
+      }
+      const correct = room.solution?.length === 3 &&
+        room.solution.includes(suspect) && room.solution.includes(weapon) && room.solution.includes(place);
+      const accusation = {
+        id: crypto.randomUUID(),
+        suspect,
+        weapon,
+        place,
+        correct,
+        createdAt: Date.now()
+      };
+      if (correct) {
+        room.status = "finished";
+        room.winnerId = actor.playerId;
+        room.finishReason = "correct-accusation";
+        room.winningAccusation = accusation;
+      } else {
+        room.ineligibleToWin = room.ineligibleToWin || [];
+        room.ineligibleToWin.push(actor.playerId);
+        room.privateAccusations = room.privateAccusations || {};
+        room.privateAccusations[actor.playerId] = {
+          id: accusation.id,
+          correct: false,
+          createdAt: accusation.createdAt,
+          message: "Acusación incorrecta. Ya no podés ganar, pero seguís respondiendo cuando te consulten."
+        };
+        room.turnPlayerId = this.nextEligiblePlayerId(room, actor.playerId);
+        if (!room.turnPlayerId) {
+          room.status = "finished";
+          room.finishReason = "no-eligible-players";
+        }
+      }
+      await this.saveRoom(room);
+      await this.broadcastSnapshot();
+      const currentActor = await this.actorFor(request, room);
+      return json({ room: this.snapshotFor(room, currentActor) });
+    }
+
     if (path.endsWith("/responses") && method === "POST") {
       if (actor.role !== "player") return json({ error: "Solo los jugadores pueden responder." }, 403);
       if (room.paused) return json({ error: "La partida está pausada por el organizador." }, 409);
@@ -437,7 +517,11 @@ export class GameRoom extends DurableObject {
           suggestion.currentResponderId = null;
           suggestion.outcome = "nobody";
           suggestion.completedAt = Date.now();
-          room.turnPlayerId = this.nextPlayerId(room, suggestion.byPlayerId);
+          room.turnPlayerId = this.nextEligiblePlayerId(room, suggestion.byPlayerId);
+          if (!room.turnPlayerId) {
+            room.status = "finished";
+            room.finishReason = "no-eligible-players";
+          }
         } else {
           suggestion.currentResponderId = suggestion.responderOrder[suggestion.responderIndex];
         }
@@ -451,7 +535,11 @@ export class GameRoom extends DurableObject {
         suggestion.completed = true;
         suggestion.outcome = "shown";
         suggestion.completedAt = Date.now();
-        room.turnPlayerId = this.nextPlayerId(room, suggestion.byPlayerId);
+        room.turnPlayerId = this.nextEligiblePlayerId(room, suggestion.byPlayerId);
+        if (!room.turnPlayerId) {
+          room.status = "finished";
+          room.finishReason = "no-eligible-players";
+        }
       }
       await this.saveRoom(room);
       await this.broadcastSnapshot();
@@ -474,6 +562,20 @@ export class GameRoom extends DurableObject {
       if (allCards.length !== 18 || new Set(allCards).size !== 18 || allCards.some(card => !ALL_GAME_CARDS.includes(card))) {
         return json({ error: "La distribución debe contener exactamente las 18 cartas sin repetir ninguna." }, 409);
       }
+      const solution = ALL_GAME_CARDS.filter(card => !allCards.includes(card));
+      const solutionByCategory = [
+        solution.filter(card => SUSPECT_CARDS.includes(card)),
+        solution.filter(card => WEAPON_CARDS.includes(card)),
+        solution.filter(card => PLACE_CARDS.includes(card))
+      ];
+      if (solution.length !== 3 || solutionByCategory.some(group => group.length !== 1)) {
+        return json({ error: "No se pudo determinar una solución válida. Revisen las cartas cargadas." }, 409);
+      }
+      room.solution = solution;
+      room.ineligibleToWin = [];
+      room.privateAccusations = {};
+      room.winnerId = null;
+      room.finishReason = null;
       let body;
       try { body = await readJson(request); }
       catch (error) { return json({ error: error.message }, 400); }
