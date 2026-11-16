@@ -348,18 +348,132 @@
       '</section>';
   }
 
+  function renderHandPanel(room, me) {
+    if (!me || room.status !== "lobby") return "";
+    if (me.handSubmitted) {
+      return '<section class="online-hand-panel"><p class="online-eyebrow">TUS CARTAS</p><strong>Mano confirmada</strong>' +
+        '<p class="online-muted">Tus cartas quedaron guardadas de forma privada. Los demás solo pueden ver que ya completaste la carga.</p></section>';
+    }
+    if (room.players.length < 3) {
+      return '<section class="online-hand-panel"><p class="online-eyebrow">CARGA DE CARTAS</p>' +
+        '<strong>Esperando al menos 3 jugadores</strong><p class="online-muted">Cuando estén todos sentados, vas a poder cargar tus cartas.</p></section>';
+    }
+    const count = state.expectedHandCount || expectedHandCount(room);
+    const groups = [
+      { title: "Sospechosos", cards: CARDS.suspects },
+      { title: "Armas", cards: CARDS.weapons },
+      { title: "Lugares", cards: CARDS.places }
+    ];
+    const choices = groups.map(group => '<div class="online-hand-category"><strong>' + group.title + '</strong><div class="online-hand-options">' +
+      group.cards.map(card => '<label><input type="checkbox" data-online-card value="' + escapeHtml(card) + '" ' +
+        (state.handSelection.includes(card) ? "checked" : "") + '><span>' + escapeHtml(card) + '</span></label>').join("") +
+      '</div></div>').join("");
+    return '<section class="online-hand-panel"><p class="online-eyebrow">CARGÁ TUS CARTAS</p><h4>Tu mano privada</h4>' +
+      '<p>Según tu asiento, te corresponden <strong>' + count + ' cartas</strong>. Solo vos vas a poder consultar cuáles cargaste.</p>' +
+      '<div class="online-hand-counter">' + state.handSelection.length + ' / ' + count + ' seleccionadas</div>' +
+      choices + '<button class="online-button online-button-primary online-full-button" data-action="submit-hand" ' +
+      (state.handSelection.length === count && !state.busy ? "" : "disabled") + '>' +
+      (state.busy ? "Guardando cartas…" : "Confirmar mi mano") + '</button>' +
+      '<p class="online-muted">La primera confirmación cierra la lista de participantes y bloquea los asientos para conservar la distribución.</p></section>';
+  }
+
+  function renderSuggestionComposer() {
+    const fields = [
+      { id: "online-suspect", label: "Sospechoso", cards: CARDS.suspects },
+      { id: "online-weapon", label: "Arma", cards: CARDS.weapons },
+      { id: "online-place", label: "Lugar", cards: CARDS.places }
+    ];
+    return '<section class="online-suggestion-composer"><p class="online-eyebrow">ES TU TURNO</p><h4>Hacer una suposición</h4>' +
+      fields.map(field => '<label class="online-label" for="' + field.id + '">' + field.label + '</label>' +
+        '<select id="' + field.id + '" class="online-input"><option value="">Elegir…</option>' +
+        field.cards.map(card => '<option value="' + escapeHtml(card) + '">' + escapeHtml(card) + '</option>').join("") +
+        '</select>').join("") +
+      '<button class="online-button online-button-primary online-full-button" data-action="make-suggestion" ' +
+      (state.busy ? "disabled" : "") + '>Enviar suposición</button>' +
+      '<p class="online-muted">Todos verán los tres elementos y el orden de respuestas. Las cartas que se muestren seguirán siendo privadas.</p></section>';
+  }
+
+  function renderSuggestionPanel(room, me) {
+    if (room.status !== "playing" || !me) return "";
+    const suggestion = room.suggestion;
+    const myTurn = room.turnPlayerId === me.id;
+    let output = "";
+
+    if (suggestion) {
+      const responseRows = suggestion.responses.map(response => {
+        const status = response.type === "none"
+          ? '<span class="online-response-none">No tiene ninguna</span>'
+          : '<span class="online-card-back" aria-label="Carta oculta">?</span><span class="online-response-shown">Mostró una carta</span>';
+        return '<div class="online-response-row"><strong>' + escapeHtml(response.playerName) + '</strong>' + status + '</div>';
+      }).join("");
+      const responder = room.players.find(player => player.id === suggestion.currentResponderId);
+      const shown = suggestion.responses.find(response => response.type === "shown");
+      let result = "";
+      if (suggestion.completed && suggestion.outcome === "nobody") {
+        result = '<div class="online-suggestion-result">Ningún jugador tenía alguna de las tres cartas.</div>';
+      } else if (suggestion.completed && suggestion.outcome === "shown") {
+        if (suggestion.byPlayerId === me.id && room.private?.shownCard) {
+          result = '<div class="online-suggestion-result online-private-result"><span>Te mostraron esta carta</span><strong>' +
+            escapeHtml(room.private.shownCard) + '</strong></div>';
+        } else {
+          result = '<div class="online-suggestion-result"><span class="online-card-back" aria-label="Carta oculta">?</span>' +
+            '<strong>' + escapeHtml(shown?.playerName || "Un jugador") + ' mostró una carta</strong></div>';
+        }
+      }
+
+      let responseControl = "";
+      if (!suggestion.completed && suggestion.currentResponderId === me.id) {
+        const matching = Array.isArray(room.private?.matchingCards) ? room.private.matchingCards : [];
+        if (!matching.length) {
+          responseControl = '<div class="online-response-control"><p>Revisaste tus cartas y no tenés ninguna de las tres.</p>' +
+            '<button class="online-button online-button-primary online-full-button" data-action="respond-none" ' +
+            (state.busy ? "disabled" : "") + '>Confirmar: no tengo ninguna</button></div>';
+        } else {
+          responseControl = '<div class="online-response-control"><p>Tenés más de una posibilidad? Elegí exactamente una carta para mostrar.</p>' +
+            '<div class="online-matching-cards">' + matching.map(card =>
+              '<label><input type="radio" name="online-response-card" value="' + escapeHtml(card) + '" ' +
+              (state.responseChoice === card ? "checked" : "") + '><span>' + escapeHtml(card) + '</span></label>'
+            ).join("") + '</div><button class="online-button online-button-primary online-full-button" data-action="respond-card" ' +
+            (state.responseChoice && matching.includes(state.responseChoice) && !state.busy ? "" : "disabled") + '>Mostrar carta seleccionada</button></div>';
+        }
+      } else if (!suggestion.completed && suggestion.byPlayerId === me.id) {
+        responseControl = '<p class="online-waiting-note">Esperando respuesta de <strong>' +
+          escapeHtml(responder?.name || "el siguiente jugador") + '</strong>.</p>';
+      }
+
+      output += '<section class="online-suggestion-live"><p class="online-eyebrow">' +
+        (suggestion.completed ? "SUPOSICIÓN RESPONDIDA" : "SUPOSICIÓN EN CURSO") + '</p>' +
+        '<h4>' + escapeHtml(suggestion.byPlayerName) + ' supone:</h4>' +
+        '<div class="online-suggestion-cards"><span>' + escapeHtml(suggestion.cards[0]) + '</span><span>' +
+        escapeHtml(suggestion.cards[1]) + '</span><span>' + escapeHtml(suggestion.cards[2]) + '</span></div>' +
+        '<div class="online-response-list">' + (responseRows || '<p class="online-muted">Todavía no hay respuestas.</p>') + '</div>' +
+        (!suggestion.completed ? '<p class="online-waiting-note">Ahora responde <strong>' + escapeHtml(responder?.name || "—") + '</strong>.</p>' : "") +
+        responseControl + result + '</section>';
+    }
+
+    if (myTurn) {
+      output += renderSuggestionComposer();
+    } else if (!suggestion || suggestion.completed) {
+      const current = room.players.find(player => player.id === room.turnPlayerId);
+      output += '<p class="online-waiting-note">Turno de <strong>' + escapeHtml(current?.name || "otro jugador") + '</strong>.</p>';
+    }
+    return output;
+  }
+
   function renderRoom() {
     const room = state.room;
     if (!room) return renderHome();
     const isHost = Boolean(state.session?.organizerToken);
     const me = room.players.find(player => player.id === state.session?.playerId);
     const players = sortedPlayers();
+    const handsReady = players.length >= 3 && players.every(player => player.handSubmitted);
+    const seatsLocked = room.status !== "lobby" || room.rosterLocked;
 
     const seats = Array.from({ length: MAX_SEATS }, (_, index) => {
       const seat = index + 1;
       const player = players.find(item => item.seat === seat);
       if (!player) return '<div class="online-table-seat is-free"><span class="online-seat-number">' + seat + '</span><strong>Asiento libre</strong></div>';
-      const selector = isHost && room.status === "lobby"
+      const selector = isHost && !seatsLocked
         ? '<select class="online-seat-select" data-action="host-seat" data-player-id="' + escapeHtml(player.id) +
           '" aria-label="Cambiar asiento de ' + escapeHtml(player.name) + '">' +
           Array.from({ length: MAX_SEATS }, (_, i) => '<option value="' + (i + 1) + '" ' + (player.seat === i + 1 ? "selected" : "") +
@@ -368,10 +482,12 @@
       return '<div class="online-table-seat ' + (player.id === state.session?.playerId ? "is-me" : "") + '">' +
         '<span class="online-seat-number">' + seat + '</span><strong>' + escapeHtml(player.name) + '</strong>' +
         '<span class="online-presence"><i class="' + (player.connected ? "is-online" : "") + '"></i>' +
-        (player.connected ? "Conectado" : "Desconectado") + '</span>' + selector + '</div>';
+        (player.connected ? "Conectado" : "Desconectado") + '</span>' +
+        '<span class="online-hand-status">' + (player.handSubmitted ? "Cartas cargadas" : "Falta cargar cartas") + '</span>' +
+        selector + '</div>';
     }).join("");
 
-    const selfSeatControl = me && !isHost && room.status === "lobby"
+    const selfSeatControl = me && !isHost && !seatsLocked
       ? '<div class="online-inline-control"><label class="online-label" for="online-self-seat">Tu asiento</label>' +
         '<select id="online-self-seat" class="online-input" data-action="self-seat">' +
         Array.from({ length: MAX_SEATS }, (_, i) => {
@@ -382,7 +498,8 @@
         }).join("") + '</select></div>'
       : "";
 
-    const canStart = players.length >= 3 && players.length <= 6 && players.every(player => Number.isInteger(player.seat));
+    const canStart = players.length >= 3 && players.length <= 6 &&
+      players.every(player => Number.isInteger(player.seat)) && handsReady;
     const firstControl = isHost && room.status === "lobby"
       ? '<div class="online-start-controls"><label class="online-label" for="online-first-player">¿Quién comienza?</label>' +
         '<select id="online-first-player" class="online-input"><option value="random" ' +
@@ -391,22 +508,28 @@
           '>' + escapeHtml(player.name) + '</option>').join("") + '</select>' +
         '<button class="online-button online-button-primary online-full-button" data-action="start" ' +
         (canStart && !state.busy ? "" : "disabled") + '>' + (state.busy ? "Iniciando…" : "Iniciar partida") + '</button>' +
-        '<p class="online-muted">' + (players.length < 3 ? "Se necesitan al menos 3 jugadores." : "Al iniciar, los asientos quedan bloqueados.") + '</p></div>'
+        '<p class="online-muted">' + (players.length < 3 ? "Se necesitan al menos 3 jugadores." :
+          !handsReady ? "Todos los jugadores deben cargar y confirmar sus cartas." : "Al iniciar, los asientos quedan bloqueados.") + '</p></div>'
       : "";
 
     const joinAsPlayer = isHost && !me && room.status === "lobby"
       ? '<button class="online-button online-button-secondary" data-action="join-as-player">Sumarme como jugador</button>' : "";
 
+    const handPanel = renderHandPanel(room, me);
+    const suggestionPanel = renderSuggestionPanel(room, me);
     let turnPanel = "";
     if (room.status === "playing") {
       const current = room.players.find(player => player.id === room.turnPlayerId);
       const currentIndex = players.findIndex(player => player.id === room.turnPlayerId);
       const next = currentIndex >= 0 && players.length ? players[(currentIndex + 1) % players.length] : null;
+      const responder = room.suggestion?.currentResponderId
+        ? room.players.find(player => player.id === room.suggestion.currentResponderId)
+        : null;
       turnPanel = '<section class="online-turn-panel"><p class="online-eyebrow">INDICADOR DE TURNO</p>' +
-        '<div class="online-turn-grid"><div class="online-turn-current"><span>Turno inicial</span><strong>' +
-        escapeHtml(current?.name || "Sin definir") + '</strong></div><div><span>Próximo en la mesa</span><strong>' +
-        escapeHtml(next?.name || "—") + '</strong></div><div><span>Debe responder</span><strong>Se determina con la suposición</strong></div></div>' +
-        '<p class="online-muted">El orden está sincronizado. El avance al siguiente turno se vinculará a las suposiciones digitales; no se avanzará manualmente.</p></section>';
+        '<div class="online-turn-grid"><div class="online-turn-current"><span>Turno actual</span><strong>' +
+        escapeHtml(current?.name || "Sin definir") + '</strong></div><div><span>Próximo turno</span><strong>' +
+        escapeHtml(next?.name || "—") + '</strong></div><div><span>Debe responder</span><strong>' +
+        escapeHtml(responder?.name || "Nadie") + '</strong></div></div></section>';
     }
 
     const statusText = room.status === "playing" ? "Partida iniciada" : "Esperando jugadores";
@@ -414,11 +537,13 @@
       escapeHtml(statusText) + '</p><h3>Sala ' + escapeHtml(room.code) + '</h3></div>' +
       '<button class="online-copy-button" data-action="copy-code">Copiar código</button></div>' +
       '<p class="online-muted">Organiza ' + escapeHtml(room.hostName) + ' · ' + players.length + '/6 jugadores · Código para compartir</p>' +
-      '<div class="online-seat-grid online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer + firstControl + turnPanel +
+      (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">La mesa quedó cerrada: ya comenzó la carga de cartas y no se pueden mover los asientos.</p>' : "") +
+      '<div class="online-seat-grid online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer +
+      handPanel + firstControl + turnPanel + suggestionPanel +
       '<div class="online-actions online-room-actions"><button class="online-button online-button-light" data-action="refresh">Actualizar sala</button>' +
-      '<button class="online-button online-button-secondary" data-action="home">Salir de esta vista</button></div></section>';
+      '<button class="online-button online-button-secondary" data-action="show-annotator">Ver anotador</button>' +
+      '<button class="online-button online-button-light" data-action="home">Salir de esta vista</button></div></section>';
   }
-
   function render() {
     if (!state.open) return;
     let body = state.screen === "create" ? renderCreate() : state.screen === "join" ? renderJoin() :
