@@ -123,7 +123,7 @@
       const original = window.historyItemsHtml;
       window.historyItemsHtml = function(...args) {
         return original.apply(this, args).replace(
-          /mostró <b class="text-emerald-700">\\?<\\/b>/g,
+          /mostró <b class="text-emerald-700">\?<\/b>/g,
           "mostró una carta (oculta)"
         );
       };
