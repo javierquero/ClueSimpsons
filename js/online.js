@@ -653,6 +653,80 @@
     } catch (error) { state.busy = false; state.joinLookup = null; setError(error.message); }
   }
 
+  async function submitHand() {
+    const selected = [...content.querySelectorAll("[data-online-card]:checked")].map(input => input.value);
+    const expected = state.expectedHandCount || expectedHandCount(state.room);
+    if (selected.length !== expected) return setError("Seleccioná exactamente " + expected + " cartas.");
+    state.busy = true;
+    state.error = "";
+    render();
+    try {
+      const data = await api("/api/rooms/" + state.session.code + "/hand", {
+        method: "POST",
+        body: { cards: selected }
+      });
+      state.room = data.room;
+      activateOnlineAnnotator(state.room);
+      // El marcado de la mano se procesa mediante la función existente de v72.
+      window.openMyHandModal();
+      document.querySelectorAll('#myhand-options input[name="myhand-card"]').forEach(input => {
+        input.checked = selected.includes(input.value);
+      });
+      window.saveMyHand();
+      state.handSelection = [];
+      state.busy = false;
+      state.error = "";
+      await refreshRoom(false);
+    } catch (error) {
+      state.busy = false;
+      setError(error.message);
+    }
+  }
+
+  async function submitSuggestion() {
+    const suspect = document.getElementById("online-suspect")?.value || "";
+    const weapon = document.getElementById("online-weapon")?.value || "";
+    const place = document.getElementById("online-place")?.value || "";
+    if (!suspect || !weapon || !place) return setError("Elegí un sospechoso, un arma y un lugar.");
+    state.busy = true;
+    state.error = "";
+    render();
+    try {
+      const data = await api("/api/rooms/" + state.session.code + "/suggestions", {
+        method: "POST",
+        body: { suspect, weapon, place }
+      });
+      state.room = data.room;
+      state.busy = false;
+      state.responseChoice = "";
+      activateOnlineAnnotator(state.room);
+      render();
+    } catch (error) {
+      state.busy = false;
+      setError(error.message);
+    }
+  }
+
+  async function submitResponse(card) {
+    if (!card) return setError("Elegí una carta o confirmá que no tenés ninguna.");
+    state.busy = true;
+    state.error = "";
+    render();
+    try {
+      const data = await api("/api/rooms/" + state.session.code + "/responses", {
+        method: "POST",
+        body: { card }
+      });
+      state.room = data.room;
+      state.busy = false;
+      state.responseChoice = "";
+      render();
+    } catch (error) {
+      state.busy = false;
+      setError(error.message);
+    }
+  }
+
   async function joinRoom() {
     if (!state.selectedSeat || !state.joinLookup) return setError("Elegí un asiento libre.");
     state.busy = true; state.error = ""; render();
