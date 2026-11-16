@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anotador Clue: Los Simpson</title>
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ca8a04">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Clue Simpsons">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="tailwind.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-amber-100 min-h-screen text-slate-800 font-sans overflow-x-hidden">
+
+  <!-- ═══ TOP HEADER ═══ -->
+  <header class="app-header bg-yellow-400 border-b-4 border-yellow-600 px-2 sm:px-4 py-2 sm:py-3 sticky top-0 z-30 shadow-md">
+    <div class="max-w-5xl mx-auto flex items-center justify-center sm:justify-between gap-1">
+      <div class="flex items-center justify-center w-full sm:w-auto sm:justify-start space-x-2 shrink-0">
+        <img src="dona.webp" alt="" width="128" height="126" class="header-donut header-donut-left w-6 h-6 sm:w-8 sm:h-8">
+        <h1 class="font-simpson text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl text-yellow-950 tracking-wide">Clue Simpsons</h1>
+        <img src="dona.webp" alt="" width="128" height="126" class="header-donut header-donut-right w-6 h-6 sm:w-8 sm:h-8">
+      </div>
+      <div class="desktop-only flex items-center space-x-1 sm:space-x-2 shrink-0 flex-wrap">
+        <button id="btn-myhand" onclick="openMyHandModal()" style="display:none !important;"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+          🎴 <span class="ml-1">Mis Cartas</span>
+        </button>
+        <button onclick="openEnvelopeModal()" id="btn-envelope"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28 transition-all">
+          ✉️ <span class="ml-1">Sobre</span>
+        </button>
+        <button id="btn-guess-desktop" onclick="openGuessModal()" disabled
+          class="font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28 bg-slate-300 text-slate-400 cursor-not-allowed transition-colors">
+          🔍 <span class="ml-1">Suposición</span>
+        </button>
+        <button onclick="openRulesModal()"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28">
+          📖 <span class="ml-1">Reglas</span>
+        </button>
+        <button id="btn-undo-desktop" onclick="undoLastAction()" disabled
+          class="bg-slate-300 text-slate-400 cursor-not-allowed font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-28 transition-colors">
+          ↩️ <span class="ml-1">Deshacer</span>
+        </button>
+        <button id="btn-redo-desktop" onclick="redoLastAction()" disabled
+          class="bg-slate-300 text-slate-400 cursor-not-allowed font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-24 transition-colors">
+          ↪️ <span class="ml-1">Rehacer</span>
+        </button>
+        <div class="w-px h-7 bg-yellow-600 mx-1 self-center"></div>
+        <button onclick="toggleLock(true)"
+          class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-1.5 px-2 rounded-lg text-sm flex items-center justify-center shadow w-28">
+          🔒 <span class="ml-1">Bloquear</span>
+        </button>
+        <button onclick="openConfigModal()" aria-label="Opciones"
+          class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-1.5 px-2 rounded-lg text-sm shadow flex items-center justify-center w-10">
+          ⚙️
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="max-w-5xl mx-auto p-2 sm:p-4">
+    <div id="desktop-layout">
+      <div>
+        <div id="table-wrapper" class="bg-white rounded-xl shadow-lg border-2 border-yellow-500" style="overflow: hidden;">
+          <div style="overflow: auto; max-height: calc(100dvh - 140px); -webkit-overflow-scrolling: touch;">
+            <table class="w-full border-collapse text-left text-xs sm:text-sm">
+              <thead style="position: sticky; top: 0; z-index: 10;">
+                <tr class="bg-yellow-200 border-b border-yellow-400" id="table-header">
+                  <th id="th-cards-header" class="p-1.5 sm:p-3 font-bold text-slate-800 sticky-col bg-yellow-200 min-w-[90px] sm:min-w-[150px] border-r border-yellow-300">Cartas</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- history-list se mantiene oculto para que renderHistory() no falle -->
+        <div id="history-list" class="hidden"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ═══ BOTTOM NAV (mobile only) ═══ -->
+  <nav id="bottom-nav">
+    <button onclick="openMyHandModal()" id="nav-btn-myhand" style="display:none !important;">
+      <span class="nav-icon">🎴</span>Mis Cartas
+    </button>
+    <button onclick="openEnvelopeModal()" id="nav-btn-envelope" class="transition-all">
+      <span class="nav-icon">✉️</span>Sobre
+    </button>
+    <button id="btn-guess-mobile" onclick="openGuessModal()" disabled style="opacity: 0.4;">
+      <span class="nav-icon">🔍</span>Suposición
+    </button>
+    <button onclick="openRulesModal()">
+      <span class="nav-icon">📖</span>Reglas
+    </button>
+    <button id="btn-undo-mobile" onclick="undoLastAction()" disabled class="opacity-40">
+      <span class="nav-icon">↩️</span>Deshacer
+    </button>
+    <button id="btn-redo-mobile" onclick="redoLastAction()" disabled class="opacity-40">
+      <span class="nav-icon">↪️</span>Rehacer
+    </button>
+    <button onclick="toggleLock(true)">
+      <span class="nav-icon">🔒</span>Bloquear
+    </button>
+    <button onclick="openConfigModal()">
+      <span class="nav-icon">⚙️</span>Opciones
+    </button>
+  </nav>
+
+  <div id="action-toast" role="status" aria-live="polite" aria-atomic="true" class="hidden fixed left-1/2 -translate-x-1/2 bottom-20 md:bottom-5 z-[70] bg-slate-900 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-2xl max-w-[90vw] text-center"></div>
+
+  <!-- ═══ MODAL SELECCIONAR MI PERSONAJE ═══ -->
+  <div id="character-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'character-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">Seleccionar mi personaje</h2>
+          <button onclick="closeCharacterModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <p class="text-xs text-slate-600 mb-3">Elegí el personaje con el que estás jugando en el tablero:</p>
+        <div id="character-options" class="space-y-2"></div>
+        <div class="flex justify-between pt-3 border-t mt-4">
+          <button onclick="selectMyCharacter('')" class="px-3 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-xs">
+            Ninguno (Mostrar "Cartas")
+          </button>
+          <button onclick="closeCharacterModal()" class="px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-xs shadow">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ OVERLAY CASO RESUELTO ═══ -->
+  <!-- ═══ MODAL CASO RESUELTO ═══ -->
+  <div id="solved-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="solved-modal-content bg-emerald-500 text-white rounded-2xl border-4 border-emerald-700 p-4 w-full max-w-md shadow-2xl text-center space-y-3 max-h-[90dvh] overflow-y-auto">
+      <!-- Imágenes de las 3 cartas en triángulo -->
+      <div class="flex flex-col items-center gap-2" id="solved-cards-images"></div>
+      <button onclick="closeSolvedModal()" class="mt-2 px-6 py-2 bg-white text-emerald-700 font-extrabold rounded-lg shadow hover:bg-emerald-50">
+        ¡Excelente!
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL MIS CARTAS ═══ -->
+  <div id="myhand-modal" class="bottom-sheet hidden">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">🎴 Mis cartas</h2>
+        </div>
+        <div class="flex justify-between items-center bg-yellow-50 p-2 rounded border border-yellow-300 mb-2">
+          <p class="text-xs text-slate-700 font-semibold">Seleccioná tus cartas:</p>
+          <span id="myhand-counter" class="text-xs font-bold px-2 py-0.5 rounded bg-yellow-300 text-yellow-950">0/0</span>
+        </div>
+        <p class="text-xs text-red-600 font-bold mb-3">⚠️ Una vez confirmadas no se podrán modificar.</p>
+        <div id="myhand-options" class="space-y-3"></div>
+        <div class="flex justify-end pt-3 border-t mt-3 sticky bottom-0 bg-white">
+          <button id="btn-confirm-hand" onclick="saveMyHand()" disabled
+            class="px-5 py-2.5 rounded-xl font-extrabold text-sm shadow bg-slate-300 text-slate-400 cursor-not-allowed transition-colors">
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL SOBRE CONFIDENCIAL ═══ -->
+  <div id="envelope-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'envelope-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">✉️ Sobre Confidencial</h2>
+          <button onclick="closeEnvelopeModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <p class="text-xs text-slate-600 mb-3">Cartas deducidas automáticamente:</p>
+        <!-- Mis cartas (solo si mano bloqueada) -->
+        <div id="envelope-mycards" class="hidden mb-3 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <p class="text-xs font-bold text-emerald-700 mb-1">🎴 Mis cartas</p>
+          <p id="envelope-mycards-list" class="text-xs text-emerald-800"></p>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">👤 Sospechoso</label>
+            <p id="envelope-display-suspect" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">🔪 Arma</label>
+            <p id="envelope-display-weapon" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">🏠 Lugar</label>
+            <p id="envelope-display-place" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium text-sm bg-gray-50">---</p>
+          </div>
+        </div>
+        <div class="flex justify-between items-center pt-4 border-t mt-4 gap-2">
+          <button id="btn-show-solved" onclick="triggerSolvedFromEnvelope()" disabled
+            class="px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm shadow bg-gray-300 text-gray-500 cursor-not-allowed transition-all">
+            🎉 Caso Resuelto
+          </button>
+          <button onclick="closeEnvelopeModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-xs sm:text-sm shadow">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL REGLAS ═══ -->
+  <div id="rules-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'rules-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-2xl sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content text-xs sm:text-sm text-slate-700 leading-relaxed space-y-4">
+        <div class="flex justify-between items-center border-b pb-2 sticky top-0 bg-white z-10 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">📋 Instrucciones — Clue: Los Simpsons</h2>
+          <button onclick="closeRulesModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-1">✕</button>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🎯 Objetivo</p>
+          <p>El jefe Wiggum encuentra muerto al empresario Charles Montgomery Burns. Los sospechosos disfrazados de su personaje de CLUE favorito intentan averiguar quién mató al Sr. Burns. Tenés que descubrir: ¿Quién lo hizo? ¿Dónde? ¿Con qué arma?</p>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">📦 Incluye</p>
+          <ul class="list-disc ml-5 space-y-0.5">
+            <li>Tablero Clue con 9 lugares de Springfield</li>
+            <li>6 fichas de sospechosos: Homero, Marge, Bart, Lisa, Krusty y Waylon Smithers</li>
+            <li>6 armas: Guante extensible, Dona envenenada, Collar, Saxofón, Barra de Plutonio, Honda</li>
+            <li>36 tarjetas (6 sospechosos, 6 armas, 9 lugares, más otras)</li>
+            <li>Bloc de hojas de detective</li>
+            <li>1 sobre confidencial</li>
+            <li>2 dados</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">⚙️ Preparación</p>
+          <ul class="list-disc ml-5 space-y-1">
+            <li>Buscar el espacio SALIDA del sospechoso más cercano a cada jugador y colocar su ficha ahí.</li>
+            <li>Colocar cada arma en distintos lugares. Seleccionar seis de los nueve que hay en total.</li>
+            <li>Colocar en el tablero el sobre vacío rotulado "CONFIDENCIAL, Archivo del Caso".</li>
+            <li>Dividir el mazo en tres grupos: sospechosos, lugares y armas. Mezclar cada grupo y poner una carta boca abajo en el sobre. Nadie puede verlas.</li>
+            <li>Juntar y mezclar los tres grupos restantes. Repartirlos boca abajo empezando por el lado derecho.</li>
+            <li>Tomar una hoja del bloc de detective y doblarla para que nadie vea las anotaciones.</li>
+            <li>Lisa Simpson siempre tira primero si nadie juega con ella.</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🎮 Cómo jugar</p>
+          <div class="space-y-2">
+            <div>
+              <p class="font-semibold text-slate-800">Mover la ficha</p>
+              <ul class="list-disc ml-5 space-y-0.5">
+                <li>Tirar los dados y mover la ficha tantas casillas como marquen.</li>
+                <li>Podés mover horizontal o verticalmente, hacia adelante o atrás, pero nunca en diagonal.</li>
+                <li>No podés entrar al mismo cuadro dos veces durante la misma jugada.</li>
+                <li>No podés entrar, saltar o caer en un cuadro ocupado por otro sospechoso.</li>
+              </ul>
+            </div>
+            <div>
+              <p class="font-semibold text-slate-800">Pasadizos secretos</p>
+              <p class="ml-1">Los lugares en las esquinas están interconectados por pasadizos secretos. Si te encontrás en alguno de esos lugares, podés usar el pasadizo en lugar de tirar los dados.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🔍 Cómo hacer una suposición</p>
+          <p>Cuando entrés a un lugar, hacé una suposición nombrando las tres tarjetas que creés que están en el sobre. Primero decís el sospechoso, luego el lugar (donde estás) y después el arma.</p>
+          <p class="mt-1">El jugador a tu izquierda revisa sus tarjetas. Si tiene alguna de las mencionadas, te la muestra en secreto (solo una). Si no tiene ninguna, pasa al siguiente jugador.</p>
+          <p class="mt-1 font-semibold">Recordá: solo podés hacer UNA suposición por turno.</p>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">⚠️ Qué pasa si tu suposición es incorrecta</p>
+          <p>Si nadie las ve, volvé a colocar las tres tarjetas dentro del sobre.</p>
+          <p class="mt-1">Ya no podrás moverte durante el juego, pero podés seguir tratando de probar las suposiciones de tus contrincantes.</p>
+        </div>
+        <div>
+          <p class="font-bold text-sm text-slate-900 mb-1">🏆 Cómo ganar</p>
+          <p>Cuando creas que tu acusación es totalmente correcta, tomá las tres tarjetas del sobre y verificalas en secreto. Si son las correctas, ¡ganaste! Mostralas a todos.</p>
+          <p class="mt-1">Si tu acusación es falsa, perdiste. Devolvé las tarjetas al sobre sin mostrárselas a nadie y seguís participando para mostrar tarjetas a los demás, pero ya no podés ganar.</p>
+        </div>
+        <div class="border-t pt-3 text-[11px] text-slate-500 text-center italic">
+          © 2005 Hasbro Internacional Inc. / Twentieth Century Fox Film Corporation.<br>
+          Fabricado bajo licencia por Toy Company S.R.L. — Buenos Aires, Argentina<br>
+          <span class="not-italic font-semibold text-slate-400">v58 — 24/09/2026</span>
+        </div>
+        <div class="flex justify-between pt-2 border-t gap-2">
+          <button onclick="closeRulesModal(); openQuickGuide(false)" class="px-4 py-2 rounded-xl bg-blue-100 text-blue-800 font-extrabold text-sm">Guía rápida</button>
+          <button onclick="closeRulesModal()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Entendido</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL CONFIGURACIÓN ═══ -->
+  <div id="config-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'config-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <h2 class="text-lg font-extrabold text-slate-800 sheet-title mb-4 pt-1">⚙️ Configurar Partida</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Cantidad de Jugadores</label>
+            <select id="player-count-select" onchange="updateMyCardsCountOptions()" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium">
+              <option value="3">3 Jugadores</option>
+              <option value="4" selected>4 Jugadores</option>
+              <option value="5">5 Jugadores</option>
+              <option value="6">6 Jugadores</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">¿Cuántas cartas te tocaron a vos?</label>
+            <select id="my-cards-count-select" class="w-full border-2 border-yellow-400 rounded-lg p-2 font-medium"></select>
+            <p class="text-[11px] text-slate-500 mt-1">Usá esto si el reparto no fue exacto.</p>
+          </div>
+        </div>
+        <div class="flex items-center justify-end pt-4 border-t mt-4">
+          <div class="flex space-x-2">
+            <button onclick="closeConfigModal()" id="btn-cancel-config" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm hidden">Cancelar</button>
+            <button onclick="startNewGame()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">¡Empezar Juego!</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CONFIRMACIÓN NUEVA PARTIDA ═══ -->
+  <div id="new-game-confirm-modal" class="bottom-sheet confirmation-sheet hidden" onclick="sheetBackdropClose(event,'new-game-confirm-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-lg font-extrabold text-slate-800 sheet-title">¿Empezar una partida nueva?</h2>
+          <button onclick="closeNewGameConfirmation()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <div class="bg-amber-50 border border-amber-300 rounded-xl p-3 text-sm text-slate-700">
+          <p>Se reemplazará la partida actual.</p>
+          <p class="mt-2 font-semibold">Podés recuperarla inmediatamente con Deshacer.</p>
+        </div>
+        <div class="flex justify-end gap-2 pt-4 mt-4 border-t">
+          <button onclick="closeNewGameConfirmation()" class="px-4 py-2.5 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm">Cancelar</button>
+          <button onclick="startNewGame(true)" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Empezar nueva</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CONFIRMACIÓN ELIMINAR HISTORIAL ═══ -->
+  <div id="delete-history-confirm-modal" class="bottom-sheet confirmation-sheet hidden" onclick="sheetBackdropClose(event,'delete-history-confirm-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content">
+        <div class="flex justify-between items-center border-b pb-2 mb-3 pt-1">
+          <h2 class="text-lg font-extrabold text-slate-800 sheet-title">¿Eliminar esta suposición?</h2>
+          <button onclick="closeDeleteHistoryConfirmation()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <div class="bg-amber-50 border border-amber-300 rounded-xl p-3 text-sm text-slate-700">
+          <p>Se eliminará esta entrada del historial.</p>
+          <p class="mt-2 font-semibold">Las marcas del tablero no cambiarán y podés recuperarla con Deshacer.</p>
+        </div>
+        <div class="flex justify-end gap-2 pt-4 mt-4 border-t">
+          <button onclick="closeDeleteHistoryConfirmation()" class="px-4 py-2.5 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm">Cancelar</button>
+          <button onclick="confirmDeleteHistoryEntry()" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 font-extrabold text-white text-sm shadow">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL SUPOSICIÓN ═══ -->
+  <div id="guess-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'guess-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-lg sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content space-y-2">
+        <div class="flex justify-between items-center border-b pb-2 pt-1">
+          <h2 class="text-base font-extrabold text-slate-800 sheet-title">Nueva Suposición</h2>
+          <button onclick="closeGuessModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <!-- Cartas seleccionadas (solo display) -->
+        <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-3 space-y-1 text-sm">
+          <div class="flex justify-between"><span class="text-slate-500 font-bold">👤</span><span id="guess-display-suspect" class="font-semibold text-slate-800">—</span></div>
+          <div class="flex justify-between"><span class="text-slate-500 font-bold">🔪</span><span id="guess-display-weapon" class="font-semibold text-slate-800">—</span></div>
+          <div class="flex justify-between"><span class="text-slate-500 font-bold">🏠</span><span id="guess-display-place" class="font-semibold text-slate-800">—</span></div>
+        </div>
+        <input type="hidden" id="guess-suspect">
+        <input type="hidden" id="guess-weapon">
+        <input type="hidden" id="guess-place">
+        <input type="hidden" id="guess-nobody">
+        <div class="pt-1 border-t">
+          <span class="font-bold text-slate-800 text-sm">Respuestas</span>
+          <div id="guess-responses-container" class="space-y-1.5 max-h-52 overflow-y-auto pr-1 mt-1.5"></div>
+        </div>
+        <div class="border-t pt-2">
+          <p class="text-xs font-bold text-slate-600 mb-1.5">📜 Historial</p>
+          <div id="guess-modal-history" class="space-y-1.5 max-h-36 overflow-y-auto text-xs text-slate-700">
+            <p class="text-slate-400 italic">No hay suposiciones aún.</p>
+          </div>
+        </div>
+        <div class="flex justify-end space-x-2 pt-2 border-t">
+          <button onclick="closeGuessModal()" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm">Cancelar</button>
+          <button onclick="saveGuess()" class="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 font-extrabold text-slate-900 text-sm shadow">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ GUÍA RÁPIDA ═══ -->
+  <div id="quick-guide-modal" class="bottom-sheet hidden" onclick="sheetBackdropClose(event,'quick-guide-modal')">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-md sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div class="sheet-content space-y-3">
+        <div class="flex justify-between items-center border-b pb-2 pt-1">
+          <h2 class="text-lg font-extrabold text-slate-800 sheet-title">👋 Guía rápida</h2>
+          <button onclick="closeQuickGuide(true)" class="text-slate-400 font-bold text-xl">✕</button>
+        </div>
+        <div class="space-y-2 text-sm text-slate-700">
+          <p><b>Toque normal:</b> recorre ❌, ?, 1, 2 y 3.</p>
+          <p><b>Toque largo:</b> confirma ✔️ quién tiene la carta y marca ❌ en el resto.</p>
+          <p><b>Nombre de una carta:</b> la selecciona para una suposición.</p>
+          <p><b>👁️:</b> indica a quién le mostraste una de tus cartas.</p>
+          <p><b>Deshacer y Rehacer:</b> corrigen acciones sin perder la partida.</p>
+          <p><b>Sobre:</b> muestra las cartas deducidas automáticamente.</p>
+        </div>
+        <div class="flex justify-end pt-2 border-t">
+          <button onclick="closeQuickGuide(true)" class="px-5 py-2.5 rounded-xl bg-yellow-400 font-extrabold text-slate-900 shadow">Empezar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PANTALLA DE BLOQUEO ═══ -->
+  <div id="lock-screen" class="fixed inset-0 bg-yellow-400 z-50 flex flex-col items-center justify-center p-6 text-center hidden">
+    <img src="caja-clue-simpsons.webp" alt="Caja Clue Los Simpsons" width="622" height="467" class="w-64 sm:w-80 md:w-96 lg:w-[480px] xl:w-[560px] rounded-xl shadow-2xl mb-4 border-4 border-yellow-600">
+    <h2 class="text-2xl font-extrabold text-yellow-950 mb-2">Anotador Bloqueado</h2>
+    <p class="text-yellow-900 text-sm mb-6">Tocá el botón para volver a ver tus notas secretas.</p>
+    <button onclick="toggleLock(false)" class="bg-slate-900 text-white font-extrabold px-6 py-3 rounded-xl shadow-lg hover:bg-slate-800">
+      Desbloquear Pantalla
+    </button>
+  </div>
+  <script src="js/app.js" defer></script>
+</body>
+</html>
