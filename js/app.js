@@ -1155,7 +1155,7 @@
     // Habilita la instalación y el uso sin conexión de la aplicación.
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=71', { updateViaCache: 'none' })
+        navigator.serviceWorker.register('./sw.js?v=72', { updateViaCache: 'none' })
           .then(watchForAppUpdates)
           .catch(error => console.warn('No se pudo registrar el Service Worker:', error));
       });
