@@ -7,6 +7,7 @@
   const content = document.getElementById("online-content");
   const closeButton = document.getElementById("online-close");
   const entryButton = document.getElementById("btn-online");
+  const liveIndicator = document.getElementById("online-live-indicator");
   if (!panel || !content || !entryButton) return;
 
   const state = {
@@ -383,6 +384,58 @@
     } else {
       try { new Notification("ClueSimpsons", options); } catch {}
     }
+  }
+
+
+  function updateLiveIndicator(room = state.room) {
+    if (!liveIndicator) return;
+    if (!state.annotatorActive || state.open || !room || !["playing", "finished"].includes(room.status)) {
+      liveIndicator.classList.add("hidden");
+      liveIndicator.innerHTML = "";
+      return;
+    }
+    const current = room.players.find(player => player.id === room.turnPlayerId);
+    const suggestion = room.suggestion;
+    let contentHtml = "";
+
+    if (room.status === "finished") {
+      contentHtml = '<span class="online-live-kicker">PARTIDA FINALIZADA</span>' +
+        '<strong>' + escapeHtml(room.winnerName ? "Ganó " + room.winnerName : "Se reveló la solución") + '</strong>';
+    } else if (room.paused) {
+      contentHtml = '<span class="online-live-kicker">PARTIDA PAUSADA</span><strong>Esperando al organizador</strong>';
+    } else if (suggestion && !suggestion.completed) {
+      const responder = room.players.find(player => player.id === suggestion.currentResponderId);
+      const responses = suggestion.responses.map(response =>
+        '<span class="online-live-response">' + escapeHtml(response.playerName) + ': ' +
+        (response.type === "none" ? "No tiene ninguna" : "Mostró una carta") + '</span>'
+      ).join("");
+      contentHtml = '<span class="online-live-kicker">' + escapeHtml(suggestion.byPlayerName) + ' está suponiendo</span>' +
+        '<strong>' + suggestion.cards.map(escapeHtml).join(" · ") + '</strong>' +
+        '<div class="online-live-progress">' + (responses || "") + '</div>' +
+        '<span class="online-live-next">Ahora responde ' + escapeHtml(responder?.name || "—") + '</span>';
+    } else if (suggestion?.completed && suggestion.outcome === "shown") {
+      const shown = suggestion.responses.find(response => response.type === "shown");
+      const isSuggester = suggestion.byPlayerId === state.session?.playerId;
+      contentHtml = '<span class="online-live-kicker">SUPOSICIÓN RESPONDIDA</span>' +
+        '<strong>' + escapeHtml(shown?.playerName || "Un jugador") + ' mostró una carta</strong>' +
+        '<div class="online-live-reveal">' +
+        (isSuggester && room.private?.shownCard
+          ? cardImageMarkup(room.private.shownCard, false) + '<span>' + escapeHtml(room.private.shownCard) + '</span>'
+          : cardImageMarkup("", true) + '<span>Carta secreta</span>') +
+        '</div>' +
+        '<span class="online-live-next">Turno de ' + escapeHtml(current?.name || "—") + '</span>';
+    } else if (suggestion?.completed && suggestion.outcome === "nobody") {
+      contentHtml = '<span class="online-live-kicker">SUPOSICIÓN RESPONDIDA</span>' +
+        '<strong>Ningún jugador tenía esas cartas</strong>' +
+        '<span class="online-live-next">Turno de ' + escapeHtml(current?.name || "—") + '</span>';
+    } else {
+      contentHtml = '<span class="online-live-kicker">TURNO ACTUAL</span>' +
+        '<strong>Juega ' + escapeHtml(current?.name || "—") + '</strong>';
+    }
+
+    liveIndicator.innerHTML = '<div class="online-live-inner">' + contentHtml + '</div>' +
+      '<button type="button" class="online-live-open" aria-label="Abrir panel de partida" title="Abrir partida">↗</button>';
+    liveIndicator.classList.remove("hidden");
   }
 
   function renderHome() {
@@ -772,6 +825,7 @@
             activateOnlineAnnotator(state.room);
             applyCompletedSuggestion(state.room);
             notifyPlayer(state.room);
+            updateLiveIndicator(state.room);
             if (state.open && state.screen === "room") render();
           }
         } catch {}
@@ -807,6 +861,7 @@
       activateOnlineAnnotator(state.room);
       applyCompletedSuggestion(state.room);
       notifyPlayer(state.room);
+      updateLiveIndicator(state.room);
       render();
       connectSocket();
       return true;
@@ -845,6 +900,7 @@
 
   function closePanel() {
     deactivateOnlineAnnotator();
+    updateLiveIndicator(state.room);
     state.open = false;
     panel.classList.add("hidden");
     document.body.classList.remove("online-panel-open");
@@ -1151,6 +1207,9 @@
   entryButton.addEventListener("click", openPanel);
   closeButton?.addEventListener("click", closePanel);
   panel.addEventListener("click", event => { if (event.target === panel) closePanel(); });
+  liveIndicator?.addEventListener("click", event => {
+    if (event.target.closest(".online-live-open")) openPanel();
+  });
   document.addEventListener("keydown", event => { if (event.key === "Escape" && state.open) closePanel(); });
   window.openOnlinePanel = openPanel;
   window.closeOnlinePanel = closePanel;
