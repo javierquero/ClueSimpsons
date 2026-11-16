@@ -1,0 +1,202 @@
+    @font-face {
+      font-family: 'HomerSimpson';
+      src: url('Homer_Simpson_Revised.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    .font-simpson {
+      font-family: 'HomerSimpson', sans-serif;
+    }
+
+    .app-header { overflow-x: hidden; }
+
+    .header-donut-left {
+      animation: donutRollFromLeft 2s cubic-bezier(.18, .72, .24, 1) both;
+    }
+    .header-donut-right {
+      animation: donutRollFromRight 2s cubic-bezier(.18, .72, .24, 1) both;
+    }
+    @keyframes donutRollFromLeft {
+      from { transform: translateX(-150px) rotate(-540deg); opacity: 0; }
+      18% { opacity: 1; }
+      to { transform: translateX(0) rotate(0); opacity: 1; }
+    }
+    @keyframes donutRollFromRight {
+      from { transform: translateX(150px) rotate(540deg); opacity: 0; }
+      18% { opacity: 1; }
+      to { transform: translateX(0) rotate(0); opacity: 1; }
+    }
+
+    :focus-visible {
+      outline: 3px solid #2563eb;
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    .sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 5;
+    }
+    thead .sticky-col {
+      z-index: 15;
+    }
+
+    @keyframes slideDown {
+      0%   { transform: translateY(-100%); opacity: 0; }
+      80%  { transform: translateY(5%);    opacity: 1; }
+      100% { transform: translateY(0);     opacity: 1; }
+    }
+    .solved-modal-content { animation: slideDown 0.55s ease-out forwards; }
+
+    .card-flip-container {
+      perspective: 800px;
+      width: 96px;
+    }
+    .card-flip-inner {
+      position: relative;
+      width: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.7s ease-in-out;
+    }
+    .card-flip-inner.flipped {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 12px;
+      border: 4px solid #facc15;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      width: 96px;
+    }
+    .card-back {
+      position: absolute;
+      top: 0; left: 0;
+    }
+    .card-front {
+      transform: rotateY(180deg);
+    }
+    @keyframes borderPulse {
+      0%   { border-color: #facc15; }
+      50%  { border-color: #16a34a; }
+      100% { border-color: #facc15; }
+    }
+    .table-border-solved {
+      animation: borderPulse 0.8s ease-in-out infinite !important;
+      border-width: 4px !important;
+    }
+
+
+    /* ── ANIMACIÓN TITILANTE (PULSO DE TAMAÑO / ESCALA PURA - SIN CAMBIO DE COLOR) ── */
+    @keyframes pulseEnvelopeScale {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .envelope-glow {
+      animation: pulseEnvelopeScale 1s infinite ease-in-out !important;
+    }
+
+    /* ── BOTTOM SHEET (mobile modals) ── */
+    .bottom-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(3px);
+    }
+    .bottom-sheet.hidden { display: none; }
+    .bottom-sheet.confirmation-sheet { z-index: 60; }
+    .bottom-sheet-inner {
+      background: #fffdf0;
+      border-radius: 20px 20px 0 0;
+      border-top: 4px solid #facc15;
+      max-height: 85dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 0 env(safe-area-inset-bottom, 16px);
+      animation: sheetSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    @keyframes sheetSlideUp {
+      from { transform: translateY(100%); opacity: 0.6; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .sheet-handle {
+      width: 40px; height: 4px;
+      background: #d1d5db;
+      border-radius: 2px;
+      margin: 10px auto 4px;
+      animation: handlePulse 0.6s ease-out 0.2s both;
+    }
+    @keyframes handlePulse {
+      0%   { width: 24px; background: #facc15; }
+      60%  { width: 48px; background: #fbbf24; }
+      100% { width: 40px; background: #d1d5db; }
+    }
+    .sheet-content { padding: 0 16px 16px; }
+    .sheet-title {
+      display: inline-block;
+      padding-bottom: 4px;
+      border-bottom: 3px solid #facc15;
+    }
+
+    /* ── BOTTOM NAV (mobile) ── */
+    #bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 40;
+      background: #fef08a;
+      border-top: 3px solid #ca8a04;
+      display: flex;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    #bottom-nav button {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 8px 2px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #713f12;
+      background: none;
+      border: none;
+      cursor: pointer;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #bottom-nav button:active { background: #fde68a; }
+    #bottom-nav button .nav-icon { font-size: 20px; line-height: 1; }
+
+    /* ── Select no-zoom iOS ── */
+    select, input[type="text"] { font-size: 16px; }
+
+    /* ── DESKTOP: hide bottom nav ── */
+    @media (min-width: 768px) {
+      #bottom-nav { display: none !important; }
+      body { padding-bottom: 0 !important; }
+    }
+    /* ── MOBILE: hide desktop header buttons, show bottom nav ── */
+    @media (max-width: 767px) {
+      .desktop-only { display: none !important; }
+      body { padding-bottom: 72px; }
+    }
+
+    /* ── Table compact on mobile ── */
+    @media (max-width: 767px) {
+      .cell-td { padding: 6px 4px !important; font-size: 14px; min-width: 38px; }
+    }
