@@ -711,10 +711,19 @@
       render();
       connectSocket();
       return true;
-    } catch {
-      state.session = null;
-      saveSession();
-      return false;
+    } catch (error) {
+      const message = String(error?.message || "");
+      if (message.includes("No existe una partida") || message.includes("Sesión no válida")) {
+        state.session = null;
+        saveSession();
+        state.error = message;
+        return false;
+      }
+      // Un fallo temporal de red no debe borrar el código ni el token de recuperación.
+      state.screen = "home";
+      state.error = "No se pudo conectar. Conservé tu sesión para que puedas reintentar.";
+      render();
+      return true;
     }
   }
 
