@@ -107,12 +107,12 @@ async function requestJson(request, url, env) {
     return withCors(json({ error: "No se pudo generar un código disponible. Intentá nuevamente." }, 503), origin);
   }
 
-  const match = path.match(/^\/api\/rooms\/(\d{6})(?:\/(join|seat|hand|start|suggestions|responses|socket-ticket|ws))?$/);
+  const match = path.match(/^\/api\/rooms\/(\d{6})(?:\/(join|seat|hand|start|pause|suggestions|responses|socket-ticket|ws))?$/);
   if (!match) return withCors(json({ error: "Ruta no encontrada." }, 404), origin);
 
   const code = match[1];
   const action = match[2] || (request.method === "GET" ? "snapshot" : "");
-  if (!["snapshot", "join", "seat", "hand", "start", "suggestions", "responses", "socket-ticket", "ws"].includes(action)) {
+  if (!["snapshot", "join", "seat", "hand", "start", "pause", "suggestions", "responses", "socket-ticket", "ws"].includes(action)) {
     return withCors(json({ error: "Operación no permitida." }, 405), origin);
   }
 
@@ -178,6 +178,7 @@ export class GameRoom extends DurableObject {
     return {
       code: room.code,
       status: room.status,
+      paused: Boolean(room.paused),
       rosterLocked: Boolean(room.rosterLocked),
       hostName: room.hostName,
       hostOnline,
@@ -261,6 +262,7 @@ export class GameRoom extends DurableObject {
         hostTokenHash: await sha256(hostToken),
         status: "lobby",
         rosterLocked: false,
+        paused: false,
         players: [],
         firstPlayerId: null,
         turnPlayerId: null,
@@ -361,9 +363,23 @@ export class GameRoom extends DurableObject {
       return json({ room: this.publicSnapshot(room) });
     }
 
+    if (path.endsWith("/pause") && method === "POST") {
+      if (actor.role !== "host") return json({ error: "Solo el organizador puede pausar o reanudar." }, 403);
+      if (room.status !== "playing") return json({ error: "La partida todavía no comenzó." }, 409);
+      let body;
+      try { body = await readJson(request); }
+      catch (error) { return json({ error: error.message }, 400); }
+      if (typeof body.paused !== "boolean") return json({ error: "Indicá si la partida queda pausada." }, 400);
+      room.paused = body.paused;
+      await this.saveRoom(room);
+      await this.broadcastSnapshot();
+      return json({ room: this.publicSnapshot(room) });
+    }
+
     if (path.endsWith("/suggestions") && method === "POST") {
       if (actor.role !== "player") return json({ error: "El organizador debe ingresar como jugador para hacer suposiciones." }, 403);
       if (room.status !== "playing") return json({ error: "La partida todavía no está iniciada." }, 409);
+      if (room.paused) return json({ error: "La partida está pausada por el organizador." }, 409);
       if (room.turnPlayerId !== actor.playerId) return json({ error: "Todavía no es tu turno." }, 409);
       if (room.suggestion && !room.suggestion.completed) return json({ error: "Hay una suposición esperando respuestas." }, 409);
       let body;
@@ -401,6 +417,7 @@ export class GameRoom extends DurableObject {
 
     if (path.endsWith("/responses") && method === "POST") {
       if (actor.role !== "player") return json({ error: "Solo los jugadores pueden responder." }, 403);
+      if (room.paused) return json({ error: "La partida está pausada por el organizador." }, 409);
       const suggestion = room.suggestion;
       if (!suggestion || suggestion.completed) return json({ error: "No hay una suposición pendiente." }, 409);
       if (suggestion.currentResponderId !== actor.playerId) return json({ error: "Todavía no te corresponde responder." }, 409);
