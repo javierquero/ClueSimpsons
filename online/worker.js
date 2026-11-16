@@ -345,9 +345,7 @@ export class GameRoom extends DurableObject {
     room.socketTickets = tickets;
     await this.saveRoom(room);
 
-    const pair = new WebSocketPair();
-    const client = pair[0];
-    const server = pair[1];
+    const [client, server] = Object.values(new WebSocketPair());
     this.ctx.acceptWebSocket(server);
     server.serializeAttachment({ role: actor.role, playerId: actor.playerId });
     server.send(JSON.stringify({ type: "room.snapshot", room: this.publicSnapshot(room) }));
