@@ -171,7 +171,8 @@ export class GameRoom extends DurableObject {
       .map(({ id, name, seat }) => ({
         id, name, seat,
         connected: onlineIds.has(id),
-        handSubmitted: Boolean(room.hands?.[id])
+        handSubmitted: Boolean(room.hands?.[id]),
+        handCount: room.hands?.[id]?.length || 0
       }));
 
     return {
@@ -314,7 +315,6 @@ export class GameRoom extends DurableObject {
     if (path.endsWith("/hand") && method === "POST") {
       if (actor.role !== "player") return json({ error: "Solo los jugadores pueden cargar sus cartas." }, 403);
       if (room.status !== "lobby") return json({ error: "Las cartas solo se pueden cargar antes de iniciar." }, 409);
-      if (room.hands?.[actor.playerId]) return json({ error: "Tus cartas ya fueron confirmadas y no se pueden cambiar." }, 409);
       let body;
       try { body = await readJson(request); }
       catch (error) { return json({ error: error.message }, 400); }
