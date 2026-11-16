@@ -323,12 +323,11 @@ export class GameRoom extends DurableObject {
         return json({ error: "La selección contiene cartas que no pertenecen al juego." }, 400);
       }
       if (new Set(cards).size !== cards.length) return json({ error: "No se pueden repetir cartas." }, 400);
-      const ordered = [...room.players].sort((a, b) => a.seat - b.seat);
-      const playerIndex = ordered.findIndex(player => player.id === actor.playerId);
-      const base = Math.floor(18 / ordered.length);
-      const remainder = 18 % ordered.length;
-      const expected = base + (playerIndex < remainder ? 1 : 0);
-      if (cards.length !== expected) return json({ error: "Te corresponden " + expected + " cartas según el orden de la mesa." }, 400);
+      const base = Math.floor(18 / room.players.length);
+      const largerHand = Math.ceil(18 / room.players.length);
+      if (cards.length !== base && cards.length !== largerHand) {
+        return json({ error: "La cantidad debe ser " + base + (largerHand !== base ? " o " + largerHand : "") + " cartas, como permite la distribución del juego." }, 400);
+      }
       room.hands = room.hands || {};
       room.hands[actor.playerId] = cards;
       room.rosterLocked = true;
