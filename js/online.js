@@ -17,7 +17,8 @@
     handSelection: [], responseChoice: "", expectedHandCount: 0, handCountChoice: null,
     lastNotificationKey: "", accusationDraft: null, accusationConfirmOpen: false,
     annotatorActive: false, conventionalSnapshot: null, onlineAnnotationKey: "",
-    originalSaveState: null, originalSaveActionStacks: null, historyWrapperInstalled: false
+    originalSaveState: null, originalSaveActionStacks: null, historyWrapperInstalled: false,
+    originalOpenGuessModal: null
   };
 
   function escapeHtml(value) {
@@ -128,12 +129,27 @@
     if (!state.historyWrapperInstalled && typeof window.historyItemsHtml === "function") {
       const original = window.historyItemsHtml;
       window.historyItemsHtml = function(...args) {
-        return original.apply(this, args).replace(
-          /mostró <b class="text-emerald-700">\?<\/b>/g,
-          "mostró una carta (oculta)"
-        );
+        const rendered = original.apply(this, args);
+        return state.annotatorActive
+          ? rendered.replace(/mostró <b class="text-emerald-700">\?<\/b>/g, "mostró una carta (oculta)")
+          : rendered;
       };
       state.historyWrapperInstalled = true;
+    }
+    if (state.originalOpenGuessModal === null && typeof window.openGuessModal === "function") {
+      state.originalOpenGuessModal = window.openGuessModal;
+      window.openGuessModal = function(...args) {
+        if (state.annotatorActive) {
+          if (state.open) {
+            state.error = "En el modo interactivo, las suposiciones se realizan desde la sala.";
+            render();
+          } else {
+            openPanel();
+          }
+          return;
+        }
+        return state.originalOpenGuessModal.apply(this, args);
+      };
     }
   }
 
@@ -555,7 +571,7 @@
       choices + '<button class="online-button online-button-primary online-full-button" data-action="submit-hand" ' +
       (state.handSelection.length === count && !state.busy ? "" : "disabled") + '>' +
       (state.busy ? "Guardando cartas…" : "Confirmar mi mano") + '</button>' +
-      '<p class="online-muted">La primera confirmación cierra la lista de participantes y bloquea los asientos para conservar la distribución.</p></section>';
+      '<p class="online-muted">La primera confirmación cierra el ingreso de nuevos participantes. El organizador todavía puede ajustar los asientos hasta iniciar.</p></section>';
   }
 
   function renderAccusationComposer() {
@@ -695,7 +711,7 @@
     const handsReady = players.length >= 3 && players.every(player => player.handSubmitted);
     const totalHandCards = players.reduce((sum, player) => sum + (player.handCount || 0), 0);
     const handsValid = handsReady && totalHandCards === 18;
-    const seatsLocked = room.status !== "lobby" || room.rosterLocked;
+    const seatsLocked = room.status !== "lobby";
 
     const seats = Array.from({ length: MAX_SEATS }, (_, index) => {
       const seat = index + 1;
@@ -765,7 +781,6 @@
     let turnPanel = "";
     if (room.status === "playing") {
       const current = room.players.find(player => player.id === room.turnPlayerId);
-      const currentIndex = players.findIndex(player => player.id === room.turnPlayerId);
       const responder = room.suggestion?.currentResponderId
         ? room.players.find(player => player.id === room.suggestion.currentResponderId)
         : null;
@@ -778,9 +793,8 @@
           : null;
         next = nextResponderId ? room.players.find(player => player.id === nextResponderId) : null;
         nextLabel = "Próximo en responder";
-      } else if (currentIndex >= 0 && players.length) {
-        const candidate = players[(currentIndex + 1) % players.length];
-        next = candidate?.id === room.turnPlayerId ? null : candidate;
+      } else if (room.nextTurnPlayerId) {
+        next = room.players.find(player => player.id === room.nextTurnPlayerId) || null;
       }
       turnPanel = '<section class="online-turn-panel"><p class="online-eyebrow">INDICADOR DE TURNO</p>' +
         '<div class="online-turn-grid"><div class="online-turn-current"><span>Turno actual</span><strong>' +
@@ -794,7 +808,7 @@
       escapeHtml(statusText) + '</p><h3>Sala ' + escapeHtml(room.code) + '</h3></div>' +
       '<button class="online-copy-button" data-action="copy-code">Copiar código</button></div>' +
       '<p class="online-muted">Organiza ' + escapeHtml(room.hostName) + ' · ' + players.length + '/6 jugadores · Código para compartir</p>' +
-      (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">La mesa quedó cerrada: ya comenzó la carga de cartas y no se pueden mover los asientos.</p>' : "") +
+      (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">Ya no se pueden sumar participantes porque comenzó la carga de cartas. El organizador todavía puede ajustar los asientos hasta iniciar.</p>' : "") +
       '<div class="online-seat-grid online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer +
       handPanel + firstControl + turnPanel + pauseControl + privateAccusationBanner + suggestionPanel + finishedPanel + notificationControl +
       '<div class="online-actions online-room-actions"><button class="online-button online-button-light" data-action="refresh">Actualizar sala</button>' +
