@@ -993,7 +993,7 @@
       if (created && state.session?.code === created.code) {
         state.screen = "room";
         await refreshRoom(false);
-        setError("La sala se creó, pero no pudimos incorporarte automáticamente como jugador. Elegí un asiento para reintentar: " + error.message);
+        setError("La sala se creó, pero no pudimos incorporarte automáticamente como jugador. Reabrí la sala para reintentar el ingreso: " + error.message);
         connectSocket();
       } else {
         setError(error.message);
@@ -1011,6 +1011,7 @@
     try {
       const data = await api("/api/rooms/" + state.joinCode, { token: "" });
       if (data.room.status !== "lobby") throw new Error("La partida ya comenzó y no admite nuevos jugadores.");
+      if (data.room.rosterLocked) throw new Error("El ingreso de jugadores se cerró cuando comenzó la carga de cartas.");
       if (data.room.players.length >= MAX_SEATS) throw new Error("La mesa ya está completa.");
       state.joinLookup = data.room;
       state.screen = "join";
