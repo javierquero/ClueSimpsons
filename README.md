@@ -2,7 +2,7 @@
   Anotador Clue: Los Simpson 
 </h1>
 
-<p align="center"><strong>Versión actual: v78</strong></p>
+<p align="center"><strong>Versión actual: v79</strong></p>
 
 Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para jugar sin papel ni lápiz. Funciona en el navegador o instalada como app y el modo convencional sigue funcionando sin conexión; el modo interactivo requiere Internet.
 
@@ -25,9 +25,9 @@ Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para
 - **Deshacer y Rehacer**: permite recorrer las últimas acciones, incluso después de refrescar la página.
 - **Soporte de 3 a 6 jugadores** con nombres editables directamente en la tabla.
 - **Reglas del juego** integradas en la app.
-- **Modo interactivo (v78)**: acceso desde Configuración; la pantalla inicial prioriza el ingreso por código y ofrece crear partida como alternativa. Quien organiza queda incorporado automáticamente como jugador. Incluye elección de asientos, carga privada de cartas, turnos sincronizados, suposiciones en orden de mesa, respuestas explícitas, acusación final e iconos vectoriales para las acciones de sala.
+- **Modo interactivo (v79)**: acceso desde Configuración; la pantalla inicial prioriza el ingreso por código y ofrece crear partida como alternativa. Quien organiza queda incorporado automáticamente como jugador. Incluye elección de asientos, carga privada de cartas, turnos sincronizados, suposiciones en orden de mesa, respuestas explícitas, acusación final e iconos vectoriales para las acciones de sala.
 - **Privacidad de cartas**: todos ven la suposición y quién responde, pero solo quien supone recibe la identidad de la carta mostrada. La mano de cada jugador queda privada.
-- **Integración con el anotador v72**: el modo interactivo reutiliza el marcado automático existente mediante la función original de registro de suposiciones. No se reemplazó ni modificó `js/app.js`; el modo convencional conserva su funcionamiento.
+- **Integración con el motor del anotador original (v72)**: el modo interactivo reutiliza el marcado automático existente mediante la función original de registro de suposiciones. No se reemplazó ni modificó `js/app.js`; el modo convencional conserva su funcionamiento.
 - **Asientos y anotaciones**: si el organizador modifica el orden de los asientos antes de iniciar, las columnas del anotador online se reordenan por identidad de jugador para conservar las marcas ya realizadas.
 - **Guía rápida inicial**: explica los gestos la primera vez y puede volver a abrirse desde Reglas.
 - **PWA instalable, offline y con actualización automática**: precarga los recursos y aplica las versiones nuevas al abrir o volver a la app.
