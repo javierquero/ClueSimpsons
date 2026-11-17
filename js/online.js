@@ -609,7 +609,7 @@
         (state.handSelection.includes(card) ? "checked" : "") + '><span>' + escapeHtml(card) + '</span></label>').join("") +
       '</div></div>').join("");
     return '<section class="online-hand-panel"><p class="online-eyebrow">CARGÁ TUS CARTAS</p><h4>Tu mano privada</h4>' +
-      '<p>Según tu asiento, te corresponden <strong>' + count + ' cartas</strong>. Solo vos vas a poder consultar cuáles cargaste.</p>' +
+      '<p>Marcá las cartas que recibiste. Solo vos vas a poder consultar cuáles cargaste.</p>' +
       '<div class="online-hand-counter">' + state.handSelection.length + ' cartas seleccionadas</div>' +
       choices + '<button class="online-button online-button-primary online-full-button" data-action="submit-hand" ' +
       (state.handSelection.length > 0 && !state.busy ? "" : "disabled") + '>' +
@@ -1048,7 +1048,6 @@
 
   async function submitHand() {
     const selected = [...content.querySelectorAll("[data-online-card]:checked")].map(input => input.value);
-    const expected = Number(state.handCountChoice || state.expectedHandCount || expectedHandCount(state.room));
     if (!selected.length) return setError("Seleccioná al menos una carta.");
     if (selected.length > 21) return setError("No podés seleccionar más de 21 cartas.");
     state.busy = true;
