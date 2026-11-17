@@ -437,7 +437,7 @@
 
     const permission = notificationPermissionState();
     if (document.visibilityState === "visible") {
-      if (!state.open && typeof window.showToast === "function") window.showToast(body);
+      updateLiveIndicator(room);
       return;
     }
     if (permission !== "granted") return;
@@ -735,7 +735,7 @@
     if (room.paused) {
       output += '<div class="online-paused-banner">Partida pausada por el organizador. No se puede responder ni avanzar hasta que se reanude.</div>';
     } else if (myTurn && room.private?.canWin !== false) {
-      output += renderSuggestionComposer();
+      output += '<p class="online-waiting-note">Es tu turno. Elegí las tres cartas con las lupitas del anotador y tocá <strong>Suposición</strong> para enviarla.</p>';
     } else if (myTurn && room.private?.canWin === false) {
       output += '<div class="online-paused-banner">Ya realizaste una acusación incorrecta. No podés ganar ni hacer nuevas suposiciones, pero seguís respondiendo cuando te consulten.</div>';
     } else if (!suggestion || suggestion.completed) {
@@ -758,6 +758,25 @@
   function renderRoom() {
     const room = state.room;
     if (!room) return renderHome();
+    if (room.status !== "lobby") {
+      const me = room.players.find(player => player.id === state.session?.playerId);
+      const isHost = Boolean(state.session?.organizerToken);
+      const myTurn = Boolean(me && room.turnPlayerId === me.id);
+      const pauseControl = isHost && room.status === "playing"
+        ? '<button class="online-button ' + (room.paused ? "online-button-primary" : "online-button-light") +
+          '" data-action="toggle-pause">' + (room.paused ? "Reanudar partida" : "Pausar partida") + '</button>'
+        : "";
+      const accusationPanel = room.status === "playing" && myTurn && room.private?.canWin !== false
+        ? renderAccusationComposer() : "";
+      const privateAccusationBanner = room.private?.lastAccusation
+        ? '<div class="online-private-accusation"><strong>Acusación incorrecta</strong><p>' +
+          escapeHtml(room.private.lastAccusation.message) + '</p></div>'
+        : "";
+      return '<section class="online-card online-room-card online-active-game">' +
+        '<p class="online-eyebrow">' + (room.status === "finished" ? "PARTIDA FINALIZADA" : "PARTIDA EN CURSO") + '</p>' +
+        pauseControl + privateAccusationBanner + renderSuggestionPanel(room, me) +
+        accusationPanel + renderFinishedPanel(room) + '</section>';
+    }
     const isHost = Boolean(state.session?.organizerToken);
     const me = room.players.find(player => player.id === state.session?.playerId);
     const players = sortedPlayers();
@@ -972,7 +991,7 @@
       if (typeof window.showToast === "function") window.showToast("La partida todavía no comenzó. Esperá a que el organizador la inicie.");
       return;
     }
-    deactivateOnlineAnnotator();
+    persistOnlineAnnotation();
     updateLiveIndicator(state.room);
     state.open = false;
     panel.classList.add("hidden");
