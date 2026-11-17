@@ -963,6 +963,10 @@
   }
 
   function closePanel() {
+    if (state.screen === "room" && state.room?.status === "lobby") {
+      if (typeof window.showToast === "function") window.showToast("La partida todavía no comenzó. Esperá a que el organizador la inicie.");
+      return;
+    }
     deactivateOnlineAnnotator();
     updateLiveIndicator(state.room);
     state.open = false;
@@ -1246,6 +1250,10 @@
     const action = button.dataset.action;
     state.error = "";
     if (action === "home") {
+      if (state.screen === "room" && state.room?.status === "lobby") {
+        if (typeof window.showToast === "function") window.showToast("La partida todavía no comenzó. Esperá a que el organizador la inicie.");
+        return;
+      }
       state.screen = "home"; state.joinLookup = null; render();
     } else if (action === "create-screen") {
       state.screen = "create"; state.autoNavigated = false; render(); document.getElementById("online-host-name")?.focus();
