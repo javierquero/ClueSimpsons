@@ -373,26 +373,15 @@
     return Notification.permission;
   }
 
-  async function enableNotifications() {
-    if (!("Notification" in window)) {
-      state.error = "Este navegador no admite notificaciones del sistema.";
-      render();
-      return;
-    }
+  function requestNotificationsOnStartup() {
+    if (!("Notification" in window) || Notification.permission !== "default") return;
     try {
-      const permission = await Notification.requestPermission();
-      if (permission === "granted") {
-        localStorage.setItem("clue_online_notifications", "1");
-        state.error = "Notificaciones activadas en este dispositivo.";
-      } else if (permission === "denied") {
-        state.error = "Las notificaciones están bloqueadas en la configuración del navegador.";
-      } else {
-        state.error = "No se concedió permiso para las notificaciones.";
-      }
-    } catch {
-      state.error = "No se pudo solicitar el permiso de notificaciones.";
-    }
-    render();
+      const askedKey = "clue_online_notification_prompted";
+      if (localStorage.getItem(askedKey) === "1") return;
+      localStorage.setItem(askedKey, "1");
+      const request = Notification.requestPermission();
+      if (request && typeof request.catch === "function") request.catch(() => {});
+    } catch {}
   }
 
   function notifyPlayer(room) {
@@ -495,51 +484,50 @@
 
   function renderHome() {
     const resume = state.session
-      ? '<button class="online-button online-button-primary" data-action="resume">Reanudar partida ' + escapeHtml(state.session.code) + '</button>'
+      ? '<button class="online-button online-button-light online-full-button" data-action="resume">Reanudar partida ' + escapeHtml(state.session.code) + '</button>'
       : "";
-    return '<section class="online-card"><p class="online-eyebrow">DOS FORMAS DE JUGAR</p>' +
-      '<h3>¿Cómo querés jugar?</h3><p>El anotador convencional sigue funcionando como siempre. Para jugar en varios celulares, creá una sala o ingresá con un código.</p>' +
-      resume + '<div class="online-actions"><button class="online-button online-button-primary" data-action="create-screen">Crear partida</button>' +
-      '<button class="online-button online-button-secondary" data-action="join-screen">Unirme con un código</button></div>' +
-      '<p class="online-muted">El organizador administra la sala y no está obligado a participar como jugador.</p></section>';
+    return '<section class="online-card"><p class="online-eyebrow">PARTIDA INTERACTIVA</p>' +
+      '<h3>Unirte a una partida</h3><p>Ingresá el código que te compartieron y tu nombre para ocupar un lugar en la mesa.</p>' +
+      '<label class="online-label" for="online-room-code">Código de la partida</label>' +
+      '<input id="online-room-code" class="online-input online-code-input" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" value="' + escapeHtml(state.joinCode) + '">' +
+      '<label class="online-label" for="online-player-name">Tu nombre</label>' +
+      '<input id="online-player-name" class="online-input" maxlength="30" autocomplete="name" placeholder="Cómo te verán los demás" value="' + escapeHtml(state.joinName) + '">' +
+      '<button class="online-button online-button-secondary online-full-button" data-action="find-room" ' +
+      (state.busy ? "disabled" : "") + '>' + (state.busy ? "Buscando…" : "Buscar partida") + '</button>' +
+      '<div class="online-create-divider"><span>O</span></div>' +
+      '<button class="online-button online-button-primary online-full-button" data-action="create-screen">Crear partida</button>' +
+      resume + '</section>';
   }
 
   function renderCreate() {
-    return '<section class="online-card"><p class="online-eyebrow">NUEVA SALA</p><h3>Crear una partida</h3>' +
-      '<label class="online-label" for="online-host-name">Nombre del organizador</label>' +
-      '<input id="online-host-name" class="online-input" maxlength="30" autocomplete="name" placeholder="Tu nombre">' +
+    return '<section class="online-card"><p class="online-eyebrow">NUEVA PARTIDA</p><h3>Crear una partida</h3>' +
+      '<label class="online-label" for="online-host-name">Tu nombre</label>' +
+      '<input id="online-host-name" class="online-input" maxlength="30" autocomplete="name" placeholder="Cómo te verán los demás">' +
+      '<p class="online-muted">Al crear la sala vas a quedar incorporado automáticamente como jugador en el primer asiento.</p>' +
       '<div class="online-actions"><button class="online-button online-button-primary" data-action="create" ' +
-      (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Creando…' : 'Crear sala') + '</button>' +
+      (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Creando…' : 'Crear partida') + '</button>' +
       '<button class="online-button online-button-light" data-action="home">Volver</button></div></section>';
   }
 
   function renderJoin() {
-    let seats = "";
     const room = state.joinLookup;
-    if (room) {
-      seats = Array.from({ length: MAX_SEATS }, (_, index) => {
-        const seat = index + 1;
-        const player = room.players.find(item => item.seat === seat);
-        const selected = state.selectedSeat === seat;
-        return '<button class="online-seat-choice ' + (player ? "is-occupied" : "") + (selected ? " is-selected" : "") +
-          '" data-action="choose-seat" data-seat="' + seat + '" ' + (player ? "disabled" : "") +
-          ' aria-pressed="' + selected + '"><strong>Asiento ' + seat + '</strong><span>' +
-          (player ? escapeHtml(player.name) : (selected ? "Seleccionado" : "Libre")) + '</span></button>';
-      }).join("");
-    }
-
-    return '<section class="online-card"><p class="online-eyebrow">INGRESAR A UNA SALA</p><h3>Unirme a una partida</h3>' +
-      '<label class="online-label" for="online-room-code">Código de la partida</label>' +
-      '<input id="online-room-code" class="online-input online-code-input" maxlength="6" inputmode="numeric" placeholder="000000" value="' + escapeHtml(state.joinCode) + '">' +
-      '<label class="online-label" for="online-player-name">Tu nombre</label>' +
-      '<input id="online-player-name" class="online-input" maxlength="30" autocomplete="name" placeholder="Cómo te verán los demás" value="' + escapeHtml(state.joinName) + '">' +
-      '<div class="online-actions"><button class="online-button online-button-secondary" data-action="find-room" ' +
-      (state.busy ? "disabled" : "") + '>Buscar partida</button><button class="online-button online-button-light" data-action="home">Volver</button></div>' +
-      (room ? '<div class="online-room-found"><strong>Sala ' + escapeHtml(room.code) + '</strong><span>Organiza ' +
-        escapeHtml(room.hostName) + ' · ' + room.players.length + '/6 jugadores</span><p>Elegí tu lugar en la mesa:</p>' +
-        '<div class="online-seat-grid">' + seats + '</div><button class="online-button online-button-primary online-full-button" data-action="join-confirm" ' +
-        (state.selectedSeat && !state.busy ? "" : "disabled") + '>' + (state.busy ? "Ingresando…" : "Confirmar asiento y unirme") + '</button></div>' : "") +
-      '</section>';
+    if (!room) return renderHome();
+    const seats = Array.from({ length: MAX_SEATS }, (_, index) => {
+      const seat = index + 1;
+      const player = room.players.find(item => item.seat === seat);
+      const selected = state.selectedSeat === seat;
+      return '<button class="online-seat-choice ' + (player ? "is-occupied" : "") + (selected ? " is-selected" : "") +
+        '" data-action="choose-seat" data-seat="' + seat + '" ' + (player ? "disabled" : "") +
+        ' aria-pressed="' + selected + '"><strong>Asiento ' + seat + '</strong><span>' +
+        (player ? escapeHtml(player.name) : (selected ? "Seleccionado" : "Libre")) + '</span></button>';
+    }).join("");
+    return '<section class="online-card"><p class="online-eyebrow">INGRESO A LA PARTIDA</p><h3>Elegí tu asiento</h3>' +
+      '<p>Sala ' + escapeHtml(room.code) + ' · Organiza ' + escapeHtml(room.hostName) + ' · ' + room.players.length + '/6 jugadores</p>' +
+      '<div class="online-seat-grid online-room-found-seats">' + seats + '</div>' +
+      '<button class="online-button online-button-primary online-full-button" data-action="join-confirm" ' +
+      (state.selectedSeat && !state.busy ? "" : "disabled") + '>' +
+      (state.busy ? "Ingresando…" : "Confirmar asiento y unirme") + '</button>' +
+      '<button class="online-button online-button-light online-full-button" data-action="home">Volver</button></section>';
   }
 
 
@@ -741,6 +729,16 @@
     return output;
   }
 
+  function onlineActionIcon(name) {
+    const icons = {
+      copy: '<rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"></path>',
+      refresh: '<path d="M20 7v5h-5"></path><path d="M4 17v-5h5"></path><path d="M5.6 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.4-3"></path>',
+      exit: '<path d="M10 17l5-5-5-5"></path><path d="M15 12H3"></path><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"></path>'
+    };
+    return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+      (icons[name] || "") + '</svg>';
+  }
+
   function renderRoom() {
     const room = state.room;
     if (!room) return renderHome();
@@ -811,12 +809,6 @@
       ? '<button class="online-button ' + (room.paused ? "online-button-primary" : "online-button-light") +
         '" data-action="toggle-pause">' + (room.paused ? "Reanudar partida" : "Pausar partida") + '</button>'
       : "";
-    const notificationState = notificationPermissionState();
-    const notificationControl = notificationState === "granted"
-      ? '<p class="online-notification-ready">Notificaciones del sistema activadas en este dispositivo.</p>'
-      : notificationState === "unsupported"
-        ? '<p class="online-muted">Este navegador no admite notificaciones del sistema.</p>'
-        : '<button class="online-button online-button-light online-full-button" data-action="enable-notifications">Activar notificaciones de turno</button>';
     let turnPanel = "";
     if (room.status === "playing") {
       const current = room.players.find(player => player.id === room.turnPlayerId);
@@ -843,16 +835,18 @@
     }
 
     const statusText = room.status === "playing" ? "Partida iniciada" : room.status === "finished" ? "Partida finalizada" : "Esperando jugadores";
-    return '<section class="online-card online-room-card"><div class="online-room-heading"><div><p class="online-eyebrow">' +
+    return '<section class="online-card online-room-card"><div class="online-room-heading"><div class="online-room-heading-title"><p class="online-eyebrow">' +
       escapeHtml(statusText) + '</p><h3>Sala ' + escapeHtml(room.code) + '</h3></div>' +
-      '<button class="online-copy-button" data-action="copy-code">Copiar código</button></div>' +
+      '<div class="online-room-tools" aria-label="Acciones de sala">' +
+      '<button class="online-icon-button" data-action="copy-code" title="Copiar código" aria-label="Copiar código">' + onlineActionIcon("copy") + '</button>' +
+      '<button class="online-icon-button" data-action="refresh" title="Actualizar sala" aria-label="Actualizar sala">' + onlineActionIcon("refresh") + '</button>' +
+      '<button class="online-icon-button online-icon-button-exit" data-action="show-annotator" title="Salir de esta vista" aria-label="Salir de esta vista">' + onlineActionIcon("exit") + '</button>' +
+      '</div></div>' +
       '<p class="online-muted">Organiza ' + escapeHtml(room.hostName) + ' · ' + players.length + '/6 jugadores · Código para compartir</p>' +
       (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">Ya no se pueden sumar participantes porque comenzó la carga de cartas. El organizador todavía puede ajustar los asientos hasta iniciar.</p>' : "") +
       '<div class="online-seat-grid online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer +
-      handPanel + firstControl + turnPanel + pauseControl + privateAccusationBanner + suggestionPanel + finishedPanel + notificationControl +
-      '<div class="online-actions online-room-actions"><button class="online-button online-button-light" data-action="refresh">Actualizar sala</button>' +
-      '<button class="online-button online-button-secondary" data-action="show-annotator">Ver anotador</button>' +
-      '<button class="online-button online-button-light" data-action="home">Salir de esta vista</button></div></section>';
+      handPanel + firstControl + turnPanel + pauseControl + privateAccusationBanner + suggestionPanel + finishedPanel +
+      '</section>';
   }
   function render() {
     if (!state.open) return;
@@ -965,14 +959,35 @@
 
   async function createRoom() {
     const name = document.getElementById("online-host-name")?.value.trim();
-    if (!name) return setError("Ingresá el nombre del organizador.");
+    if (!name) return setError("Ingresá tu nombre.");
     state.busy = true; state.error = ""; render();
     try {
-      const data = await api("/api/rooms", { method: "POST", token: "", body: { hostName: name } });
-      state.session = { code: data.code, organizerToken: data.hostToken, playerId: null, playerToken: null, hostName: name };
-      saveSession(); state.room = data.room; state.screen = "room"; state.busy = false;
-      render(); connectSocket();
-    } catch (error) { state.busy = false; setError(error.message); }
+      const created = await api("/api/rooms", {
+        method: "POST", token: "", body: { hostName: name }
+      });
+      const joined = await api("/api/rooms/" + created.code + "/join", {
+        method: "POST", token: "", body: { name, seat: 1 }
+      });
+      state.session = {
+        code: created.code,
+        organizerToken: created.hostToken,
+        playerId: joined.playerId,
+        playerToken: joined.playerToken,
+        hostName: name,
+        playerName: name
+      };
+      saveSession();
+      state.room = joined.room;
+      state.screen = "room";
+      state.busy = false;
+      await refreshRoom(false);
+      render();
+      connectSocket();
+    } catch (error) {
+      state.busy = false;
+      // Si la sala ya fue creada, conservamos la sesión de organizador para permitir reintentar.
+      setError(error.message);
+    }
   }
 
   async function findRoom() {
@@ -986,7 +1001,11 @@
       const data = await api("/api/rooms/" + state.joinCode);
       if (data.room.status !== "lobby") throw new Error("La partida ya comenzó y no admite nuevos jugadores.");
       if (data.room.players.length >= MAX_SEATS) throw new Error("La mesa ya está completa.");
-      state.joinLookup = data.room; state.busy = false; state.error = ""; render();
+      state.joinLookup = data.room;
+      state.screen = "join";
+      state.busy = false;
+      state.error = "";
+      render();
     } catch (error) { state.busy = false; state.joinLookup = null; setError(error.message); }
   }
 
@@ -1202,12 +1221,13 @@
       state.screen = "home"; state.joinLookup = null; render();
     } else if (action === "create-screen") {
       state.screen = "create"; render(); document.getElementById("online-host-name")?.focus();
-    } else if (action === "join-screen" || action === "join-as-player") {
-      state.screen = "join"; state.joinLookup = null; state.selectedSeat = null;
-      if (action === "join-as-player") {
-        state.joinCode = state.session.code; state.joinName = state.session.hostName || "";
-      } else { state.joinCode = ""; state.joinName = ""; }
+    } else if (action === "join-screen") {
+      state.screen = "home"; state.joinLookup = null; state.selectedSeat = null;
       render(); document.getElementById("online-room-code")?.focus();
+    } else if (action === "join-as-player") {
+      state.screen = "join"; state.joinLookup = state.room; state.selectedSeat = null;
+      state.joinCode = state.session.code; state.joinName = state.session.hostName || "";
+      render();
     } else if (action === "create") await createRoom();
     else if (action === "find-room") await findRoom();
     else if (action === "choose-seat") {
@@ -1218,7 +1238,6 @@
     else if (action === "start") await startGame();
     else if (action === "toggle-pause") await togglePause();
     else if (action === "submit-hand") await submitHand();
-    else if (action === "enable-notifications") await enableNotifications();
     else if (action === "edit-hand") {
       state.editingHand = true;
       state.handSelection = [...(state.room?.private?.ownCards || [])];
@@ -1258,7 +1277,10 @@
     if (event.target.id === "online-room-code") event.target.value = event.target.value.replace(/\D/g, "").slice(0, 6);
   });
 
-  entryButton.addEventListener("click", openPanel);
+  entryButton.addEventListener("click", () => {
+    if (typeof window.closeConfigModal === "function") window.closeConfigModal();
+    openPanel();
+  });
   closeButton?.addEventListener("click", closePanel);
   panel.addEventListener("click", event => { if (event.target === panel) closePanel(); });
   liveIndicator?.addEventListener("click", event => {
@@ -1267,6 +1289,11 @@
   document.addEventListener("keydown", event => { if (event.key === "Escape" && state.open) closePanel(); });
   window.openOnlinePanel = openPanel;
   window.closeOnlinePanel = closePanel;
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", requestNotificationsOnStartup, { once: true });
+  } else {
+    requestNotificationsOnStartup();
+  }
   if (new URLSearchParams(window.location.search).get("online") === "1") {
     window.addEventListener("DOMContentLoaded", () => openPanel(), { once: true });
   }
