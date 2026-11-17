@@ -2,7 +2,7 @@
   Anotador Clue: Los Simpson 
 </h1>
 
-<p align="center"><strong>Versión actual: v81</strong></p>
+<p align="center"><strong>Versión actual: v82</strong></p>
 
 Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para jugar sin papel ni lápiz. Funciona en el navegador o instalada como app y el modo convencional sigue funcionando sin conexión; el modo interactivo requiere Internet.
 
@@ -15,7 +15,7 @@ Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para
 - **Tabla de anotaciones** con todas las cartas del juego (sospechosos, armas y lugares), organizada por categoría y colapsable por sección. Primera fila y primera columna fijas al hacer scroll.
 - **Ciclo de estados por celda** al tocar/hacer clic: Sin marcar → ❌ No tiene → ? Desconocido → Notas 1–3 → vacío.
 - **Confirmación con toque largo**: coloca ✔️ en un jugador y ❌ en el resto para esa carta. La acción completa se puede revertir con Deshacer.
-- **Selección de cartas para suposición**: tocá el nombre de una carta en la tabla para marcarla con 🔍. Una por categoría (sospechoso, arma y lugar). El botón Suposición se habilita solo al tener las 3 seleccionadas.
+- **Selección de cartas para suposición**: tocá el nombre de una carta en la tabla para marcarla con 🔍. Una por categoría (sospechoso, arma y lugar). En partidas online, el botón Suposición envía la selección a la sala y activa las respuestas secuenciales.
 - **Registro de mano inicial** (Mis Cartas): selección de cartas propias al inicio, que se bloquea automáticamente. En la fila propia se puede marcar con 👁️ a quién le mostraste cada carta.
 - **Sobre Confidencial**: se actualiza automáticamente cuando por descarte lógico se puede determinar qué carta está en el sobre. Al resolverse, el borde de la tabla titila en verde y suena una alerta con síntesis de voz.
 - **Modal de Suposición**: registro de cada suposición con selector por jugador (Pasó / No mostró / carta específica). Incluye historial de respuestas y eliminación de entradas incorrectas.
@@ -25,7 +25,7 @@ Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para
 - **Deshacer y Rehacer**: permite recorrer las últimas acciones, incluso después de refrescar la página.
 - **Soporte de 3 a 6 jugadores** con nombres editables directamente en la tabla.
 - **Reglas del juego** integradas en la app.
-- **Modo interactivo (v81)**: la pantalla inicial permite unirse por código o crear una partida; las sesiones guardadas se pueden reanudar desde esa misma pantalla. Quien organiza queda incorporado automáticamente como jugador. Los asientos se asignan automáticamente por orden de entrada y solo el organizador puede reordenarlos antes de iniciar. Las cartas quedan bloqueadas al confirmarse y no se pueden editar. Incluye carga privada de cartas, turnos sincronizados, suposiciones en orden de mesa, respuestas explícitas y acusación final.
+- **Modo interactivo (v82)**: la pantalla inicial permite unirse por código o crear una partida; las sesiones guardadas se pueden reanudar desde esa misma pantalla. Quien organiza queda incorporado automáticamente como jugador. Los asientos se asignan automáticamente por orden de entrada y solo el organizador puede reordenarlos antes de iniciar. Las cartas quedan bloqueadas al confirmarse y no se pueden editar. Incluye carga privada de cartas, turnos sincronizados, suposiciones en orden de mesa, respuestas explícitas y acusación final.
 - **Privacidad de cartas**: todos ven la suposición y quién responde, pero solo quien supone recibe la identidad de la carta mostrada. La mano de cada jugador queda privada.
 - **Integración con el motor del anotador original (v72)**: el modo interactivo reutiliza el marcado automático existente mediante la función original de registro de suposiciones. No se reemplazó ni modificó `js/app.js`; el modo convencional conserva su funcionamiento.
 - **Asientos y anotaciones**: si el organizador modifica el orden de los asientos antes de iniciar, las columnas del anotador online se reordenan por identidad de jugador para conservar las marcas ya realizadas.
