@@ -942,8 +942,16 @@
     panel.classList.remove("hidden");
     document.body.classList.add("online-panel-open");
     state.error = "";
-    const restored = await restoreSession();
-    if (!restored) { state.screen = "home"; render(); }
+
+    // La pantalla de ingreso es la portada. Una sesión guardada se reanuda
+    // únicamente cuando el usuario elige "Reanudar partida".
+    if (state.room) {
+      render();
+    } else {
+      state.session = readSession();
+      state.screen = "home";
+      render();
+    }
     closeButton?.focus();
   }
 
@@ -1313,7 +1321,10 @@
   } else {
     requestNotificationsOnStartup();
   }
-  if (new URLSearchParams(window.location.search).get("online") === "1") {
-    window.addEventListener("DOMContentLoaded", () => openPanel(), { once: true });
+  const showJoinScreenOnStartup = () => openPanel();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", showJoinScreenOnStartup, { once: true });
+  } else {
+    showJoinScreenOnStartup();
   }
 })();
