@@ -358,15 +358,11 @@ export class GameRoom extends DurableObject {
         return json({ error: "La selección contiene cartas que no pertenecen al juego." }, 400);
       }
       if (new Set(cards).size !== cards.length) return json({ error: "No se pueden repetir cartas." }, 400);
-      const base = Math.floor(18 / room.players.length);
-      const largerHand = Math.ceil(18 / room.players.length);
-      if (cards.length !== base && cards.length !== largerHand) {
-        return json({ error: "La cantidad debe ser " + base + (largerHand !== base ? " o " + largerHand : "") + " cartas, como permite la distribución del juego." }, 400);
+      if (!cards.length || cards.length > ALL_GAME_CARDS.length) {
+        return json({ error: "Seleccioná entre 1 y 21 cartas." }, 400);
       }
       room.hands = room.hands || {};
-      if (room.hands[actor.playerId]) {
-        return json({ error: "Tus cartas ya fueron confirmadas y no se pueden modificar." }, 409);
-      }
+      // La mano puede reemplazarse mientras la sala siga en lobby.
       room.hands[actor.playerId] = cards;
       room.rosterLocked = true;
       await this.saveRoom(room);
