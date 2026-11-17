@@ -586,7 +586,7 @@ export class GameRoom extends DurableObject {
           PLACE_CARDS.length - remainingCounts[2]
         ];
         return json({
-          error: "La cantidad total de cartas es correcta, pero la distribución por categoría no. Entre los 3 participantes deben quedar repartidas 5 cartas de sospechosos, 5 de armas y 8 de lugares. Actualmente cargaron: " +
+          error: "Hay un error en la carga de cartas. Revisen que la distribución sea correcta: entre los 3 participantes deben quedar repartidas 5 cartas de sospechosos, 5 de armas y 8 de lugares. Actualmente cargaron: " +
             dealtCounts[0] + " sospechosos, " + dealtCounts[1] + " armas y " + dealtCounts[2] +
             " lugares. Debe quedar 1 carta sin repartir de cada categoría."
         }, 409);
