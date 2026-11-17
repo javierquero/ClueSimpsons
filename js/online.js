@@ -286,7 +286,10 @@
   function promptCurrentResponder(room) {
     const suggestion = room?.suggestion;
     if (!room || room.status !== "playing" || room.paused || !suggestion || suggestion.completed) return;
-    if (suggestion.currentResponderId === state.session?.playerId && !state.open) openPanel();
+    if (suggestion.currentResponderId === state.session?.playerId && !state.open) {
+      state.screen = "room";
+      openPanel();
+    }
   }
 
   function deactivateOnlineAnnotator() {
