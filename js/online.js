@@ -838,7 +838,9 @@
       (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">Ya no se pueden sumar participantes porque comenzó la carga de cartas. Solo el organizador puede ordenar los asientos antes de iniciar.</p>' : "") +
       '<div class="online-seat-grid online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer +
       handPanel + firstControl + turnPanel + pauseControl + privateAccusationBanner + suggestionPanel + finishedPanel +
-      '<div class="online-actions online-room-actions"><button class="online-button online-button-secondary" data-action="show-annotator">Ver anotador</button></div>' +
+      (room.status === "playing" || room.status === "finished"
+        ? '<div class="online-actions online-room-actions"><button class="online-button online-button-secondary" data-action="show-annotator">Ver anotador</button></div>'
+        : "") +
       '</section>';
   }
   function render() {
@@ -1034,25 +1036,8 @@
         body: { cards: selected }
       });
       state.room = data.room;
-      activateOnlineAnnotator(state.room, { skipHandRestore: true });
-      // Si estábamos corrigiendo la mano antes de iniciar, reiniciamos solo el
-      // tablero nuevo online y aplicamos otra vez el mecanismo original de v72.
-      if (gameState.handLocked) {
-        gameState.matrix = {};
-        gameState.envelope = { suspect: "", weapon: "", place: "" };
-        gameState.history = [];
-        gameState.handLocked = false;
-        // Los deshacer/rehacer de la mano anterior no deben restaurar una
-        // distribución que ya fue reemplazada en el servidor.
-        undoStack = [];
-        redoStack = [];
-      }
-      gameState.myCardsCount = selected.length;
-      window.openMyHandModal();
-      document.querySelectorAll('#myhand-options input[name="myhand-card"]').forEach(input => {
-        input.checked = selected.includes(input.value);
-      });
-      window.saveMyHand();
+      // Las cartas quedan guardadas en la sala. El anotador se activa al iniciar
+      // y restaura la mano privada directamente desde el servidor.
       state.handSelection = [];
       state.editingHand = false;
       state.busy = false;
@@ -1064,11 +1049,16 @@
     }
   }
 
-  async function submitSuggestion() {
-    const suspect = document.getElementById("online-suspect")?.value || "";
-    const weapon = document.getElementById("online-weapon")?.value || "";
-    const place = document.getElementById("online-place")?.value || "";
-    if (!suspect || !weapon || !place) return setError("Elegí un sospechoso, un arma y un lugar.");
+  async function submitSuggestion(selectedCards = null) {
+    const suspect = selectedCards?.suspect || document.getElementById("online-suspect")?.value || "";
+    const weapon = selectedCards?.weapon || document.getElementById("online-weapon")?.value || "";
+    const place = selectedCards?.place || document.getElementById("online-place")?.value || "";
+    if (!suspect || !weapon || !place) {
+      const message = "Elegí un sospechoso, un arma y un lugar.";
+      if (state.open) setError(message);
+      else if (typeof window.showToast === "function") window.showToast(message);
+      return;
+    }
     state.busy = true;
     state.error = "";
     render();
@@ -1081,10 +1071,19 @@
       state.busy = false;
       state.responseChoice = "";
       activateOnlineAnnotator(state.room);
+      if (selectedCards) {
+        guessSelection = { suspect: "", weapon: "", place: "" };
+        updateGuessButton();
+        saveState();
+        renderAll();
+        if (typeof window.showToast === "function") window.showToast("Suposición enviada. Esperando las respuestas de los jugadores.");
+      }
       render();
     } catch (error) {
       state.busy = false;
-      setError(error.message);
+      if (state.open) setError(error.message);
+      else if (typeof window.showToast === "function") window.showToast(error.message);
+      else console.error(error);
     }
   }
 
@@ -1142,8 +1141,9 @@
   async function refreshRoom(reconnect = true) {
     try {
       const data = await api("/api/rooms/" + state.session.code);
+      const previousStatus = state.room?.status;
       state.room = data.room;
-      activateOnlineAnnotator(state.room);
+      enterAnnotatorAfterStart(state.room, previousStatus !== "playing");
       applyCompletedSuggestion(state.room);
       state.error = "";
       render();
@@ -1159,6 +1159,7 @@
         method: "POST", host: true, body: { firstPlayerId }
       });
       state.room = data.room; state.busy = false; state.screen = "room";
+      enterAnnotatorAfterStart(state.room, true);
       await refreshRoom(false);
       render();
     } catch (error) { state.busy = false; setError(error.message); }
