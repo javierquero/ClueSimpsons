@@ -982,6 +982,7 @@
       created = await api("/api/rooms", {
         method: "POST", token: "", body: { hostName: name }
       });
+      state.autoNavigated = false;
       state.session = {
         code: created.code,
         organizerToken: created.hostToken,
@@ -1129,6 +1130,7 @@
       });
       const retainedOrganizerToken = state.session?.code === state.joinCode ? state.session.organizerToken : null;
       const retainedHostName = state.session?.code === state.joinCode ? state.session.hostName : null;
+      state.autoNavigated = false;
       state.session = {
         code: state.joinCode, organizerToken: retainedOrganizerToken, hostName: retainedHostName,
         playerId: data.playerId, playerToken: data.playerToken, playerName: state.joinName
@@ -1246,7 +1248,7 @@
     if (action === "home") {
       state.screen = "home"; state.joinLookup = null; render();
     } else if (action === "create-screen") {
-      state.screen = "create"; render(); document.getElementById("online-host-name")?.focus();
+      state.screen = "create"; state.autoNavigated = false; render(); document.getElementById("online-host-name")?.focus();
     } else if (action === "join-screen") {
       state.screen = "home"; state.joinLookup = null; state.selectedSeat = null;
       render(); document.getElementById("online-room-code")?.focus();
