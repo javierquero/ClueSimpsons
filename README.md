@@ -25,7 +25,7 @@ Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para
 - **Deshacer y Rehacer**: permite recorrer las últimas acciones, incluso después de refrescar la página.
 - **Soporte de 3 a 6 jugadores** con nombres editables directamente en la tabla.
 - **Reglas del juego** integradas en la app.
-- **Modo interactivo (v77)**: salas de 3 a 6 jugadores, ingreso por código, organizador independiente, elección de asientos y ajustes por el organizador hasta iniciar, carga privada de cartas, selección manual o aleatoria de quién comienza, indicador sincronizado de turnos, suposiciones en orden de mesa, respuestas explícitas y acusación final.
+- **Modo interactivo (v77)**: acceso desde Configuración; la pantalla inicial prioriza el ingreso por código y ofrece crear partida como alternativa. Quien organiza queda incorporado automáticamente como jugador. Incluye elección de asientos, carga privada de cartas, turnos sincronizados, suposiciones en orden de mesa, respuestas explícitas, acusación final e iconos vectoriales para las acciones de sala.
 - **Privacidad de cartas**: todos ven la suposición y quién responde, pero solo quien supone recibe la identidad de la carta mostrada. La mano de cada jugador queda privada.
 - **Integración con el anotador v72**: el modo interactivo reutiliza el marcado automático existente mediante la función original de registro de suposiciones. No se reemplazó ni modificó `js/app.js`; el modo convencional conserva su funcionamiento.
 - **Asientos y anotaciones**: si el organizador modifica el orden de los asientos antes de iniciar, las columnas del anotador online se reordenan por identidad de jugador para conservar las marcas ya realizadas.
