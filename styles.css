@@ -1078,93 +1078,43 @@ body.online-panel-open { overflow: hidden; }
 }
 
 
-/* Indicador flotante: permite seguir la suposición mientras se consulta el anotador. */
+/* v84: estado de partida en una franja fija, integrada y sin tarjeta flotante. */
 .online-live-indicator {
   position: fixed;
-  left: 10px;
-  right: 10px;
-  bottom: calc(59px + env(safe-area-inset-bottom, 0px));
   z-index: 150;
+  left: 0;
+  right: 0;
+  bottom: calc(59px + env(safe-area-inset-bottom, 0px));
   display: flex;
   align-items: center;
   gap: 9px;
-  max-width: 560px;
-  margin: 0 auto;
-  padding: 10px 11px 10px 13px;
-  border: 1px solid #fbbf24;
-  border-radius: 13px;
-  background: rgba(255,251,235,.97);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 7px 12px;
+  border-top: 1px solid #fbbf24;
+  border-bottom: 1px solid #fbbf24;
+  border-radius: 0;
+  background: #fffbeb;
   color: #422006;
-  box-shadow: 0 7px 24px rgba(15,23,42,.2);
-  backdrop-filter: blur(8px);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 .online-live-indicator.hidden { display: none; }
-.online-live-inner {
-  display: flex;
-  min-width: 0;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 4px;
-}
-.online-live-kicker {
-  color: #a16207;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-}
-.online-live-inner > strong {
-  color: #422006;
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-.online-live-progress {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-}
-.online-live-response {
-  color: #475569;
-  font-size: 10px;
-  font-weight: 700;
-}
-.online-live-next {
-  color: #1d4ed8;
-  font-size: 11px;
-  font-weight: 900;
-}
-.online-live-reveal {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: #475569;
-  font-size: 11px;
-  font-weight: 800;
-}
-.online-live-open {
-  display: inline-flex;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9px;
-  background: #facc15;
-  color: #713f12;
-  font-size: 19px;
-  font-weight: 900;
-}
+.online-live-inner { display: flex; min-width: 0; flex: 1 1 auto; flex-direction: column; gap: 2px; }
+.online-live-kicker { color: #a16207; font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.online-live-inner > strong { color: #422006; font-size: 11px; font-weight: 900; line-height: 1.3; overflow-wrap: anywhere; }
+.online-live-progress { display: flex; flex-wrap: wrap; gap: 3px 8px; }
+.online-live-response { color: #475569; font-size: 10px; font-weight: 700; }
+.online-live-next { color: #1d4ed8; font-size: 10px; font-weight: 900; }
+.online-live-reveal { display: flex; align-items: center; gap: 7px; color: #475569; font-size: 10px; font-weight: 800; }
+.online-live-open { display: inline-flex; width: 30px; height: 30px; flex: 0 0 30px; align-items: center; justify-content: center; border-radius: 6px; background: #facc15; color: #713f12; font-size: 18px; font-weight: 900; }
 @media (min-width: 768px) {
-  .online-live-indicator {
-    right: 18px;
-    left: auto;
-    bottom: 18px;
-    width: min(390px, calc(100vw - 36px));
-    margin: 0;
-  }
+  .online-live-indicator { bottom: 0; padding: 9px max(18px, calc((100vw - 980px) / 2)); border-right: 0; border-left: 0; }
 }
+.online-active-game { gap: 12px; }
+.online-active-game > .online-paused-banner,
+.online-active-game > .online-private-accusation { margin-top: 8px; }
 
 
 /* v78: acceso online desde configuración, acciones de sala e iconografía vectorial. */
