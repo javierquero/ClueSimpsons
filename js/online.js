@@ -378,9 +378,17 @@
     try {
       const askedKey = "clue_online_notification_prompted";
       if (localStorage.getItem(askedKey) === "1") return;
-      localStorage.setItem(askedKey, "1");
-      const request = Notification.requestPermission();
-      if (request && typeof request.catch === "function") request.catch(() => {});
+      const askFromFirstInteraction = () => {
+        if (Notification.permission !== "default") return;
+        try { localStorage.setItem(askedKey, "1"); } catch {}
+        try {
+          const request = Notification.requestPermission();
+          if (request && typeof request.catch === "function") request.catch(() => {});
+        } catch {}
+      };
+      // Los navegadores modernos requieren un gesto del usuario para mostrar el permiso.
+      document.addEventListener("pointerdown", askFromFirstInteraction, { once: true, capture: true });
+      document.addEventListener("keydown", askFromFirstInteraction, { once: true, capture: true });
     } catch {}
   }
 
