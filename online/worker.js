@@ -579,7 +579,17 @@ export class GameRoom extends DurableObject {
         solution.filter(card => PLACE_CARDS.includes(card))
       ];
       if (solution.length !== 3 || solutionByCategory.some(group => group.length !== 1)) {
-        return json({ error: "No se pudo determinar una solución válida. Revisen las cartas cargadas." }, 409);
+        const remainingCounts = solutionByCategory.map(group => group.length);
+        const dealtCounts = [
+          SUSPECT_CARDS.length - remainingCounts[0],
+          WEAPON_CARDS.length - remainingCounts[1],
+          PLACE_CARDS.length - remainingCounts[2]
+        ];
+        return json({
+          error: "La cantidad total de cartas es correcta, pero la distribución por categoría no. Entre los 3 participantes deben quedar repartidas 5 cartas de sospechosos, 5 de armas y 8 de lugares. Actualmente cargaron: " +
+            dealtCounts[0] + " sospechosos, " + dealtCounts[1] + " armas y " + dealtCounts[2] +
+            " lugares. Debe quedar 1 carta sin repartir de cada categoría."
+        }, 409);
       }
       room.solution = solution;
       room.ineligibleToWin = [];
