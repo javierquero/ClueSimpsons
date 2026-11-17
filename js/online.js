@@ -848,12 +848,13 @@
       '<div class="online-room-tools" aria-label="Acciones de sala">' +
       '<button class="online-icon-button" data-action="copy-code" title="Copiar código" aria-label="Copiar código">' + onlineActionIcon("copy") + '</button>' +
       '<button class="online-icon-button" data-action="refresh" title="Actualizar sala" aria-label="Actualizar sala">' + onlineActionIcon("refresh") + '</button>' +
-      '<button class="online-icon-button online-icon-button-exit" data-action="show-annotator" title="Salir de esta vista" aria-label="Salir de esta vista">' + onlineActionIcon("exit") + '</button>' +
+      '<button class="online-icon-button online-icon-button-exit" data-action="home" title="Salir de esta vista" aria-label="Salir de esta vista">' + onlineActionIcon("exit") + '</button>' +
       '</div></div>' +
       '<p class="online-muted">Organiza ' + escapeHtml(room.hostName) + ' · ' + players.length + '/6 jugadores · Código para compartir</p>' +
       (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">Ya no se pueden sumar participantes porque comenzó la carga de cartas. El organizador todavía puede ajustar los asientos hasta iniciar.</p>' : "") +
       '<div class="online-seat-grid online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer +
       handPanel + firstControl + turnPanel + pauseControl + privateAccusationBanner + suggestionPanel + finishedPanel +
+      '<div class="online-actions online-room-actions"><button class="online-button online-button-secondary" data-action="show-annotator">Ver anotador</button></div>' +
       '</section>';
   }
   function render() {
