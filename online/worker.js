@@ -329,11 +329,12 @@ export class GameRoom extends DurableObject {
       try { body = await readJson(request); }
       catch (error) { return json({ error: error.message }, 400); }
       const name = cleanName(body.name);
-      const seat = Number(body.seat);
       if (!name) return json({ error: "Ingresá tu nombre." }, 400);
-      if (!Number.isInteger(seat) || seat < 1 || seat > MAX_PLAYERS) return json({ error: "Elegí un asiento válido." }, 400);
       if (room.players.length >= MAX_PLAYERS) return json({ error: "La mesa ya está completa." }, 409);
-      if (room.players.some(player => player.seat === seat)) return json({ error: "Ese asiento ya está ocupado." }, 409);
+      // El servidor asigna el primer asiento libre: el jugador no puede elegirlo.
+      const seat = Array.from({ length: MAX_PLAYERS }, (_, index) => index + 1)
+        .find(candidate => !room.players.some(player => player.seat === candidate));
+      if (!seat) return json({ error: "La mesa ya está completa." }, 409);
 
       const playerId = crypto.randomUUID();
       const playerToken = randomToken();
@@ -363,6 +364,9 @@ export class GameRoom extends DurableObject {
         return json({ error: "La cantidad debe ser " + base + (largerHand !== base ? " o " + largerHand : "") + " cartas, como permite la distribución del juego." }, 400);
       }
       room.hands = room.hands || {};
+      if (room.hands[actor.playerId]) {
+        return json({ error: "Tus cartas ya fueron confirmadas y no se pueden modificar." }, 409);
+      }
       room.hands[actor.playerId] = cards;
       room.rosterLocked = true;
       await this.saveRoom(room);
@@ -371,6 +375,7 @@ export class GameRoom extends DurableObject {
     }
 
     if (path.endsWith("/seat") && (method === "PATCH" || method === "POST")) {
+      if (actor.role !== "host") return json({ error: "Solo el organizador puede ordenar los asientos." }, 403);
       if (room.status !== "lobby") return json({ error: "Los asientos quedan bloqueados cuando comienza la partida." }, 409);
       let body;
       try { body = await readJson(request); }
@@ -378,8 +383,7 @@ export class GameRoom extends DurableObject {
       const seat = Number(body.seat);
       if (!Number.isInteger(seat) || seat < 1 || seat > MAX_PLAYERS) return json({ error: "Elegí un asiento entre 1 y 6." }, 400);
 
-      const targetId = actor.role === "host" ? String(body.playerId || "") : actor.playerId;
-      if (actor.role !== "host" && body.playerId) return json({ error: "Solo el organizador puede cambiar el asiento de otro jugador." }, 403);
+      const targetId = String(body.playerId || "");
       const target = room.players.find(player => player.id === targetId);
       if (!target) return json({ error: "No se encontró al jugador." }, 404);
       if (target.seat === seat) return json({ room: this.publicSnapshot(room) });
