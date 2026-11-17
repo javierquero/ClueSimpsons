@@ -10,7 +10,7 @@ const ASSETS = [
   './js/app.js',
   './js/app.js?v=72',
   './js/online.js',
-  './js/online.js?v=82',
+  './js/online.js?v=83',
   './manifest.json',
   './dona.webp',
   './icon-192.png',
