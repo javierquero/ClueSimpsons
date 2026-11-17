@@ -1165,3 +1165,75 @@ body.online-panel-open { overflow: hidden; }
     margin: 0;
   }
 }
+
+
+/* v77: acceso online desde configuración, acciones de sala e iconografía vectorial. */
+.config-online-entry {
+  margin-top: 16px;
+  padding: 13px;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  background: #fffbeb;
+}
+.config-online-entry > p {
+  margin: 0 0 9px;
+  color: #78350f;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.online-entry-settings {
+  width: 100%;
+  min-height: 42px;
+  gap: 9px;
+  border-color: #d6a11b;
+  background: #fef3c7;
+  color: #713f12;
+  font-size: 13px;
+}
+.online-entry-settings svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+.online-entry-settings .online-entry-label { display: inline; }
+.online-create-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0 3px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 900;
+}
+.online-create-divider::before,
+.online-create-divider::after { content: ""; height: 1px; flex: 1; background: #e2e8f0; }
+.online-room-heading { align-items: center; }
+.online-room-heading-title { min-width: 0; }
+.online-room-tools {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+.online-icon-button {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #fbbf24;
+  border-radius: 10px;
+  background: #fef3c7;
+  color: #92400e;
+  cursor: pointer;
+  transition: background .12s ease, transform .12s ease;
+}
+.online-icon-button:hover { background: #fde68a; }
+.online-icon-button:active { transform: translateY(1px); }
+.online-icon-button svg { width: 19px; height: 19px; }
+.online-icon-button-exit { border-color: #cbd5e1; background: #f1f5f9; color: #475569; }
+.online-icon-button-exit:hover { background: #e2e8f0; }
+.online-room-found-seats { margin-top: 15px; }
+@media (max-width: 430px) {
+  .online-room-tools { gap: 4px; }
+  .online-icon-button { width: 34px; height: 34px; }
+  .online-icon-button svg { width: 18px; height: 18px; }
+  .online-room-heading { gap: 7px; }
+  .online-room-heading h3 { font-size: 18px; }
+}
