@@ -589,22 +589,16 @@
 
   function renderHandPanel(room, me) {
     if (!me || room.status !== "lobby") return "";
-    if (me.handSubmitted) {
-      return '<section class="online-hand-panel"><p class="online-eyebrow">TUS CARTAS</p><strong>Mano confirmada · ' +
-        me.handCount + ' cartas</strong><p class="online-muted">Tus cartas quedaron guardadas de forma privada y ya no se pueden modificar.</p></section>';
-    }
     if (room.players.length < 3) {
       return '<section class="online-hand-panel"><p class="online-eyebrow">CARGA DE CARTAS</p>' +
         '<strong>Esperando al menos 3 jugadores</strong><p class="online-muted">Cuando estén todos sentados, vas a poder cargar tus cartas.</p></section>';
     }
-    const allowedCounts = allowedHandCounts(room);
-    const count = state.handCountChoice || allowedCounts[0] || expectedHandCount(room);
-    const countPicker = allowedCounts.length > 1
-      ? '<label class="online-label" for="online-hand-count">Cantidad de cartas que recibiste</label>' +
-        '<select id="online-hand-count" class="online-input">' +
-        allowedCounts.map(value => '<option value="' + value + '" ' + (count === value ? "selected" : "") + '>' + value + ' cartas</option>').join("") +
-        '</select>'
-      : '<p class="online-muted">La distribución corresponde a ' + count + ' cartas por jugador.</p>';
+    if (me.handSubmitted && !state.editingHand) {
+      return '<section class="online-hand-panel"><p class="online-eyebrow">TUS CARTAS</p><strong>Selección guardada · ' +
+        me.handCount + ' cartas</strong><p class="online-muted">Podés modificar tu selección mientras el organizador no haya iniciado la partida.</p>' +
+        '<button class="online-button online-button-secondary online-full-button" data-action="edit-hand">Modificar mis cartas</button></section>';
+    }
+    const count = state.handSelection.length;
     const groups = [
       { title: "Sospechosos", cards: CARDS.suspects },
       { title: "Armas", cards: CARDS.weapons },
@@ -616,11 +610,11 @@
       '</div></div>').join("");
     return '<section class="online-hand-panel"><p class="online-eyebrow">CARGÁ TUS CARTAS</p><h4>Tu mano privada</h4>' +
       '<p>Según tu asiento, te corresponden <strong>' + count + ' cartas</strong>. Solo vos vas a poder consultar cuáles cargaste.</p>' +
-      countPicker + '<div class="online-hand-counter">' + state.handSelection.length + ' / ' + count + ' seleccionadas</div>' +
+      '<div class="online-hand-counter">' + state.handSelection.length + ' cartas seleccionadas</div>' +
       choices + '<button class="online-button online-button-primary online-full-button" data-action="submit-hand" ' +
-      (state.handSelection.length === count && !state.busy ? "" : "disabled") + '>' +
-      (state.busy ? "Guardando cartas…" : "Confirmar mi mano") + '</button>' +
-      '<p class="online-muted">Al confirmar, tus cartas quedan bloqueadas. El organizador puede ordenar los asientos hasta iniciar la partida.</p></section>';
+      (state.handSelection.length > 0 && !state.busy ? "" : "disabled") + '>' +
+      (state.busy ? "Guardando cartas…" : "Guardar mi selección") + '</button>' +
+      '<p class="online-muted">Podés seleccionar más o menos cartas que el reparto teórico y volver a modificarlas. La partida solo podrá comenzar cuando entre todos sumen 18 cartas válidas y la solución sea correcta.</p></section>';
   }
 
   function renderAccusationComposer() {
@@ -1055,7 +1049,8 @@
   async function submitHand() {
     const selected = [...content.querySelectorAll("[data-online-card]:checked")].map(input => input.value);
     const expected = Number(state.handCountChoice || state.expectedHandCount || expectedHandCount(state.room));
-    if (selected.length !== expected) return setError("Seleccioná exactamente " + expected + " cartas.");
+    if (!selected.length) return setError("Seleccioná al menos una carta.");
+    if (selected.length > 21) return setError("No podés seleccionar más de 21 cartas.");
     state.busy = true;
     state.error = "";
     render();
@@ -1065,13 +1060,12 @@
         body: { cards: selected }
       });
       state.room = data.room;
-      // Las cartas quedan guardadas en la sala. El anotador se activa al iniciar
-      // y restaura la mano privada directamente desde el servidor.
-      state.handSelection = [];
+      // La selección queda guardada en el servidor y puede editarse hasta el inicio.
+      state.handSelection = [...selected];
       state.editingHand = false;
       state.busy = false;
       state.error = "";
-      await refreshRoom(false);
+      await refreshRoom(true);
     } catch (error) {
       state.busy = false;
       setError(error.message);
@@ -1289,7 +1283,6 @@
     else if (action === "edit-hand") {
       state.editingHand = true;
       state.handSelection = [...(state.room?.private?.ownCards || [])];
-      state.handCountChoice = state.handSelection.length || state.handCountChoice;
       render();
     } else if (action === "make-suggestion") await submitSuggestion();
     else if (action === "respond-none") await submitResponse("none");
@@ -1306,12 +1299,7 @@
     const target = event.target;
     if (target.dataset.action === "host-seat") await changeSeat(target.dataset.playerId, target.value, true);
     else if (target.id === "online-first-player") state.selectedFirst = target.value;
-    else if (target.id === "online-hand-count") {
-      state.handCountChoice = Number(target.value);
-      state.expectedHandCount = expectedHandCount(state.room);
-      if (state.annotatorActive && !gameState.handLocked) gameState.myCardsCount = state.handCountChoice;
-      render();
-    } else if (target.hasAttribute("data-online-card")) {
+    else if (target.hasAttribute("data-online-card")) {
       state.handSelection = [...content.querySelectorAll("[data-online-card]:checked")].map(input => input.value);
       render();
     } else if (target.name === "online-response-card") {
