@@ -18,7 +18,7 @@
     lastNotificationKey: "", accusationDraft: null, accusationConfirmOpen: false,
     annotatorActive: false, conventionalSnapshot: null, onlineAnnotationKey: "",
     originalSaveState: null, originalSaveActionStacks: null, historyWrapperInstalled: false,
-    originalOpenGuessModal: null, annotationPlayerOrderIds: []
+    originalOpenGuessModal: null, annotationPlayerOrderIds: [], autoNavigated: false
   };
 
   function escapeHtml(value) {
@@ -141,12 +141,14 @@
       state.originalOpenGuessModal = window.openGuessModal;
       window.openGuessModal = function(...args) {
         if (state.annotatorActive) {
-          if (state.open) {
-            state.error = "En el modo interactivo, las suposiciones se realizan desde la sala.";
-            render();
-          } else {
-            openPanel();
+          const selected = { suspect: guessSelection.suspect, weapon: guessSelection.weapon, place: guessSelection.place };
+          if (!selected.suspect || !selected.weapon || !selected.place) {
+            const message = "Seleccioná un sospechoso, un arma y un lugar con las lupitas.";
+            if (state.open) setError(message);
+            else if (typeof window.showToast === "function") window.showToast(message);
+            return;
           }
+          submitSuggestion(selected);
           return;
         }
         return state.originalOpenGuessModal.apply(this, args);
@@ -194,6 +196,7 @@
   }
 
   function activateOnlineAnnotator(room, options = {}) {
+    if (!room || !["playing", "finished"].includes(room.status)) return;
     const localOrder = localPlayerOrder(room);
     if (!localOrder.length || !state.session?.playerId) return;
     const key = onlineAnnotationStorageKey();
@@ -268,6 +271,15 @@
       state.handSelection = [];
     } catch (error) {
       console.warn("No se pudo restaurar la mano privada en el anotador:", error);
+    }
+  }
+
+  function enterAnnotatorAfterStart(room, navigate = false) {
+    if (!room || !["playing", "finished"].includes(room.status)) return;
+    activateOnlineAnnotator(room);
+    if (navigate && !state.autoNavigated) {
+      state.autoNavigated = true;
+      if (state.open) hidePanelForAnnotator();
     }
   }
 
@@ -864,7 +876,7 @@
           const payload = JSON.parse(event.data);
           if (payload.type === "room.snapshot" && payload.room) {
             state.room = payload.room;
-            activateOnlineAnnotator(state.room);
+            enterAnnotatorAfterStart(state.room, true);
             applyCompletedSuggestion(state.room);
             notifyPlayer(state.room);
             updateLiveIndicator(state.room);
@@ -886,6 +898,7 @@
     state.room = data.room;
     state.screen = "room";
     state.error = "";
+    enterAnnotatorAfterStart(state.room, true);
     render();
     connectSocket();
   }
@@ -900,7 +913,7 @@
       state.room = data.room;
       state.screen = "room";
       state.error = "";
-      activateOnlineAnnotator(state.room);
+      enterAnnotatorAfterStart(state.room, true);
       applyCompletedSuggestion(state.room);
       notifyPlayer(state.room);
       updateLiveIndicator(state.room);
