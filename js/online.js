@@ -961,21 +961,25 @@
     const name = document.getElementById("online-host-name")?.value.trim();
     if (!name) return setError("Ingresá tu nombre.");
     state.busy = true; state.error = ""; render();
+    let created = null;
     try {
-      const created = await api("/api/rooms", {
+      created = await api("/api/rooms", {
         method: "POST", token: "", body: { hostName: name }
-      });
-      const joined = await api("/api/rooms/" + created.code + "/join", {
-        method: "POST", token: "", body: { name, seat: 1 }
       });
       state.session = {
         code: created.code,
         organizerToken: created.hostToken,
-        playerId: joined.playerId,
-        playerToken: joined.playerToken,
-        hostName: name,
-        playerName: name
+        playerId: null,
+        playerToken: null,
+        hostName: name
       };
+      saveSession();
+      const joined = await api("/api/rooms/" + created.code + "/join", {
+        method: "POST", token: "", body: { name, seat: 1 }
+      });
+      state.session.playerId = joined.playerId;
+      state.session.playerToken = joined.playerToken;
+      state.session.playerName = name;
       saveSession();
       state.room = joined.room;
       state.screen = "room";
@@ -985,8 +989,14 @@
       connectSocket();
     } catch (error) {
       state.busy = false;
-      // Si la sala ya fue creada, conservamos la sesión de organizador para permitir reintentar.
-      setError(error.message);
+      if (created && state.session?.code === created.code) {
+        state.screen = "room";
+        await refreshRoom(false);
+        setError("La sala se creó, pero no pudimos incorporarte automáticamente como jugador. Elegí un asiento para reintentar: " + error.message);
+        connectSocket();
+      } else {
+        setError(error.message);
+      }
     }
   }
 
