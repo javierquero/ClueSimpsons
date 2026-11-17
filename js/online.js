@@ -520,21 +520,15 @@
   function renderJoin() {
     const room = state.joinLookup;
     if (!room) return renderHome();
-    const seats = Array.from({ length: MAX_SEATS }, (_, index) => {
-      const seat = index + 1;
-      const player = room.players.find(item => item.seat === seat);
-      const selected = state.selectedSeat === seat;
-      return '<button class="online-seat-choice ' + (player ? "is-occupied" : "") + (selected ? " is-selected" : "") +
-        '" data-action="choose-seat" data-seat="' + seat + '" ' + (player ? "disabled" : "") +
-        ' aria-pressed="' + selected + '"><strong>Asiento ' + seat + '</strong><span>' +
-        (player ? escapeHtml(player.name) : (selected ? "Seleccionado" : "Libre")) + '</span></button>';
-    }).join("");
-    return '<section class="online-card"><p class="online-eyebrow">INGRESO A LA PARTIDA</p><h3>Elegí tu asiento</h3>' +
+    const nextSeat = Array.from({ length: MAX_SEATS }, (_, index) => index + 1)
+      .find(seat => !room.players.some(player => player.seat === seat));
+    return '<section class="online-card"><p class="online-eyebrow">INGRESO A LA PARTIDA</p><h3>Unirte a la partida</h3>' +
       '<p>Sala ' + escapeHtml(room.code) + ' · Organiza ' + escapeHtml(room.hostName) + ' · ' + room.players.length + '/6 jugadores</p>' +
-      '<div class="online-seat-grid online-room-found-seats">' + seats + '</div>' +
+      '<p class="online-muted">El asiento se asignará automáticamente según el orden de entrada. ' +
+      (nextSeat ? 'Te corresponde inicialmente el asiento ' + nextSeat + '.' : 'La mesa está completa.') + '</p>' +
       '<button class="online-button online-button-primary online-full-button" data-action="join-confirm" ' +
-      (state.selectedSeat && !state.busy ? "" : "disabled") + '>' +
-      (state.busy ? "Ingresando…" : "Confirmar asiento y unirme") + '</button>' +
+      (nextSeat && !state.busy ? "" : "disabled") + '>' +
+      (state.busy ? "Ingresando…" : "Unirme a la partida") + '</button>' +
       '<button class="online-button online-button-light online-full-button" data-action="home">Volver</button></section>';
   }
 
@@ -574,10 +568,9 @@
 
   function renderHandPanel(room, me) {
     if (!me || room.status !== "lobby") return "";
-    if (me.handSubmitted && !state.editingHand) {
+    if (me.handSubmitted) {
       return '<section class="online-hand-panel"><p class="online-eyebrow">TUS CARTAS</p><strong>Mano confirmada · ' +
-        me.handCount + ' cartas</strong><p class="online-muted">Tus cartas quedaron guardadas de forma privada. Los demás solo pueden ver cuántas cargaste.</p>' +
-        '<button class="online-button online-button-secondary online-full-button" data-action="edit-hand">Editar mis cartas</button></section>';
+        me.handCount + ' cartas</strong><p class="online-muted">Tus cartas quedaron guardadas de forma privada y ya no se pueden modificar.</p></section>';
     }
     if (room.players.length < 3) {
       return '<section class="online-hand-panel"><p class="online-eyebrow">CARGA DE CARTAS</p>' +
@@ -606,7 +599,7 @@
       choices + '<button class="online-button online-button-primary online-full-button" data-action="submit-hand" ' +
       (state.handSelection.length === count && !state.busy ? "" : "disabled") + '>' +
       (state.busy ? "Guardando cartas…" : "Confirmar mi mano") + '</button>' +
-      '<p class="online-muted">La primera confirmación cierra el ingreso de nuevos participantes. El organizador todavía puede ajustar los asientos hasta iniciar.</p></section>';
+      '<p class="online-muted">Al confirmar, tus cartas quedan bloqueadas. El organizador puede ordenar los asientos hasta iniciar la partida.</p></section>';
   }
 
   function renderAccusationComposer() {
@@ -776,16 +769,7 @@
         selector + '</div>';
     }).join("");
 
-    const selfSeatControl = me && !isHost && !seatsLocked
-      ? '<div class="online-inline-control"><label class="online-label" for="online-self-seat">Tu asiento</label>' +
-        '<select id="online-self-seat" class="online-input" data-action="self-seat">' +
-        Array.from({ length: MAX_SEATS }, (_, i) => {
-          const seat = i + 1;
-          const occupied = players.some(player => player.seat === seat && player.id !== me.id);
-          return '<option value="' + seat + '" ' + (me.seat === seat ? "selected" : "") +
-            (occupied ? " disabled" : "") + '>Asiento ' + seat + (occupied ? " — ocupado" : "") + '</option>';
-        }).join("") + '</select></div>'
-      : "";
+    const selfSeatControl = "";
 
     const canStart = players.length >= 3 && players.length <= 6 &&
       players.every(player => Number.isInteger(player.seat)) && handsValid;
@@ -851,7 +835,7 @@
       '<button class="online-icon-button online-icon-button-exit" data-action="home" title="Salir de esta vista" aria-label="Salir de esta vista">' + onlineActionIcon("exit") + '</button>' +
       '</div></div>' +
       '<p class="online-muted">Organiza ' + escapeHtml(room.hostName) + ' · ' + players.length + '/6 jugadores · Código para compartir</p>' +
-      (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">Ya no se pueden sumar participantes porque comenzó la carga de cartas. El organizador todavía puede ajustar los asientos hasta iniciar.</p>' : "") +
+      (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">Ya no se pueden sumar participantes porque comenzó la carga de cartas. Solo el organizador puede ordenar los asientos antes de iniciar.</p>' : "") +
       '<div class="online-seat-grid online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer +
       handPanel + firstControl + turnPanel + pauseControl + privateAccusationBanner + suggestionPanel + finishedPanel +
       '<div class="online-actions online-room-actions"><button class="online-button online-button-secondary" data-action="show-annotator">Ver anotador</button></div>' +
@@ -992,7 +976,7 @@
       };
       saveSession();
       const joined = await api("/api/rooms/" + created.code + "/join", {
-        method: "POST", token: "", body: { name, seat: 1 }
+        method: "POST", token: "", body: { name }
       });
       state.session.playerId = joined.playerId;
       state.session.playerToken = joined.playerToken;
@@ -1124,11 +1108,11 @@
   }
 
   async function joinRoom() {
-    if (!state.selectedSeat || !state.joinLookup) return setError("Elegí un asiento libre.");
+    if (!state.joinLookup) return setError("Primero buscá una partida.");
     state.busy = true; state.error = ""; render();
     try {
       const data = await api("/api/rooms/" + state.joinCode + "/join", {
-        method: "POST", token: "", body: { name: state.joinName, seat: state.selectedSeat }
+        method: "POST", token: "", body: { name: state.joinName }
       });
       const retainedOrganizerToken = state.session?.code === state.joinCode ? state.session.organizerToken : null;
       const retainedHostName = state.session?.code === state.joinCode ? state.session.hostName : null;
@@ -1284,7 +1268,6 @@
   content.addEventListener("change", async event => {
     const target = event.target;
     if (target.dataset.action === "host-seat") await changeSeat(target.dataset.playerId, target.value, true);
-    else if (target.dataset.action === "self-seat") await changeSeat(state.session.playerId, target.value, false);
     else if (target.id === "online-first-player") state.selectedFirst = target.value;
     else if (target.id === "online-hand-count") {
       state.handCountChoice = Number(target.value);
