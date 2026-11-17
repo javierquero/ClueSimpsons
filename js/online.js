@@ -1025,7 +1025,7 @@
     if (!state.joinName) return setError("Ingresá tu nombre.");
     state.busy = true; state.error = ""; render();
     try {
-      const data = await api("/api/rooms/" + state.joinCode);
+      const data = await api("/api/rooms/" + state.joinCode, { token: "" });
       if (data.room.status !== "lobby") throw new Error("La partida ya comenzó y no admite nuevos jugadores.");
       if (data.room.players.length >= MAX_SEATS) throw new Error("La mesa ya está completa.");
       state.joinLookup = data.room;
