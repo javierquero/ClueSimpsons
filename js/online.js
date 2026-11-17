@@ -652,23 +652,6 @@
       solution.map(card => '<span>' + escapeHtml(card) + '</span>').join("") + '</div></section>';
   }
 
-  function renderSuggestionComposer() {
-    const fields = [
-      { id: "online-suspect", label: "Sospechoso", cards: CARDS.suspects },
-      { id: "online-weapon", label: "Arma", cards: CARDS.weapons },
-      { id: "online-place", label: "Lugar", cards: CARDS.places }
-    ];
-    return '<section class="online-suggestion-composer"><p class="online-eyebrow">ES TU TURNO</p><h4>Hacer una suposición</h4>' +
-      fields.map(field => '<label class="online-label" for="' + field.id + '">' + field.label + '</label>' +
-        '<select id="' + field.id + '" class="online-input"><option value="">Elegir…</option>' +
-        field.cards.map(card => '<option value="' + escapeHtml(card) + '">' + escapeHtml(card) + '</option>').join("") +
-        '</select>').join("") +
-      '<button class="online-button online-button-primary online-full-button" data-action="make-suggestion" ' +
-      (state.busy ? "disabled" : "") + '>Enviar suposición</button>' +
-      '<p class="online-muted">Todos verán los tres elementos y el orden de respuestas. Las cartas que se muestren seguirán siendo privadas.</p>' +
-      renderAccusationComposer() + '</section>';
-  }
-
   function renderSuggestionPanel(room, me) {
     if (room.status !== "playing") return "";
     const localPlayerId = state.session?.playerId || null;
@@ -766,7 +749,7 @@
         ? '<button class="online-button ' + (room.paused ? "online-button-primary" : "online-button-light") +
           '" data-action="toggle-pause">' + (room.paused ? "Reanudar partida" : "Pausar partida") + '</button>'
         : "";
-      const accusationPanel = room.status === "playing" && myTurn && room.private?.canWin !== false
+      const accusationPanel = room.status === "playing" && !room.paused && myTurn && room.private?.canWin !== false
         ? renderAccusationComposer() : "";
       const privateAccusationBanner = room.private?.lastAccusation
         ? '<div class="online-private-accusation"><strong>Acusación incorrecta</strong><p>' +
