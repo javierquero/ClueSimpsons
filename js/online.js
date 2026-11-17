@@ -992,13 +992,11 @@
       return;
     }
     persistOnlineAnnotation();
-    updateLiveIndicator(state.room);
     state.open = false;
     panel.classList.add("hidden");
     document.body.classList.remove("online-panel-open");
-    if (state.reconnectTimer) clearTimeout(state.reconnectTimer);
-    state.reconnectTimer = null;
-    if (state.socket) { try { state.socket.close(); } catch {} state.socket = null; }
+    updateLiveIndicator(state.room);
+    // La sesión y el WebSocket siguen activos: cerrar este panel no cierra la partida ni el anotador.
   }
 
   async function createRoom() {
