@@ -538,7 +538,7 @@
     const resume = state.session
       ? '<button class="online-button online-button-light online-full-button" data-action="resume">Reanudar partida ' + escapeHtml(state.session.code) + '</button>'
       : "";
-    return '<section class="online-card"><p class="online-eyebrow">PARTIDA INTERACTIVA</p>' +
+    return '<section class="online-card"><p class="online-eyebrow">PARTIDA ONLINE</p>' +
       '<h3>Unirte a una partida</h3><p>Ingresá el código que te compartieron y tu nombre para ocupar un lugar en la mesa.</p>' +
       '<label class="online-label" for="online-room-code">Código de la partida</label>' +
       '<input id="online-room-code" class="online-input online-code-input" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" value="' + escapeHtml(state.joinCode) + '">' +
