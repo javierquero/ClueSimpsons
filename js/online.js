@@ -887,8 +887,13 @@
     if (!state.open) return;
     let body = state.screen === "create" ? renderCreate() : state.screen === "join" ? renderJoin() :
       state.screen === "room" ? renderRoom() : renderHome();
-    content.innerHTML = '<div class="online-status-line"><span class="online-status-dot"></span> Sala sincronizada en tiempo real</div>' +
-      (state.error ? '<div class="online-error" role="alert">' + escapeHtml(state.error) + '</div>' : "") + body;
+    const waitingForPlayers = state.screen === "room" && state.room?.status === "lobby" && (state.room.players?.length || 0) < 3;
+    const statusText = waitingForPlayers ? "Esperando jugadores..." : "Sala sincronizada en tiempo real";
+    const loading = state.busy && state.screen === "create"
+      ? '<div class="online-create-loading" role="status" aria-live="polite"><span class="online-create-spinner" aria-hidden="true"></span><strong>Creando sala...</strong><span>Preparando la pantalla de la partida</span></div>'
+      : "";
+    content.innerHTML = '<div class="online-status-line"><span class="online-status-dot' + (waitingForPlayers ? ' is-pulsing' : '') + '"></span> ' + statusText + '</div>' +
+      (state.error ? '<div class="online-error" role="alert">' + escapeHtml(state.error) + '</div>' : "") + body + loading;
   }
 
   async function connectSocket() {
@@ -1031,8 +1036,8 @@
       saveSession();
       state.room = joined.room;
       state.screen = "room";
-      state.busy = false;
       await refreshRoom(false);
+      state.busy = false;
       render();
       connectSocket();
     } catch (error) {
@@ -1192,7 +1197,6 @@
       state.room = data.room;
       enterAnnotatorAfterStart(state.room, previousStatus !== "playing");
       applyCompletedSuggestion(state.room);
-      promptCurrentResponder(state.room);
       syncSuggestionSheet(state.room);
       state.error = "";
       render();
