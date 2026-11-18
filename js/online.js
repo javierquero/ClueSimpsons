@@ -800,7 +800,7 @@
         (isHost && !seatsLocked ? ' is-draggable-seat' : '') + '" data-player-id="' + escapeHtml(player.id) +
         '" data-seat="' + seat + '">' + dragHandle +
         '<span class="online-seat-number">' + seat + '</span><strong>' + escapeHtml(player.name) + '</strong>' +
-        '<span class="online-hand-status">' + (player.handSubmitted ? "Cartas cargadas" : "Falta cargar cartas") + '</span>' +
+        '<span class="online-hand-status ' + (player.handSubmitted ? "is-loaded" : "is-pending") + '" title="' + (player.handSubmitted ? "Cartas cargadas" : "Falta cargar cartas") + '" aria-label="' + (player.handSubmitted ? "Cartas cargadas" : "Falta cargar cartas") + '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="hand-icon-card" d="M7 4.5h9.5A2.5 2.5 0 0 1 19 7v12.5H8.5A2.5 2.5 0 0 1 6 17V5.5A1 1 0 0 1 7 4.5Z"/><path class="hand-icon-check" d="m9 12.5 2.2 2.2 4.8-5"/><path class="hand-icon-pending" d="M9 9h6M9 12h3"/></svg></span>' +
         '</div>';
     }).join("");
 
