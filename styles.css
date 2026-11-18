@@ -1443,3 +1443,90 @@ body.online-panel-open { overflow: hidden; }
     height: 30px;
   }
 }
+
+
+/* v94: icono vectorial de estado de cartas y asientos amplios que aprovechan la pantalla. */
+.online-seat-list .online-hand-status {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  padding: 0;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+.online-seat-list .online-hand-status svg {
+  width: 27px;
+  height: 27px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.online-seat-list .online-hand-status .hand-icon-card { stroke: currentColor; }
+.online-seat-list .online-hand-status .hand-icon-check { display: none; }
+.online-seat-list .online-hand-status .hand-icon-pending { display: block; }
+.online-seat-list .online-hand-status.is-loaded {
+  color: #15803d;
+  background: #dcfce7;
+}
+.online-seat-list .online-hand-status.is-loaded .hand-icon-check { display: block; }
+.online-seat-list .online-hand-status.is-loaded .hand-icon-pending { display: none; }
+@media (max-width: 600px) {
+  .online-content { display: flex; flex-direction: column; }
+  .online-content > .online-status-line { flex: 0 0 auto; }
+  .online-content > .online-card.online-room-card:not(.online-active-game) {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    min-height: calc(100dvh - 94px);
+    margin-bottom: 0;
+  }
+  .online-seat-list {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    justify-content: stretch;
+    gap: 7px;
+    margin-top: 12px;
+  }
+  .online-seat-list .online-table-seat {
+    flex: 1 1 0;
+    min-height: 58px;
+    padding: 8px 9px;
+    grid-template-columns: 22px 28px minmax(0, 1fr) 38px;
+    grid-template-areas: "handle number name hand";
+    column-gap: 8px;
+  }
+  .online-seat-list .online-seat-drag-handle {
+    width: 22px;
+    height: 34px;
+  }
+  .online-seat-list .online-seat-number {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+  .online-seat-list .online-table-seat > strong {
+    font-size: 14px;
+    line-height: 1.2;
+  }
+  .online-seat-list .online-hand-status {
+    width: 32px;
+    height: 32px;
+    max-width: none;
+    grid-area: hand;
+  }
+  .online-seat-list .online-hand-status svg { width: 25px; height: 25px; }
+  .online-seat-list .online-table-seat.is-free {
+    flex: 1 1 0;
+    min-height: 52px;
+    grid-template-columns: 22px 28px minmax(0, 1fr);
+    grid-template-areas: "handle number name";
+  }
+  .online-start-controls { margin-top: 10px; }
+}
