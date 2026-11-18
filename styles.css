@@ -1298,3 +1298,44 @@ body.online-panel-open { overflow: hidden; }
     min-height: 42px;
   }
 }
+
+
+/* v92: ordenar asientos arrastrando desde el control vectorial lateral. */
+.online-seat-list .online-table-seat {
+  grid-template-columns: 22px 32px minmax(140px, 1fr) minmax(105px, auto) minmax(125px, auto);
+  grid-template-areas: "handle number name presence hand";
+}
+.online-seat-list .online-seat-drag-handle {
+  grid-area: handle;
+  display: inline-flex;
+  width: 22px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.online-seat-drag-handle svg { width: 18px; height: 22px; fill: currentColor; }
+.online-seat-list .is-draggable-seat .online-seat-drag-handle:hover { color: #92400e; }
+.online-seat-list .is-dragging-seat { opacity: .45; border-style: dashed; }
+.online-seat-list .is-seat-drop-target { border: 2px dashed #d97706; background: #fffbeb; }
+.online-seat-list .online-table-seat.is-free {
+  grid-template-columns: 22px 32px 1fr;
+  grid-template-areas: "handle number name";
+}
+@media (max-width: 600px) {
+  .online-seat-list .online-table-seat {
+    grid-template-columns: 22px 28px minmax(0, 1fr);
+    grid-template-areas:
+      "handle number name"
+      "handle presence presence"
+      "handle hand hand";
+  }
+  .online-seat-list .online-seat-drag-handle { align-self: stretch; height: auto; }
+  .online-seat-list .online-table-seat.is-free {
+    grid-template-columns: 22px 28px minmax(0, 1fr);
+    grid-template-areas: "handle number name";
+  }
+}
