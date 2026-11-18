@@ -8,6 +8,8 @@
   const closeButton = document.getElementById("online-close");
   const entryButton = document.getElementById("btn-online");
   const liveIndicator = document.getElementById("online-live-indicator");
+  const suggestionSheet = document.getElementById("online-suggestion-sheet");
+  const suggestionSheetContent = document.getElementById("online-suggestion-content");
   if (!panel || !content || !entryButton) return;
 
   const state = {
@@ -18,7 +20,8 @@
     lastNotificationKey: "", accusationDraft: null, accusationConfirmOpen: false,
     annotatorActive: false, conventionalSnapshot: null, onlineAnnotationKey: "",
     originalSaveState: null, originalSaveActionStacks: null, historyWrapperInstalled: false,
-    originalOpenGuessModal: null, annotationPlayerOrderIds: [], autoNavigated: false
+    originalOpenGuessModal: null, annotationPlayerOrderIds: [], autoNavigated: false,
+    suggestionSheetOpen: false, lastSuggestionSheetId: ""
   };
 
   function escapeHtml(value) {
@@ -287,8 +290,7 @@
     const suggestion = room?.suggestion;
     if (!room || room.status !== "playing" || room.paused || !suggestion || suggestion.completed) return;
     if (suggestion.currentResponderId === state.session?.playerId && !state.open) {
-      state.screen = "room";
-      openPanel();
+      showSuggestionSheet(room);
     }
   }
 
@@ -388,6 +390,35 @@
   }
 
 
+
+  function showSuggestionSheet(room = state.room) {
+    if (!suggestionSheet || !suggestionSheetContent || !room || room.status !== "playing" || !room.suggestion) return;
+    const me = room.players.find(player => player.id === state.session?.playerId);
+    suggestionSheetContent.innerHTML = renderSuggestionPanel(room, me) +
+      '<div class="flex justify-end pt-2 border-t mt-3"><button type="button" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm" data-action="close-suggestion-sheet">Cerrar</button></div>';
+    state.suggestionSheetOpen = true;
+    state.lastSuggestionSheetId = room.suggestion.id || state.lastSuggestionSheetId;
+    suggestionSheet.classList.remove("hidden");
+  }
+
+  function closeSuggestionSheet() {
+    state.suggestionSheetOpen = false;
+    suggestionSheet?.classList.add("hidden");
+  }
+
+  function syncSuggestionSheet(room = state.room) {
+    const suggestion = room?.suggestion;
+    if (!suggestion || room.status !== "playing") {
+      closeSuggestionSheet();
+      state.lastSuggestionSheetId = "";
+      return;
+    }
+    if (suggestion.id && suggestion.id !== state.lastSuggestionSheetId) {
+      showSuggestionSheet(room);
+      return;
+    }
+    if (state.suggestionSheetOpen) showSuggestionSheet(room);
+  }
 
   function notificationPermissionState() {
     if (!("Notification" in window)) return "unsupported";
@@ -884,6 +915,7 @@
             enterAnnotatorAfterStart(state.room, true);
             applyCompletedSuggestion(state.room);
             promptCurrentResponder(state.room);
+            syncSuggestionSheet(state.room);
             notifyPlayer(state.room);
             updateLiveIndicator(state.room);
             if (state.open && state.screen === "room") render();
@@ -1093,6 +1125,7 @@
       state.busy = false;
       state.responseChoice = "";
       activateOnlineAnnotator(state.room);
+      showSuggestionSheet(state.room);
       if (selectedCards) {
         guessSelection = { suspect: "", weapon: "", place: "" };
         updateGuessButton();
@@ -1122,6 +1155,7 @@
       state.room = data.room;
       state.busy = false;
       state.responseChoice = "";
+      syncSuggestionSheet(state.room);
       render();
     } catch (error) {
       state.busy = false;
@@ -1169,6 +1203,7 @@
       enterAnnotatorAfterStart(state.room, previousStatus !== "playing");
       applyCompletedSuggestion(state.room);
       promptCurrentResponder(state.room);
+      syncSuggestionSheet(state.room);
       state.error = "";
       render();
       if (reconnect) connectSocket();
@@ -1311,6 +1346,25 @@
     if (event.target.id === "online-room-code") event.target.value = event.target.value.replace(/\D/g, "").slice(0, 6);
   });
 
+  suggestionSheetContent?.addEventListener("click", async event => {
+    const button = event.target.closest("[data-action]");
+    if (!button || button.disabled) return;
+    if (button.dataset.action === "respond-none") await submitResponse("none");
+    else if (button.dataset.action === "respond-card") await submitResponse(state.responseChoice);
+    else if (button.dataset.action === "close-suggestion-sheet") closeSuggestionSheet();
+  });
+
+  suggestionSheetContent?.addEventListener("change", event => {
+    if (event.target.name === "online-response-card") {
+      state.responseChoice = event.target.value;
+      syncSuggestionSheet(state.room);
+    }
+  });
+
+  suggestionSheet?.addEventListener("click", event => {
+    if (event.target === suggestionSheet) closeSuggestionSheet();
+  });
+
   entryButton.addEventListener("click", () => {
     if (typeof window.closeConfigModal === "function") window.closeConfigModal();
     openPanel();
@@ -1327,11 +1381,5 @@
     document.addEventListener("DOMContentLoaded", requestNotificationsOnStartup, { once: true });
   } else {
     requestNotificationsOnStartup();
-  }
-  const showJoinScreenOnStartup = () => openPanel();
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", showJoinScreenOnStartup, { once: true });
-  } else {
-    showJoinScreenOnStartup();
   }
 })();
