@@ -1224,3 +1224,23 @@ body.online-panel-open { overflow: hidden; }
   animation: online-create-spin .8s linear infinite;
 }
 @keyframes online-create-spin { to { transform: rotate(360deg); } }
+
+
+/* v90: encabezado principal más compacto y barra online sin botón de cierre. */
+.app-header {
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+}
+.app-header h1 {
+  font-size: clamp(1.05rem, 3vw, 1.8rem) !important;
+  line-height: 1.05 !important;
+}
+.app-header .header-donut {
+  width: 22px !important;
+  height: 22px !important;
+}
+@media (min-width: 768px) {
+  .app-header { padding-top: 6px !important; padding-bottom: 6px !important; }
+  .app-header h1 { font-size: clamp(1.25rem, 2vw, 2rem) !important; }
+  .app-header .header-donut { width: 26px !important; height: 26px !important; }
+}
