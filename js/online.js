@@ -791,7 +791,7 @@
     const seats = Array.from({ length: MAX_SEATS }, (_, index) => {
       const seat = index + 1;
       const player = players.find(item => item.seat === seat);
-      if (!player) return '<div class="online-table-seat is-free"><span class="online-seat-number">' + seat + '</span><strong>Asiento libre</strong></div>';
+      if (!player) return '<div class="online-table-seat is-free" data-seat="' + seat + '"><span class="online-seat-number">' + seat + '</span><strong>Asiento libre</strong></div>';
       const dragHandle = isHost && !seatsLocked
         ? '<span class="online-seat-drag-handle" aria-hidden="true"><svg viewBox="0 0 20 20" focusable="false"><circle cx="6" cy="4" r="1.5"/><circle cx="14" cy="4" r="1.5"/><circle cx="6" cy="10" r="1.5"/><circle cx="14" cy="10" r="1.5"/><circle cx="6" cy="16" r="1.5"/><circle cx="14" cy="16" r="1.5"/></svg></span>'
         : "";
