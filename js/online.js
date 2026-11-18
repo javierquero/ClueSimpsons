@@ -792,18 +792,17 @@
       const seat = index + 1;
       const player = players.find(item => item.seat === seat);
       if (!player) return '<div class="online-table-seat is-free"><span class="online-seat-number">' + seat + '</span><strong>Asiento libre</strong></div>';
-      const selector = isHost && !seatsLocked
-        ? '<select class="online-seat-select" data-action="host-seat" data-player-id="' + escapeHtml(player.id) +
-          '" aria-label="Cambiar asiento de ' + escapeHtml(player.name) + '">' +
-          Array.from({ length: MAX_SEATS }, (_, i) => '<option value="' + (i + 1) + '" ' + (player.seat === i + 1 ? "selected" : "") +
-          '>Asiento ' + (i + 1) + '</option>').join("") + '</select>'
+      const dragHandle = isHost && !seatsLocked
+        ? '<span class="online-seat-drag-handle" aria-hidden="true"><svg viewBox="0 0 20 20" focusable="false"><circle cx="6" cy="4" r="1.5"/><circle cx="14" cy="4" r="1.5"/><circle cx="6" cy="10" r="1.5"/><circle cx="14" cy="10" r="1.5"/><circle cx="6" cy="16" r="1.5"/><circle cx="14" cy="16" r="1.5"/></svg></span>'
         : "";
-      return '<div class="online-table-seat ' + (player.id === state.session?.playerId ? "is-me" : "") + '">' +
+      return '<div class="online-table-seat ' + (player.id === state.session?.playerId ? "is-me" : "") +
+        (isHost && !seatsLocked ? ' is-draggable-seat' : '') + '" data-player-id="' + escapeHtml(player.id) +
+        '" data-seat="' + seat + '">' + dragHandle +
         '<span class="online-seat-number">' + seat + '</span><strong>' + escapeHtml(player.name) + '</strong>' +
         '<span class="online-presence"><i class="' + (player.connected ? "is-online" : "") + '"></i>' +
         (player.connected ? "Conectado" : "Desconectado") + '</span>' +
         '<span class="online-hand-status">' + (player.handSubmitted ? "Cartas cargadas" : "Falta cargar cartas") + '</span>' +
-        selector + '</div>';
+        '</div>';
     }).join("");
 
     const selfSeatControl = "";
@@ -1184,6 +1183,48 @@
       state.room = data.room; state.error = ""; render();
     } catch (error) { setError(error.message); await refreshRoom(false); }
   }
+
+  let draggedSeatRow = null;
+  let dragPointerId = null;
+
+  function clearSeatDrag() {
+    content.querySelectorAll(".is-dragging-seat,.is-seat-drop-target").forEach(row =>
+      row.classList.remove("is-dragging-seat", "is-seat-drop-target"));
+    draggedSeatRow = null;
+    dragPointerId = null;
+  }
+
+  content.addEventListener("pointerdown", event => {
+    const handle = event.target.closest(".online-seat-drag-handle");
+    if (!handle || !state.session?.organizerToken || state.room?.status !== "lobby") return;
+    const row = handle.closest(".online-table-seat[data-player-id]");
+    if (!row) return;
+    draggedSeatRow = row;
+    dragPointerId = event.pointerId;
+    row.classList.add("is-dragging-seat");
+    event.preventDefault();
+  });
+
+  content.addEventListener("pointermove", event => {
+    if (!draggedSeatRow || event.pointerId !== dragPointerId) return;
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".online-table-seat[data-player-id]");
+    content.querySelectorAll(".is-seat-drop-target").forEach(row => row.classList.remove("is-seat-drop-target"));
+    if (target && target !== draggedSeatRow) target.classList.add("is-seat-drop-target");
+    event.preventDefault();
+  });
+
+  content.addEventListener("pointerup", async event => {
+    if (!draggedSeatRow || event.pointerId !== dragPointerId) return;
+    const source = draggedSeatRow;
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".online-table-seat");
+    const playerId = source.dataset.playerId;
+    const destinationSeat = Number(target?.dataset.seat);
+    const changed = target && target !== source && Number.isInteger(destinationSeat);
+    clearSeatDrag();
+    if (changed) await changeSeat(playerId, destinationSeat, true);
+  });
+
+  content.addEventListener("pointercancel", clearSeatDrag);
 
   async function refreshRoom(reconnect = true) {
     try {
