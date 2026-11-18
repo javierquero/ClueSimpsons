@@ -1187,3 +1187,40 @@ body.online-panel-open { overflow: hidden; }
   .online-room-heading { gap: 7px; }
   .online-room-heading h3 { font-size: 18px; }
 }
+
+
+/* Estado de creación de sala y espera de participantes */
+.online-status-dot.is-pulsing {
+  animation: online-status-pulse 1.15s ease-in-out infinite;
+}
+@keyframes online-status-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 3px #bbf7d0; }
+  50% { opacity: .35; box-shadow: 0 0 0 6px rgba(187,247,208,.35); }
+}
+.online-create-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  background: rgba(255,251,235,.96);
+  color: #422006;
+  text-align: center;
+}
+.online-create-loading > span:last-child {
+  color: #64748b;
+  font-size: 13px;
+}
+.online-create-spinner {
+  width: 46px;
+  height: 46px;
+  border: 4px solid #fde68a;
+  border-top-color: #b45309;
+  border-radius: 50%;
+  animation: online-create-spin .8s linear infinite;
+}
+@keyframes online-create-spin { to { transform: rotate(360deg); } }
