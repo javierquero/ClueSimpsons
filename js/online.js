@@ -887,7 +887,7 @@
     const statusLine = state.screen === "create" ? "" :
       '<div class="online-status-line"><span class="online-status-dot' + (waitingForPlayers ? ' is-pulsing' : '') + '"></span> ' + statusText + '</div>';
     const loading = state.busy && state.screen === "create"
-      ? '<div class="online-create-loading" role="status" aria-live="polite"><span class="online-create-spinner" aria-hidden="true"></span><strong>Creando sala...</strong></div>'
+      ? '<div class="online-create-loading" role="status" aria-live="polite"><div class="online-create-cards" aria-hidden="true"><span class="online-loading-card card-one"><svg viewBox="0 0 48 68"><rect x="2" y="2" width="44" height="64" rx="6"/><path d="M8 10h32v48H8z"/><path d="M12 14 36 54M36 14 12 54M8 34h32"/></svg></span><span class="online-loading-card card-two"><svg viewBox="0 0 48 68"><rect x="2" y="2" width="44" height="64" rx="6"/><path d="M8 10h32v48H8z"/><circle cx="24" cy="34" r="12"/><path d="M24 18v32M8 34h32"/></svg></span><span class="online-loading-card card-three"><svg viewBox="0 0 48 68"><rect x="2" y="2" width="44" height="64" rx="6"/><path d="M8 10h32v48H8z"/><path d="m24 17 13 17-13 17L11 34z"/><circle cx="24" cy="34" r="4"/></svg></span></div><strong>Creando sala...</strong></div>'
       : "";
     content.innerHTML = statusLine +
       (state.error ? '<div class="online-error" role="alert">' + escapeHtml(state.error) + '</div>' : "") + body + loading;
