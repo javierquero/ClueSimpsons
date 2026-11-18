@@ -1530,3 +1530,115 @@ body.online-panel-open { overflow: hidden; }
   }
   .online-start-controls { margin-top: 10px; }
 }
+
+
+/* v95: filas a todo el ancho, con altura contenida y spinner animado con cartas. */
+.online-content > .online-card.online-room-card {
+  width: 100%;
+  max-width: none;
+}
+.online-seat-list {
+  width: 100%;
+}
+.online-seat-list .online-table-seat {
+  width: 100%;
+  box-sizing: border-box;
+}
+.online-create-spinner { display: none !important; }
+.online-create-cards {
+  position: relative;
+  display: flex;
+  width: 126px;
+  height: 100px;
+  align-items: center;
+  justify-content: center;
+}
+.online-loading-card {
+  position: absolute;
+  display: block;
+  width: 43px;
+  height: 62px;
+  transform-style: preserve-3d;
+  perspective: 500px;
+}
+.online-loading-card svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: #fef3c7;
+  stroke: #92400e;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.online-loading-card svg rect:first-child {
+  fill: #facc15;
+  stroke: #92400e;
+  stroke-width: 2.4;
+}
+.online-loading-card svg path,
+.online-loading-card svg circle { fill: none; }
+.online-loading-card.card-one {
+  animation: online-card-spin-one 1.65s ease-in-out infinite;
+  z-index: 1;
+}
+.online-loading-card.card-two {
+  animation: online-card-spin-two 1.9s ease-in-out infinite;
+  z-index: 3;
+}
+.online-loading-card.card-three {
+  animation: online-card-spin-three 1.45s ease-in-out infinite;
+  z-index: 2;
+}
+@keyframes online-card-spin-one {
+  0%, 100% { transform: translate(-27px, 5px) rotate(-18deg) rotateY(0deg); }
+  50% { transform: translate(-27px, -9px) rotate(16deg) rotateY(180deg); }
+}
+@keyframes online-card-spin-two {
+  0%, 100% { transform: translate(0, -7px) rotate(4deg) rotateY(0deg); }
+  50% { transform: translate(0, 8px) rotate(-13deg) rotateY(180deg); }
+}
+@keyframes online-card-spin-three {
+  0%, 100% { transform: translate(27px, 5px) rotate(19deg) rotateY(0deg); }
+  50% { transform: translate(27px, -10px) rotate(-17deg) rotateY(180deg); }
+}
+@media (max-width: 600px) {
+  .online-content { padding: 7px 7px; }
+  .online-content > .online-card.online-room-card:not(.online-active-game) {
+    min-height: 0;
+    flex: 0 0 auto;
+  }
+  .online-seat-list {
+    flex: 0 0 auto;
+    gap: 6px;
+  }
+  .online-seat-list .online-table-seat {
+    flex: 0 0 auto;
+    min-height: 48px;
+    padding: 6px 9px;
+    grid-template-columns: 22px 28px minmax(0, 1fr) 38px;
+    grid-template-areas: "handle number name hand";
+    column-gap: 8px;
+  }
+  .online-seat-list .online-seat-drag-handle {
+    width: 22px;
+    height: 30px;
+  }
+  .online-seat-list .online-seat-number {
+    width: 25px;
+    height: 25px;
+  }
+  .online-seat-list .online-table-seat > strong {
+    font-size: 13px;
+    line-height: 1.15;
+  }
+  .online-seat-list .online-hand-status {
+    width: 30px;
+    height: 30px;
+  }
+  .online-seat-list .online-hand-status svg { width: 23px; height: 23px; }
+  .online-seat-list .online-table-seat.is-free {
+    flex: 0 0 auto;
+    min-height: 44px;
+  }
+}
