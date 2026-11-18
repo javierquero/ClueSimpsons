@@ -1372,4 +1372,6 @@
   } else {
     requestNotificationsOnStartup();
   }
+  // Solo abrir la sala automáticamente cuando se llega desde una notificación/enlace explícito.
+  if (new URLSearchParams(window.location.search).get("online") === "1") openPanel();
 })();
