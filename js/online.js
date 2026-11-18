@@ -286,14 +286,6 @@
     }
   }
 
-  function promptCurrentResponder(room) {
-    const suggestion = room?.suggestion;
-    if (!room || room.status !== "playing" || room.paused || !suggestion || suggestion.completed) return;
-    if (suggestion.currentResponderId === state.session?.playerId && !state.open) {
-      showSuggestionSheet(room);
-    }
-  }
-
   function deactivateOnlineAnnotator() {
     if (!state.annotatorActive) return;
     persistOnlineAnnotation();
@@ -914,7 +906,6 @@
             state.room = payload.room;
             enterAnnotatorAfterStart(state.room, true);
             applyCompletedSuggestion(state.room);
-            promptCurrentResponder(state.room);
             syncSuggestionSheet(state.room);
             notifyPlayer(state.room);
             updateLiveIndicator(state.room);
@@ -953,7 +944,6 @@
       state.error = "";
       enterAnnotatorAfterStart(state.room, true);
       applyCompletedSuggestion(state.room);
-      promptCurrentResponder(state.room);
       notifyPlayer(state.room);
       updateLiveIndicator(state.room);
       render();
