@@ -873,7 +873,7 @@
       '</div></div>' +
       '<p class="online-muted">Organiza ' + escapeHtml(room.hostName) + ' · ' + players.length + '/6 jugadores · Código para compartir</p>' +
       (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">Ya no se pueden sumar participantes porque comenzó la carga de cartas. Solo el organizador puede ordenar los asientos antes de iniciar.</p>' : "") +
-      '<div class="online-seat-grid online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer +
+      '<div class="online-seat-list online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer +
       handPanel + firstControl + turnPanel + pauseControl + privateAccusationBanner + suggestionPanel + finishedPanel +
       (room.status === "playing" || room.status === "finished"
         ? '<div class="online-actions online-room-actions"><button class="online-button online-button-secondary" data-action="show-annotator">Ver anotador</button></div>'
