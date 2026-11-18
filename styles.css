@@ -1244,3 +1244,57 @@ body.online-panel-open { overflow: hidden; }
   .app-header h1 { font-size: clamp(1.25rem, 2vw, 2rem) !important; }
   .app-header .header-donut { width: 26px !important; height: 26px !important; }
 }
+
+
+/* v91: lista vertical de asientos, con adaptación para pantallas angostas. */
+.online-seat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 15px;
+}
+.online-seat-list .online-table-seat {
+  display: grid;
+  grid-template-columns: 32px minmax(140px, 1fr) minmax(105px, auto) minmax(125px, auto) 145px;
+  grid-template-areas: "number name presence hand selector";
+  align-items: center;
+  column-gap: 12px;
+  min-height: 58px;
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+.online-seat-list .online-seat-number { grid-area: number; }
+.online-seat-list .online-table-seat > strong { grid-area: name; }
+.online-seat-list .online-presence { grid-area: presence; }
+.online-seat-list .online-hand-status { grid-area: hand; }
+.online-seat-list .online-seat-select { grid-area: selector; }
+.online-seat-list .online-table-seat.is-free {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  grid-template-areas: "number name";
+  justify-content: initial;
+  min-height: 48px;
+}
+@media (max-width: 600px) {
+  .online-seat-list { gap: 6px; }
+  .online-seat-list .online-table-seat {
+    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-areas:
+      "number name"
+      "presence presence"
+      "hand hand"
+      "selector selector";
+    row-gap: 5px;
+    min-height: 0;
+    padding: 9px 10px;
+  }
+  .online-seat-list .online-table-seat > strong { font-size: 13px; }
+  .online-seat-list .online-presence,
+  .online-seat-list .online-hand-status { padding-left: 1px; }
+  .online-seat-list .online-seat-select { width: 100%; }
+  .online-seat-list .online-table-seat.is-free {
+    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-areas: "number name";
+    min-height: 42px;
+  }
+}
