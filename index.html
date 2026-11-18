@@ -455,6 +455,13 @@
   </div>
   <div id="online-live-indicator" class="online-live-indicator hidden" role="status" aria-live="polite"></div>
 
+  <div id="online-suggestion-sheet" class="bottom-sheet hidden" role="dialog" aria-modal="true" aria-label="Suposición de la partida online">
+    <div class="bottom-sheet-inner sm:relative sm:rounded-2xl sm:border-4 sm:border-yellow-400 sm:max-w-lg sm:mx-auto sm:my-8 sm:mb-auto">
+      <div class="sheet-handle sm:hidden"></div>
+      <div id="online-suggestion-content" class="sheet-content space-y-2"></div>
+    </div>
+  </div>
+
   <div id="online-panel" class="online-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="online-title">
     <div class="online-shell">
       <header class="online-topbar">
@@ -469,6 +476,6 @@
     </div>
   </div>
   <script src="js/app.js?v=72" defer></script>
-  <script src="js/online.js?v=85" defer></script>
+  <script src="js/online.js?v=86" defer></script>
 </body>
 </html>
