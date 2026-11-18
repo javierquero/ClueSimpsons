@@ -612,10 +612,7 @@
 
   function renderHandPanel(room, me) {
     if (!me || room.status !== "lobby") return "";
-    if (room.players.length < 3) {
-      return '<section class="online-hand-panel"><p class="online-eyebrow">CARGA DE CARTAS</p>' +
-        '<strong>Esperando al menos 3 jugadores</strong><p class="online-muted">Cuando estén todos sentados, vas a poder cargar tus cartas.</p></section>';
-    }
+    if (room.players.length < 3) return "";
     if (me.handSubmitted && !state.editingHand) {
       return '<section class="online-hand-panel"><p class="online-eyebrow">TUS CARTAS</p><strong>Selección guardada · ' +
         me.handCount + ' cartas</strong><p class="online-muted">Podés modificar tu selección mientras el organizador no haya iniciado la partida.</p>' +
@@ -889,10 +886,12 @@
       state.screen === "room" ? renderRoom() : renderHome();
     const waitingForPlayers = state.screen === "room" && state.room?.status === "lobby" && (state.room.players?.length || 0) < 3;
     const statusText = waitingForPlayers ? "Esperando jugadores..." : "Sala sincronizada en tiempo real";
+    const statusLine = state.screen === "create" ? "" :
+      '<div class="online-status-line"><span class="online-status-dot' + (waitingForPlayers ? ' is-pulsing' : '') + '"></span> ' + statusText + '</div>';
     const loading = state.busy && state.screen === "create"
-      ? '<div class="online-create-loading" role="status" aria-live="polite"><span class="online-create-spinner" aria-hidden="true"></span><strong>Creando sala...</strong><span>Preparando la pantalla de la partida</span></div>'
+      ? '<div class="online-create-loading" role="status" aria-live="polite"><span class="online-create-spinner" aria-hidden="true"></span><strong>Creando sala...</strong></div>'
       : "";
-    content.innerHTML = '<div class="online-status-line"><span class="online-status-dot' + (waitingForPlayers ? ' is-pulsing' : '') + '"></span> ' + statusText + '</div>' +
+    content.innerHTML = statusLine +
       (state.error ? '<div class="online-error" role="alert">' + escapeHtml(state.error) + '</div>' : "") + body + loading;
   }
 
@@ -997,10 +996,6 @@
   }
 
   function closePanel() {
-    if (state.screen === "room" && state.room?.status === "lobby") {
-      if (typeof window.showToast === "function") window.showToast("La partida todavía no comenzó. Esperá a que el organizador la inicie.");
-      return;
-    }
     persistOnlineAnnotation();
     state.open = false;
     panel.classList.add("hidden");
