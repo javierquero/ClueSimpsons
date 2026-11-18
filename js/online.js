@@ -796,11 +796,10 @@
         ? '<span class="online-seat-drag-handle" aria-hidden="true"><svg viewBox="0 0 20 20" focusable="false"><circle cx="6" cy="4" r="1.5"/><circle cx="14" cy="4" r="1.5"/><circle cx="6" cy="10" r="1.5"/><circle cx="14" cy="10" r="1.5"/><circle cx="6" cy="16" r="1.5"/><circle cx="14" cy="16" r="1.5"/></svg></span>'
         : "";
       return '<div class="online-table-seat ' + (player.id === state.session?.playerId ? "is-me" : "") +
+        (player.connected ? ' is-connected' : ' is-disconnected') +
         (isHost && !seatsLocked ? ' is-draggable-seat' : '') + '" data-player-id="' + escapeHtml(player.id) +
         '" data-seat="' + seat + '">' + dragHandle +
         '<span class="online-seat-number">' + seat + '</span><strong>' + escapeHtml(player.name) + '</strong>' +
-        '<span class="online-presence"><i class="' + (player.connected ? "is-online" : "") + '"></i>' +
-        (player.connected ? "Conectado" : "Desconectado") + '</span>' +
         '<span class="online-hand-status">' + (player.handSubmitted ? "Cartas cargadas" : "Falta cargar cartas") + '</span>' +
         '</div>';
     }).join("");
