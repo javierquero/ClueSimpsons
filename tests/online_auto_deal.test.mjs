@@ -36,6 +36,7 @@ test('el reparto automático está apagado por defecto y sortea 18 cartas y pers
   assert.equal(dealt.data.room.autoDealt,true);
   const publicView=await api('/api/rooms/'+code);
   assert.ok(players.every(p=>!publicView.data.room.private));
+  assert.ok(publicView.data.room.players.every(p=>!Object.hasOwn(p,'ownCards')));
   assert.ok(players.every(p=>publicView.data.room.players.find(x=>x.id===p.id).character));
   const characters=publicView.data.room.players.map(p=>p.character);
   assert.equal(new Set(characters).size,4);
