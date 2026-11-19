@@ -1294,7 +1294,9 @@
       const data = await api("/api/rooms/" + state.session.code + "/deal", {
         method: "POST", host: true, body: {}
       });
-      state.room = data.room; state.busy = false; render();
+      state.room = data.room; state.busy = false;
+      await refreshRoom(false);
+      render();
     } catch (error) { state.busy = false; setError(error.message); }
   }
 
