@@ -501,8 +501,8 @@ export class GameRoom extends DurableObject {
       if (cardsEnabled && !cardsDone && Object.values(room.hands || {}).some(hand => Array.isArray(hand) && hand.length)) {
         return json({ error: "Ya hay cartas cargadas manualmente. No se pueden combinar con el reparto automático." }, 409);
       }
-      room.autoCardsEnabled = cardsDone ? false : cardsEnabled;
-      room.autoCharactersEnabled = charactersDone ? false : charactersEnabled;
+      room.autoCardsEnabled = cardsDone ? true : cardsEnabled;
+      room.autoCharactersEnabled = charactersDone ? true : charactersEnabled;
       await this.saveRoom(room);
       await this.broadcastSnapshot();
       return json({ room: this.snapshotFor(room, actor) });
