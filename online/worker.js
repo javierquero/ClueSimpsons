@@ -498,8 +498,6 @@ export class GameRoom extends DurableObject {
       }
       const cardsDone = Boolean(room.autoCardsDealt ?? room.autoDealt);
       const charactersDone = Boolean(room.autoCharactersAssigned ?? room.autoDealt);
-      if (cardsDone && cardsEnabled) return json({ error: "Las cartas ya fueron repartidas y no se pueden volver a sortear." }, 409);
-      if (charactersDone && charactersEnabled) return json({ error: "Los personajes ya fueron asignados y no se pueden volver a sortear." }, 409);
       if (cardsEnabled && !cardsDone && Object.values(room.hands || {}).some(hand => Array.isArray(hand) && hand.length)) {
         return json({ error: "Ya hay cartas cargadas manualmente. No se pueden combinar con el reparto automático." }, 409);
       }
