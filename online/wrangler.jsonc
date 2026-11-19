@@ -3,10 +3,21 @@
   "name": "cluesimpsons-online",
   "main": "worker.js",
   "compatibility_date": "2026-11-16",
-  "observability": { "enabled": true },
+  "observability": {
+    "enabled": true
+  },
   "durable_objects": {
     "bindings": [
-      { "name": "GAME_ROOMS", "class_name": "GameRoom" }
+      {
+        "name": "GAME_ROOMS",
+        "class_name": "GameRoom"
+      }
     ]
+  },
+  "exports": {
+    "GameRoom": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
   }
 }
