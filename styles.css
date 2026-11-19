@@ -1589,3 +1589,23 @@ body.online-panel-open { overflow: hidden; }
     min-height: 44px;
   }
 }
+
+
+/* v99: reparto aleatorio opcional y personajes asignados a cada jugador. */
+.online-seat-player { grid-area: name; display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.online-seat-player > strong { overflow-wrap: anywhere; }
+.online-player-character { color: #92400e; font-size: 11px; font-weight: 800; }
+.online-auto-deal-control { max-width: 480px; margin: 18px 0 0; padding: 14px; border: 1px solid #fbbf24; border-radius: 12px; background: #fffbeb; }
+.online-auto-deal-toggle { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.online-auto-deal-toggle input { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 2px; accent-color: #ca8a04; }
+.online-auto-deal-toggle span { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.online-auto-deal-toggle strong { color: #422006; font-size: 13px; }
+.online-auto-deal-toggle small { color: #64748b; font-size: 11px; line-height: 1.4; }
+.online-auto-deal-control .online-button { margin-top: 12px; }
+.online-dealt-cards { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
+.online-dealt-cards span { padding: 7px 9px; border: 1px solid #fcd34d; border-radius: 8px; background: #fff; color: #713f12; font-size: 12px; font-weight: 800; }
+@media (max-width: 600px) {
+  .online-seat-player { grid-area: name; }
+  .online-player-character { font-size: 10px; }
+  .online-auto-deal-control { padding: 11px; }
+}
