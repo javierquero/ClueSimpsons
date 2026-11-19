@@ -318,8 +318,10 @@ export class GameRoom extends DurableObject {
       status: room.status,
       paused: Boolean(room.paused),
       rosterLocked: Boolean(room.rosterLocked),
-      autoDealEnabled: Boolean(room.autoDealEnabled),
-      autoDealt: Boolean(room.autoDealt),
+      autoCardsEnabled: Boolean(room.autoCardsEnabled ?? room.autoDealEnabled),
+      autoCharactersEnabled: Boolean(room.autoCharactersEnabled ?? room.autoDealEnabled),
+      autoCardsDealt: Boolean(room.autoCardsDealt ?? room.autoDealt),
+      autoCharactersAssigned: Boolean(room.autoCharactersAssigned ?? room.autoDealt),
       hostName: room.hostName,
       hostOnline,
       createdAt: room.createdAt,
@@ -426,8 +428,10 @@ export class GameRoom extends DurableObject {
         hostTokenHash: await sha256(hostToken),
         status: "lobby",
         rosterLocked: false,
-        autoDealEnabled: false,
-        autoDealt: false,
+        autoCardsEnabled: false,
+        autoCharactersEnabled: false,
+        autoCardsDealt: false,
+        autoCharactersAssigned: false,
         paused: false,
         players: [],
         firstPlayerId: null,
@@ -482,52 +486,70 @@ export class GameRoom extends DurableObject {
     if (!actor) return json({ error: "Sesión no válida. Volvé a ingresar a la partida." }, 401);
 
     if (path.endsWith("/settings") && method === "POST") {
-      if (actor.role !== "host") return json({ error: "Solo el organizador puede cambiar el modo de reparto." }, 403);
-      if (room.status !== "lobby") return json({ error: "El modo de reparto solo se puede cambiar antes de iniciar." }, 409);
-      if (room.autoDealt) return json({ error: "El reparto automático ya se realizó y no se puede cambiar." }, 409);
+      if (actor.role !== "host") return json({ error: "Solo el organizador puede cambiar estas opciones." }, 403);
+      if (room.status !== "lobby") return json({ error: "Las opciones solo se pueden cambiar antes de iniciar." }, 409);
       let body;
       try { body = await readJson(request); }
       catch (error) { return json({ error: error.message }, 400); }
-      if (typeof body.autoDealEnabled !== "boolean") return json({ error: "Indicá si el reparto automático está activado." }, 400);
-      if (body.autoDealEnabled && Object.values(room.hands || {}).some(hand => Array.isArray(hand) && hand.length)) {
-        return json({ error: "Ya hay cartas cargadas manualmente. Para usar el reparto automático, creá una sala nueva antes de cargar cartas." }, 409);
+      const cardsEnabled = body.autoCardsEnabled ?? body.autoDealEnabled;
+      const charactersEnabled = body.autoCharactersEnabled ?? body.autoDealEnabled;
+      if (typeof cardsEnabled !== "boolean" || typeof charactersEnabled !== "boolean") {
+        return json({ error: "Indicá por separado si querés sortear cartas y personajes." }, 400);
       }
-      room.autoDealEnabled = body.autoDealEnabled;
+      const cardsDone = Boolean(room.autoCardsDealt ?? room.autoDealt);
+      const charactersDone = Boolean(room.autoCharactersAssigned ?? room.autoDealt);
+      if (cardsDone && cardsEnabled) return json({ error: "Las cartas ya fueron repartidas y no se pueden volver a sortear." }, 409);
+      if (charactersDone && charactersEnabled) return json({ error: "Los personajes ya fueron asignados y no se pueden volver a sortear." }, 409);
+      if (cardsEnabled && !cardsDone && Object.values(room.hands || {}).some(hand => Array.isArray(hand) && hand.length)) {
+        return json({ error: "Ya hay cartas cargadas manualmente. No se pueden combinar con el reparto automático." }, 409);
+      }
+      room.autoCardsEnabled = cardsDone ? false : cardsEnabled;
+      room.autoCharactersEnabled = charactersDone ? false : charactersEnabled;
       await this.saveRoom(room);
       await this.broadcastSnapshot();
       return json({ room: this.snapshotFor(room, actor) });
     }
 
     if (path.endsWith("/deal") && method === "POST") {
-      if (actor.role !== "host") return json({ error: "Solo el organizador puede repartir las cartas." }, 403);
-      if (room.status !== "lobby") return json({ error: "El reparto solo se puede realizar antes de iniciar." }, 409);
-      if (!room.autoDealEnabled) return json({ error: "Primero activá el reparto automático." }, 409);
-      if (room.autoDealt) return json({ error: "Las cartas y los personajes ya fueron sorteados." }, 409);
+      if (actor.role !== "host") return json({ error: "Solo el organizador puede realizar los sorteos." }, 403);
+      if (room.status !== "lobby") return json({ error: "Los sorteos solo se pueden realizar antes de iniciar." }, 409);
+      const cardsEnabled = Boolean(room.autoCardsEnabled ?? room.autoDealEnabled);
+      const charactersEnabled = Boolean(room.autoCharactersEnabled ?? room.autoDealEnabled);
+      const cardsDone = Boolean(room.autoCardsDealt ?? room.autoDealt);
+      const charactersDone = Boolean(room.autoCharactersAssigned ?? room.autoDealt);
+      const doCards = cardsEnabled && !cardsDone;
+      const doCharacters = charactersEnabled && !charactersDone;
+      if (!doCards && !doCharacters) return json({ error: "Activá al menos una de las dos opciones pendientes." }, 409);
       if (room.players.length < MIN_PLAYERS || room.players.length > MAX_PLAYERS) {
-        return json({ error: "Para repartir necesitás entre 3 y 6 jugadores." }, 409);
+        return json({ error: "Para realizar los sorteos necesitás entre 3 y 6 jugadores." }, 409);
       }
       if (room.players.some(player => !Number.isInteger(player.seat))) {
         return json({ error: "Todos los jugadores deben tener un asiento asignado." }, 409);
       }
-      if (Object.values(room.hands || {}).some(hand => Array.isArray(hand) && hand.length)) {
+      if (doCards && Object.values(room.hands || {}).some(hand => Array.isArray(hand) && hand.length)) {
         return json({ error: "Ya hay cartas cargadas manualmente. No se puede mezclar el reparto automático con el manual." }, 409);
       }
-
-      const solution = [
-        shuffleCards(SUSPECT_CARDS)[0],
-        shuffleCards(WEAPON_CARDS)[0],
-        shuffleCards(PLACE_CARDS)[0]
-      ];
-      const deck = shuffleCards(ALL_GAME_CARDS.filter(card => !solution.includes(card)));
-      const players = shuffleCards([...room.players].sort((a, b) => a.seat - b.seat));
-      const characters = shuffleCards(SUSPECT_CARDS);
-      const hands = Object.fromEntries(players.map(player => [player.id, []]));
-      deck.forEach((card, index) => hands[players[index % players.length].id].push(card));
-      players.forEach((player, index) => { player.character = characters[index]; });
-
-      room.hands = hands;
-      room.solution = solution;
-      room.autoDealt = true;
+      if (doCards) {
+        const solution = [
+          shuffleCards(SUSPECT_CARDS)[0],
+          shuffleCards(WEAPON_CARDS)[0],
+          shuffleCards(PLACE_CARDS)[0]
+        ];
+        const deck = shuffleCards(ALL_GAME_CARDS.filter(card => !solution.includes(card)));
+        const cardPlayers = shuffleCards([...room.players].sort((a, b) => a.seat - b.seat));
+        const hands = Object.fromEntries(cardPlayers.map(player => [player.id, []]));
+        deck.forEach((card, index) => hands[cardPlayers[index % cardPlayers.length].id].push(card));
+        room.hands = hands;
+        room.solution = solution;
+        room.autoCardsDealt = true;
+      }
+      if (doCharacters) {
+        const characterPlayers = shuffleCards([...room.players].sort((a, b) => a.seat - b.seat));
+        const characters = shuffleCards(SUSPECT_CARDS);
+        characterPlayers.forEach((player, index) => { player.character = characters[index]; });
+        room.autoCharactersAssigned = true;
+      }
+      room.autoDealt = Boolean(room.autoCardsDealt && room.autoCharactersAssigned);
       room.rosterLocked = true;
       await this.saveRoom(room);
       await this.broadcastSnapshot();
@@ -537,7 +559,7 @@ export class GameRoom extends DurableObject {
     if (path.endsWith("/hand") && method === "POST") {
       if (actor.role !== "player") return json({ error: "Solo los jugadores pueden cargar sus cartas." }, 403);
       if (room.status !== "lobby") return json({ error: "Las cartas solo se pueden cargar antes de iniciar." }, 409);
-      if (room.autoDealEnabled || room.autoDealt) return json({ error: "El organizador activó el reparto automático. Esperá a que sortee las cartas y los personajes." }, 409);
+      if (room.autoCardsEnabled || room.autoDealEnabled || room.autoCardsDealt || room.autoDealt) return json({ error: "El organizador activó el reparto automático de cartas. Esperá a que las sortee." }, 409);
       let body;
       try { body = await readJson(request); }
       catch (error) { return json({ error: error.message }, 400); }
