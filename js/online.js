@@ -841,12 +841,12 @@
     const selfSeatControl = "";
 
     const canStart = players.length >= 3 && players.length <= 6 &&
-      players.every(player => Number.isInteger(player.seat)) && handsValid;
+      players.every(player => Number.isInteger(player.seat)) &&
+      (cardsAutoEnabled || cardsDone || handsValid);
     const cardsAutoEnabled = Boolean(room.autoCardsEnabled ?? room.autoDealEnabled);
     const charactersAutoEnabled = Boolean(room.autoCharactersEnabled ?? room.autoDealEnabled);
     const cardsDone = Boolean(room.autoCardsDealt ?? room.autoDealt);
     const charactersDone = Boolean(room.autoCharactersAssigned ?? room.autoDealt);
-    const canRunDraw = (cardsAutoEnabled && !cardsDone) || (charactersAutoEnabled && !charactersDone);
     const autoDealControl = isHost && room.status === "lobby"
       ? '<div class="online-auto-deal-control">' +
         '<label class="online-auto-deal-toggle"><input id="online-auto-cards-enabled" type="checkbox" ' +
@@ -855,10 +855,6 @@
         '<label class="online-auto-deal-toggle"><input id="online-auto-characters-enabled" type="checkbox" ' +
         (charactersAutoEnabled ? 'checked' : '') + (charactersDone ? ' disabled' : '') +
         '><span><strong>Asignar personajes al azar</strong></span></label>' +
-        (canRunDraw
-          ? '<button class="online-button online-button-secondary online-full-button" data-action="deal" ' +
-            (players.length >= 3 && players.every(player => Number.isInteger(player.seat)) && !state.busy ? '' : 'disabled') +
-            '>' + (state.busy ? 'Sorteando…' : 'Realizar sorteo') + '</button>' : '') +
         '</div>'
       : '';
     const firstControl = isHost && room.status === "lobby"
@@ -867,10 +863,12 @@
         (state.selectedFirst === "random" ? "selected" : "") + '>Sortear aleatoriamente</option>' +
         players.map(player => '<option value="' + escapeHtml(player.id) + '" ' + (state.selectedFirst === player.id ? "selected" : "") +
           '>' + escapeHtml(player.name) + '</option>').join("") + '</select>' +
+        autoDealControl +
         '<button class="online-button online-button-primary online-full-button" data-action="start" ' +
         (canStart && !state.busy ? "" : "disabled") + '>' + (state.busy ? "Iniciando…" : "Iniciar partida") + '</button>' +
         '<p class="online-muted">' + (players.length < 3 ? "Se necesitan al menos 3 jugadores." :
-          !handsReady ? "Todos los jugadores deben cargar y confirmar sus cartas." :
+          !handsValid && !(cardsAutoEnabled || cardsDone) ? "Todos los jugadores deben cargar y confirmar sus cartas." :
+          cardsAutoEnabled && !cardsDone ? "Las cartas se sortearán al iniciar la partida." :
           totalHandCards !== 18 ? "La mesa tiene " + totalHandCards + " de 18 cartas cargadas. Corrijan la cantidad de cartas antes de iniciar." :
           "Distribución completa. Al iniciar, la partida comienza.") + '</p></div>'
       : "";
@@ -923,7 +921,7 @@
       '<p class="online-muted">Organiza ' + escapeHtml(room.hostName) + ' · ' + players.length + '/6 jugadores · Código para compartir</p>' +
       (room.rosterLocked && room.status === "lobby" ? '<p class="online-roster-locked">Ya no se pueden sumar participantes porque comenzó la carga de cartas. Solo el organizador puede ordenar los asientos antes de iniciar.</p>' : "") +
       '<div class="online-seat-list online-table-grid">' + seats + '</div>' + selfSeatControl + joinAsPlayer +
-      handPanel + autoDealControl + firstControl + turnPanel + pauseControl + privateAccusationBanner + suggestionPanel + finishedPanel +
+      handPanel + firstControl + turnPanel + pauseControl + privateAccusationBanner + suggestionPanel + finishedPanel +
       (room.status === "playing" || room.status === "finished"
         ? '<div class="online-actions online-room-actions"><button class="online-button online-button-secondary" data-action="show-annotator">Ver anotador</button></div>'
         : "") +
@@ -1301,22 +1299,22 @@
     } catch (error) { state.busy = false; setError(error.message); }
   }
 
-  async function dealCardsAndCharacters() {
-    state.busy = true; state.error = ""; render();
-    try {
-      const data = await api("/api/rooms/" + state.session.code + "/deal", {
-        method: "POST", host: true, body: {}
-      });
-      state.room = data.room; state.busy = false;
-      await refreshRoom(false);
-      render();
-    } catch (error) { state.busy = false; setError(error.message); }
-  }
-
   async function startGame() {
     const firstPlayerId = document.getElementById("online-first-player")?.value || "random";
     state.selectedFirst = firstPlayerId; state.busy = true; state.error = ""; render();
     try {
+      const room = state.room || {};
+      const cardsEnabled = Boolean(room.autoCardsEnabled ?? room.autoDealEnabled);
+      const charactersEnabled = Boolean(room.autoCharactersEnabled ?? room.autoDealEnabled);
+      const cardsDone = Boolean(room.autoCardsDealt ?? room.autoDealt);
+      const charactersDone = Boolean(room.autoCharactersAssigned ?? room.autoDealt);
+      const needsDraw = (cardsEnabled && !cardsDone) || (charactersEnabled && !charactersDone);
+      if (needsDraw) {
+        const draw = await api("/api/rooms/" + state.session.code + "/deal", {
+          method: "POST", host: true, body: {}
+        });
+        state.room = draw.room;
+      }
       const data = await api("/api/rooms/" + state.session.code + "/start", {
         method: "POST", host: true, body: { firstPlayerId }
       });
@@ -1411,7 +1409,6 @@
     } else if (action === "join-confirm") await joinRoom();
     else if (action === "resume") await restoreSession();
     else if (action === "start") await startGame();
-    else if (action === "deal") await dealCardsAndCharacters();
     else if (action === "toggle-pause") await togglePause();
     else if (action === "submit-hand") await submitHand();
     else if (action === "edit-hand") {
