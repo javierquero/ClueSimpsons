@@ -840,13 +840,13 @@
 
     const selfSeatControl = "";
 
-    const canStart = players.length >= 3 && players.length <= 6 &&
-      players.every(player => Number.isInteger(player.seat)) &&
-      (cardsAutoEnabled || cardsDone || handsValid);
     const cardsAutoEnabled = Boolean(room.autoCardsEnabled ?? room.autoDealEnabled);
     const charactersAutoEnabled = Boolean(room.autoCharactersEnabled ?? room.autoDealEnabled);
     const cardsDone = Boolean(room.autoCardsDealt ?? room.autoDealt);
     const charactersDone = Boolean(room.autoCharactersAssigned ?? room.autoDealt);
+    const canStart = players.length >= 3 && players.length <= 6 &&
+      players.every(player => Number.isInteger(player.seat)) &&
+      (cardsAutoEnabled || cardsDone || handsValid);
     const autoDealControl = isHost && room.status === "lobby"
       ? '<div class="online-auto-deal-control">' +
         '<label class="online-auto-deal-toggle"><input id="online-auto-cards-enabled" type="checkbox" ' +
