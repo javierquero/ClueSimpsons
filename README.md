@@ -2,7 +2,7 @@
   Anotador Clue: Los Simpson 
 </h1>
 
-<p align="center"><strong>Versión actual: v97</strong></p>
+<p align="center"><strong>Versión actual: v98</strong></p>
 
 Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para jugar sin papel ni lápiz. Funciona en el navegador o instalada como app y el modo convencional sigue funcionando sin conexión; el modo interactivo requiere Internet.
 
@@ -25,7 +25,7 @@ Anotador digital para la edición **Clue: Los Simpsons** de Hasbro, pensado para
 - **Deshacer y Rehacer**: permite recorrer las últimas acciones, incluso después de refrescar la página.
 - **Soporte de 3 a 6 jugadores** con nombres editables directamente en la tabla.
 - **Reglas del juego** integradas en la app.
-- **Modo interactivo (v82)**: la pantalla inicial permite unirse por código o crear una partida; las sesiones guardadas se pueden reanudar desde esa misma pantalla. Quien organiza queda incorporado automáticamente como jugador. Los asientos se asignan automáticamente por orden de entrada y solo el organizador puede reordenarlos antes de iniciar. Las cartas quedan bloqueadas al confirmarse y no se pueden editar. Incluye carga privada de cartas, turnos sincronizados, suposiciones en orden de mesa, respuestas explícitas y acusación final.
+- **Modo interactivo (v98)**: la pantalla inicial permite unirse por código o crear una partida; las sesiones guardadas se pueden reanudar desde esa misma pantalla. Quien organiza queda incorporado automáticamente como jugador. Los asientos se asignan automáticamente por orden de entrada y solo el organizador puede reordenarlos antes de iniciar. Las cartas quedan bloqueadas al confirmarse y no se pueden editar. Incluye carga privada de cartas, turnos sincronizados, suposiciones en orden de mesa, respuestas explícitas y acusación final. El servidor conserva las últimas cinco suposiciones para sincronizar anotaciones al reconectarse y elimina salas abandonadas automáticamente (12 h en lobby o juego, 3 h finalizada; máximo absoluto de 24 h).
 - **Privacidad de cartas**: todos ven la suposición y quién responde, pero solo quien supone recibe la identidad de la carta mostrada. La mano de cada jugador queda privada.
 - **Integración con el motor del anotador original (v72)**: el modo interactivo reutiliza el marcado automático existente mediante la función original de registro de suposiciones. No se reemplazó ni modificó `js/app.js`; el modo convencional conserva su funcionamiento.
 - **Asientos y anotaciones**: si el organizador modifica el orden de los asientos antes de iniciar, las columnas del anotador online se reordenan por identidad de jugador para conservar las marcas ya realizadas.
@@ -121,6 +121,36 @@ Para desplegarlo en GitHub Pages, pusheá los archivos a la rama principal del r
 3. Se instala con el ícono de la dona, sin barra del navegador
 
 ---
+
+## 🧪 Pruebas del modo online
+
+Las pruebas del Worker requieren dos terminales y se ejecutan desde la raíz del repositorio.
+
+**Limpieza automática de salas** (usa plazos cortos solo en el Worker local):
+
+Terminal 1:
+```bash
+cd online
+npx wrangler dev --config wrangler.jsonc --port 8787 --local --var CLEANUP_TTL_OVERRIDE_MS:3000
+```
+
+Terminal 2:
+```bash
+node --test tests/online_cleanup.test.mjs
+```
+
+**Historial de suposiciones** (sin acortar plazos):
+
+Terminal 1:
+```bash
+cd online
+npx wrangler dev --config wrangler.jsonc --port 8787 --local
+```
+
+Terminal 2:
+```bash
+node --test tests/online_history.test.mjs
+```
 
 ## 🛠️ Tecnologías
 
