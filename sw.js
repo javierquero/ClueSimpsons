@@ -1,4 +1,4 @@
-const CACHE_NAME = 'clue-simpsons-v100';
+const CACHE_NAME = 'clue-simpsons-v101';
 const APP_SHELL = './index.html';
 
 const ASSETS = [
@@ -6,11 +6,11 @@ const ASSETS = [
   APP_SHELL,
   './tailwind.css',
   './styles.css',
-  './styles.css?v=100',
+  './styles.css?v=101',
   './js/app.js',
   './js/app.js?v=72',
   './js/online.js',
-  './js/online.js?v=100',
+  './js/online.js?v=101',
   './manifest.json',
   './dona.webp',
   './icon-192.png',
