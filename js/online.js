@@ -632,14 +632,13 @@
   function renderHandPanel(room, me) {
     if (!me || room.status !== "lobby") return "";
     if (room.players.length < 3) return "";
-    if (room.autoDealt && Array.isArray(room.private?.ownCards)) {
+    if ((room.autoCardsDealt || room.autoDealt) && Array.isArray(room.private?.ownCards)) {
       return '<section class="online-hand-panel"><p class="online-eyebrow">TUS CARTAS</p><h4>Reparto automático completado</h4>' +
         '<div class="online-dealt-cards">' + room.private.ownCards.map(card => '<span>' + escapeHtml(card) + '</span>').join("") + '</div>' +
         '<p class="online-muted">Estas son tus cartas privadas. No se pueden modificar.</p></section>';
     }
-    if (room.autoDealEnabled) {
-      return '<section class="online-hand-panel"><p class="online-eyebrow">REPARTO AUTOMÁTICO</p><h4>Esperando el sorteo</h4>' +
-        '<p>El organizador activó el reparto automático. Cuando estén todos los jugadores, sorteará las cartas y asignará un personaje a cada uno.</p></section>';
+    if (room.autoCardsEnabled) {
+      return '<section class="online-hand-panel"><p class="online-eyebrow">REPARTO AUTOMÁTICO</p><h4>Esperando el sorteo de cartas</h4></section>';
     }
     if (me.handSubmitted && !state.editingHand) {
       return '<section class="online-hand-panel"><p class="online-eyebrow">TUS CARTAS</p><strong>Selección guardada · ' +
@@ -843,14 +842,23 @@
 
     const canStart = players.length >= 3 && players.length <= 6 &&
       players.every(player => Number.isInteger(player.seat)) && handsValid;
+    const cardsAutoEnabled = Boolean(room.autoCardsEnabled ?? room.autoDealEnabled);
+    const charactersAutoEnabled = Boolean(room.autoCharactersEnabled ?? room.autoDealEnabled);
+    const cardsDone = Boolean(room.autoCardsDealt ?? room.autoDealt);
+    const charactersDone = Boolean(room.autoCharactersAssigned ?? room.autoDealt);
+    const canRunDraw = (cardsAutoEnabled && !cardsDone) || (charactersAutoEnabled && !charactersDone);
     const autoDealControl = isHost && room.status === "lobby"
-      ? '<div class="online-auto-deal-control"><label class="online-auto-deal-toggle"><input id="online-auto-deal-enabled" type="checkbox" ' +
-        (room.autoDealEnabled ? 'checked' : '') + (room.autoDealt ? ' disabled' : '') + '><span><strong>Repartir cartas y asignar personajes automáticamente</strong><small>Desactivado por defecto. Cada jugador recibe una mano aleatoria y un personaje único.</small></span></label>' +
-        (room.autoDealEnabled && !room.autoDealt
+      ? '<div class="online-auto-deal-control">' +
+        '<label class="online-auto-deal-toggle"><input id="online-auto-cards-enabled" type="checkbox" ' +
+        (cardsAutoEnabled ? 'checked' : '') + (cardsDone ? ' disabled' : '') +
+        '><span><strong>Sortear cartas</strong></span></label>' +
+        '<label class="online-auto-deal-toggle"><input id="online-auto-characters-enabled" type="checkbox" ' +
+        (charactersAutoEnabled ? 'checked' : '') + (charactersDone ? ' disabled' : '') +
+        '><span><strong>Asignar personajes al azar</strong></span></label>' +
+        (canRunDraw
           ? '<button class="online-button online-button-secondary online-full-button" data-action="deal" ' +
             (players.length >= 3 && players.every(player => Number.isInteger(player.seat)) && !state.busy ? '' : 'disabled') +
-            '>' + (state.busy ? 'Sorteando…' : 'Sortear cartas y personajes') + '</button>' : '') +
-        (room.autoDealt ? '<p class="online-muted">El sorteo ya se realizó. Las cartas y personajes quedaron asignados.</p>' : '') +
+            '>' + (state.busy ? 'Sorteando…' : 'Realizar sorteo') + '</button>' : '') +
         '</div>'
       : '';
     const firstControl = isHost && room.status === "lobby"
@@ -1278,11 +1286,16 @@
     } catch (error) { setError(error.message); }
   }
 
-  async function toggleAutoDeal(enabled) {
+  async function toggleAutoDeal(kind, enabled) {
     state.busy = true; state.error = ""; render();
     try {
+      const room = state.room || {};
+      const body = {
+        autoCardsEnabled: kind === "cards" ? enabled : Boolean(room.autoCardsEnabled ?? room.autoDealEnabled),
+        autoCharactersEnabled: kind === "characters" ? enabled : Boolean(room.autoCharactersEnabled ?? room.autoDealEnabled)
+      };
       const data = await api("/api/rooms/" + state.session.code + "/settings", {
-        method: "POST", host: true, body: { autoDealEnabled: enabled }
+        method: "POST", host: true, body
       });
       state.room = data.room; state.busy = false; render();
     } catch (error) { state.busy = false; setError(error.message); }
@@ -1419,7 +1432,8 @@
   content.addEventListener("change", async event => {
     const target = event.target;
     if (target.dataset.action === "host-seat") await changeSeat(target.dataset.playerId, target.value, true);
-    else if (target.id === "online-auto-deal-enabled") await toggleAutoDeal(target.checked);
+    else if (target.id === "online-auto-cards-enabled") await toggleAutoDeal("cards", target.checked);
+    else if (target.id === "online-auto-characters-enabled") await toggleAutoDeal("characters", target.checked);
     else if (target.id === "online-first-player") state.selectedFirst = target.value;
     else if (target.hasAttribute("data-online-card")) {
       state.handSelection = [...content.querySelectorAll("[data-online-card]:checked")].map(input => input.value);
