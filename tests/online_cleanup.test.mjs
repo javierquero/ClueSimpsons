@@ -1,7 +1,8 @@
-// Pruebas de la limpieza de salas abandonadas. Requieren el Worker local con
-// plazos cortos (inactividad = 3 s, tope de edad = 9 s):
+// Pruebas de la limpieza de salas abandonadas. Ejecutar desde la raíz del repo.
+// Terminal 1 (plazos cortos solo en el Worker local):
 //   cd online && npx wrangler dev --config wrangler.jsonc --port 8787 --local --var CLEANUP_TTL_OVERRIDE_MS:3000
-//   ONLINE_BASE=http://127.0.0.1:8787 node --test tests/online_cleanup.test.mjs
+// Terminal 2:
+//   node --test tests/online_cleanup.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
