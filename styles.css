@@ -713,7 +713,7 @@
 .online-seat-choice.is-selected { border: 2px solid #ca8a04; background: #fef3c7; }
 .online-seat-choice.is-occupied { opacity: .65; background: #e2e8f0; cursor: not-allowed; }
 .online-room-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.online-room-heading h3 { margin-bottom: 0; }
+.online-room-heading h3 { margin-bottom: 0; font-size: 21px; }
 .online-copy-button {
   padding: 9px 11px; border: 1px solid #fbbf24; border-radius: 9px;
   background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 900;
@@ -727,8 +727,8 @@
 .online-table-seat.is-me { border: 2px solid #16a34a; background: #f0fdf4; }
 .online-table-seat.is-free { justify-content: center; border-style: dashed; border-color: #cbd5e1; background: #f8fafc; color: #94a3b8; }
 .online-seat-number {
-  display: inline-flex; width: 23px; height: 23px; align-items: center; justify-content: center;
-  border-radius: 50%; background: #facc15; color: #713f12; font-size: 11px; font-weight: 900;
+  display: inline-flex; width: 26px; height: 26px; align-items: center; justify-content: center;
+  border-radius: 50%; background: #facc15; color: #713f12; font-size: 12px; font-weight: 900;
 }
 .online-table-seat strong { overflow-wrap: anywhere; color: #422006; font-size: 13px; }
 .online-presence { display: flex; align-items: center; gap: 5px; color: #64748b; font-size: 10px; }
@@ -1185,7 +1185,7 @@ body.online-panel-open { overflow: hidden; }
   .online-icon-button { width: 34px; height: 34px; }
   .online-icon-button svg { width: 18px; height: 18px; }
   .online-room-heading { gap: 7px; }
-  .online-room-heading h3 { font-size: 18px; }
+  .online-room-heading h3 { font-size: 20px; }
 }
 
 
@@ -1388,9 +1388,9 @@ body.online-panel-open { overflow: hidden; }
   }
   .online-seat-drag-handle svg { width: 15px; height: 18px; }
   .online-seat-list .online-seat-number {
-    width: 21px;
-    height: 21px;
-    font-size: 10px;
+    width: 23px;
+    height: 23px;
+    font-size: 11px;
   }
   .online-seat-list .online-table-seat > strong {
     min-width: 0;
@@ -1595,12 +1595,11 @@ body.online-panel-open { overflow: hidden; }
 .online-seat-player { grid-area: name; display: flex; min-width: 0; flex-direction: column; gap: 2px; }
 .online-seat-player > strong { overflow-wrap: anywhere; }
 .online-player-character { color: #92400e; font-size: 11px; font-weight: 800; }
-.online-auto-deal-control { max-width: 480px; margin: 18px 0 0; padding: 14px; border: 1px solid #fbbf24; border-radius: 12px; background: #fffbeb; }
+.online-auto-deal-control { max-width: 480px; margin: 9px 0 10px; padding: 9px 11px; border: 1px solid #fbbf24; border-radius: 10px; background: #fffbeb; }
 .online-auto-deal-toggle { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
-.online-auto-deal-toggle input { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 2px; accent-color: #ca8a04; }
+.online-auto-deal-toggle input { width: 19px; height: 19px; flex: 0 0 auto; margin-top: 2px; accent-color: #ca8a04; }
 .online-auto-deal-toggle span { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
-.online-auto-deal-toggle strong { color: #422006; font-size: 13px; }
-.online-auto-deal-control .online-button { margin-top: 12px; }
+.online-auto-deal-toggle strong { color: #422006; font-size: 13.5px; }
 .online-dealt-cards { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
 .online-dealt-cards span { padding: 7px 9px; border: 1px solid #fcd34d; border-radius: 8px; background: #fff; color: #713f12; font-size: 12px; font-weight: 800; }
 @media (max-width: 600px) {
