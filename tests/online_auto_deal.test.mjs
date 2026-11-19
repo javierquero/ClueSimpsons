@@ -23,17 +23,20 @@ test('el reparto automático está apagado por defecto y sortea 18 cartas y pers
     players.push({id:j.data.playerId,token:j.data.playerToken});
   }
   const initial=await api('/api/rooms/'+code);
-  assert.equal(initial.data.room.autoDealEnabled,false);
-  assert.equal(initial.data.room.autoDealt,false);
-  const denied=await api('/api/rooms/'+code+'/settings',{method:'POST',token:players[0].token,body:{autoDealEnabled:true}});
+  assert.equal(initial.data.room.autoCardsEnabled,false);
+  assert.equal(initial.data.room.autoCharactersEnabled,false);
+  assert.equal(initial.data.room.autoCardsDealt,false);
+  assert.equal(initial.data.room.autoCharactersAssigned,false);
+  const denied=await api('/api/rooms/'+code+'/settings',{method:'POST',token:players[0].token,body:{autoCardsEnabled:true,autoCharactersEnabled:true}});
   assert.equal(denied.status,403);
-  const enabled=await api('/api/rooms/'+code+'/settings',{method:'POST',token:hostToken,body:{autoDealEnabled:true}});
+  const enabled=await api('/api/rooms/'+code+'/settings',{method:'POST',token:hostToken,body:{autoCardsEnabled:true,autoCharactersEnabled:true}});
   assert.equal(enabled.status,200);
   const blockedManual=await api('/api/rooms/'+code+'/hand',{method:'POST',token:players[0].token,body:{cards:[S[0]]}});
   assert.equal(blockedManual.status,409);
   const dealt=await api('/api/rooms/'+code+'/deal',{method:'POST',token:hostToken,body:{}});
   assert.equal(dealt.status,200);
-  assert.equal(dealt.data.room.autoDealt,true);
+  assert.equal(dealt.data.room.autoCardsDealt,true);
+  assert.equal(dealt.data.room.autoCharactersAssigned,true);
   const publicView=await api('/api/rooms/'+code);
   assert.ok(players.every(p=>!publicView.data.room.private));
   assert.ok(publicView.data.room.players.every(p=>!Object.hasOwn(p,'ownCards')));
