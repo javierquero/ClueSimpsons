@@ -1,6 +1,9 @@
 // Historial de las últimas 5 suposiciones y carta mostrada del que supone.
+// Ejecutar desde la raíz del repo en dos terminales.
+// Terminal 1:
 //   cd online && npx wrangler dev --config wrangler.jsonc --port 8787 --local
-//   ONLINE_BASE=http://127.0.0.1:8787 node --test tests/online_history.test.mjs
+// Terminal 2:
+//   node --test tests/online_history.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
