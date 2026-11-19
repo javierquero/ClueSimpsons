@@ -16,6 +16,16 @@ const WEAPON_CARDS = ["Collar","Barra de Plutonio","Honda","Saxofón","Guante ex
 const PLACE_CARDS = ["Asilo Springfield","Bolerama","El Calabozo del Androide","Casa de los Simpsons","Estudios Krustylu","El Holandés Frito","Kwik-E-Mart","Mansión Burns","Planta Nuclear"];
 const ALL_GAME_CARDS = [...SUSPECT_CARDS, ...WEAPON_CARDS, ...PLACE_CARDS];
 
+function shuffleCards(items) {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const value = crypto.getRandomValues(new Uint32Array(1))[0];
+    const j = value % (i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 // Limpieza de salas abandonadas. Una sala se considera abandonada cuando no
 // tiene ningún WebSocket abierto y pasó este tiempo sin actividad (cualquier
 // cambio guardado: unirse, cargar cartas, suponer, responder, conectarse o
@@ -127,12 +137,12 @@ async function requestJson(request, url, env) {
     return withCors(json({ error: "No se pudo generar un código disponible. Intentá nuevamente." }, 503), origin);
   }
 
-  const match = path.match(/^\/api\/rooms\/(\d{6})(?:\/(join|seat|hand|start|pause|suggestions|responses|accusations|socket-ticket|ws))?$/);
+  const match = path.match(/^\/api\/rooms\/(\d{6})(?:\/(join|seat|hand|settings|deal|start|pause|suggestions|responses|accusations|socket-ticket|ws))?$/);
   if (!match) return withCors(json({ error: "Ruta no encontrada." }, 404), origin);
 
   const code = match[1];
   const action = match[2] || (request.method === "GET" ? "snapshot" : "");
-  if (!["snapshot", "join", "seat", "hand", "start", "pause", "suggestions", "responses", "accusations", "socket-ticket", "ws"].includes(action)) {
+  if (!["snapshot", "join", "seat", "hand", "settings", "deal", "start", "pause", "suggestions", "responses", "accusations", "socket-ticket", "ws"].includes(action)) {
     return withCors(json({ error: "Operación no permitida." }, 405), origin);
   }
 
@@ -295,8 +305,9 @@ export class GameRoom extends DurableObject {
 
     const players = [...room.players]
       .sort((a, b) => (a.seat ?? 99) - (b.seat ?? 99))
-      .map(({ id, name, seat }) => ({
+      .map(({ id, name, seat, character }) => ({
         id, name, seat,
+        character: character || null,
         connected: onlineIds.has(id),
         handSubmitted: Boolean(room.hands?.[id]),
         handCount: room.hands?.[id]?.length || 0
@@ -307,6 +318,8 @@ export class GameRoom extends DurableObject {
       status: room.status,
       paused: Boolean(room.paused),
       rosterLocked: Boolean(room.rosterLocked),
+      autoDealEnabled: Boolean(room.autoDealEnabled),
+      autoDealt: Boolean(room.autoDealt),
       hostName: room.hostName,
       hostOnline,
       createdAt: room.createdAt,
@@ -413,6 +426,8 @@ export class GameRoom extends DurableObject {
         hostTokenHash: await sha256(hostToken),
         status: "lobby",
         rosterLocked: false,
+        autoDealEnabled: false,
+        autoDealt: false,
         paused: false,
         players: [],
         firstPlayerId: null,
@@ -466,9 +481,63 @@ export class GameRoom extends DurableObject {
     const actor = await this.actorFor(request, room);
     if (!actor) return json({ error: "Sesión no válida. Volvé a ingresar a la partida." }, 401);
 
+    if (path.endsWith("/settings") && method === "POST") {
+      if (actor.role !== "host") return json({ error: "Solo el organizador puede cambiar el modo de reparto." }, 403);
+      if (room.status !== "lobby") return json({ error: "El modo de reparto solo se puede cambiar antes de iniciar." }, 409);
+      if (room.autoDealt) return json({ error: "El reparto automático ya se realizó y no se puede cambiar." }, 409);
+      let body;
+      try { body = await readJson(request); }
+      catch (error) { return json({ error: error.message }, 400); }
+      if (typeof body.autoDealEnabled !== "boolean") return json({ error: "Indicá si el reparto automático está activado." }, 400);
+      if (body.autoDealEnabled && Object.values(room.hands || {}).some(hand => Array.isArray(hand) && hand.length)) {
+        return json({ error: "Ya hay cartas cargadas manualmente. Para usar el reparto automático, creá una sala nueva antes de cargar cartas." }, 409);
+      }
+      room.autoDealEnabled = body.autoDealEnabled;
+      await this.saveRoom(room);
+      await this.broadcastSnapshot();
+      return json({ room: this.snapshotFor(room, actor) });
+    }
+
+    if (path.endsWith("/deal") && method === "POST") {
+      if (actor.role !== "host") return json({ error: "Solo el organizador puede repartir las cartas." }, 403);
+      if (room.status !== "lobby") return json({ error: "El reparto solo se puede realizar antes de iniciar." }, 409);
+      if (!room.autoDealEnabled) return json({ error: "Primero activá el reparto automático." }, 409);
+      if (room.autoDealt) return json({ error: "Las cartas y los personajes ya fueron sorteados." }, 409);
+      if (room.players.length < MIN_PLAYERS || room.players.length > MAX_PLAYERS) {
+        return json({ error: "Para repartir necesitás entre 3 y 6 jugadores." }, 409);
+      }
+      if (room.players.some(player => !Number.isInteger(player.seat))) {
+        return json({ error: "Todos los jugadores deben tener un asiento asignado." }, 409);
+      }
+      if (Object.values(room.hands || {}).some(hand => Array.isArray(hand) && hand.length)) {
+        return json({ error: "Ya hay cartas cargadas manualmente. No se puede mezclar el reparto automático con el manual." }, 409);
+      }
+
+      const solution = [
+        shuffleCards(SUSPECT_CARDS)[0],
+        shuffleCards(WEAPON_CARDS)[0],
+        shuffleCards(PLACE_CARDS)[0]
+      ];
+      const deck = shuffleCards(ALL_GAME_CARDS.filter(card => !solution.includes(card)));
+      const players = shuffleCards([...room.players].sort((a, b) => a.seat - b.seat));
+      const characters = shuffleCards(SUSPECT_CARDS);
+      const hands = Object.fromEntries(players.map(player => [player.id, []]));
+      deck.forEach((card, index) => hands[players[index % players.length].id].push(card));
+      players.forEach((player, index) => { player.character = characters[index]; });
+
+      room.hands = hands;
+      room.solution = solution;
+      room.autoDealt = true;
+      room.rosterLocked = true;
+      await this.saveRoom(room);
+      await this.broadcastSnapshot();
+      return json({ room: this.snapshotFor(room, actor) });
+    }
+
     if (path.endsWith("/hand") && method === "POST") {
       if (actor.role !== "player") return json({ error: "Solo los jugadores pueden cargar sus cartas." }, 403);
       if (room.status !== "lobby") return json({ error: "Las cartas solo se pueden cargar antes de iniciar." }, 409);
+      if (room.autoDealEnabled || room.autoDealt) return json({ error: "El organizador activó el reparto automático. Esperá a que sortee las cartas y los personajes." }, 409);
       let body;
       try { body = await readJson(request); }
       catch (error) { return json({ error: error.message }, 400); }
