@@ -154,6 +154,11 @@ Terminal 2:
 node --test tests/online_history.test.mjs
 ```
 
+**Reparto automático**:
+```bash
+node --test tests/online_auto_deal.test.mjs
+```
+
 ## 🛠️ Tecnologías
 
 - HTML5 + CSS3 + JavaScript vanilla
