@@ -14,7 +14,7 @@ Backend independiente para partidas multijugador. El anotador convencional conse
 
 - Crear sala e ingresar mediante código de seis dígitos.
 - El organizador puede jugar o limitarse a administrar la sala.
-- Cada jugador elige un asiento libre; el organizador puede cambiar los asientos e intercambiar posiciones mientras la partida siga en lobby. Las columnas del anotador se reordenan por ID de jugador para conservar las marcas locales al cambiar los asientos.
+- El servidor asigna el primer asiento libre al unirse; el organizador puede cambiar los asientos e intercambiar posiciones mientras la partida siga en lobby. Las columnas del anotador se reordenan por ID de jugador para conservar las marcas locales al cambiar los asientos.
 - La primera carga de cartas cierra el ingreso de nuevos participantes, pero no bloquea los cambios de asiento del organizador.
 - Cada jugador carga sus propias cartas. El servidor valida que sean cartas válidas, que no se repitan y que la distribución completa contenga las 18 cartas de jugador, dejando una carta por categoría en la solución.
 - El organizador elige quién comienza o solicita un sorteo aleatorio.
@@ -47,3 +47,22 @@ Comprobación de servicio: `GET /health`.
 ## Límite entre modos
 
 El módulo online mantiene su propia sesión y una copia local del anotador por jugador. Al salir del panel de una partida se restaura el estado convencional. El archivo `js/app.js` no se modifica para incorporar el modo online; la capa de integración utiliza sus funciones públicas existentes.
+
+## Limpieza de salas abandonadas
+
+- Una sala se elimina sola (alarma del Durable Object) cuando no tiene ningún WebSocket abierto y pasó su plazo sin actividad: 12 h en lobby, 12 h en juego y 3 h terminada. Cualquier cambio guardado (unirse, cargar cartas, suponer, responder, conectarse o desconectarse) reinicia el plazo.
+- Tope absoluto: 24 h desde la creación, aunque haya conexiones abiertas. Al vencer se cierran los sockets (código 1001) y se borra todo el estado.
+- Con conexiones abiertas se revisa cada hora.
+
+## Historial de suposiciones
+
+- La sala conserva las últimas 5 suposiciones completadas (`suggestionHistory`, sin la carta mostrada).
+- Quien supuso recibe en `private.shownCards[id]` la carta que le mostraron en cada una; así, si estaba desconectado, el anotador se pone al día al reconectarse.
+
+## Pruebas
+
+```bash
+cd online && npx wrangler dev --config wrangler.jsonc --port 8787 --local --var CLEANUP_TTL_OVERRIDE_MS:3000
+# En otra terminal, desde la raíz del repo:
+ONLINE_BASE=http://127.0.0.1:8787 node --test --test-force-exit tests/online_cleanup.test.mjs tests/online_history.test.mjs
+```

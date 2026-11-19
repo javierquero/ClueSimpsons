@@ -16,6 +16,26 @@ const WEAPON_CARDS = ["Collar","Barra de Plutonio","Honda","Saxofón","Guante ex
 const PLACE_CARDS = ["Asilo Springfield","Bolerama","El Calabozo del Androide","Casa de los Simpsons","Estudios Krustylu","El Holandés Frito","Kwik-E-Mart","Mansión Burns","Planta Nuclear"];
 const ALL_GAME_CARDS = [...SUSPECT_CARDS, ...WEAPON_CARDS, ...PLACE_CARDS];
 
+// Limpieza de salas abandonadas. Una sala se considera abandonada cuando no
+// tiene ningún WebSocket abierto y pasó este tiempo sin actividad (cualquier
+// cambio guardado: unirse, cargar cartas, suponer, responder, conectarse o
+// desconectarse). El plazo depende del estado de la sala.
+const HOUR_MS = 60 * 60 * 1000;
+const ROOM_IDLE_TTL_MS = {
+  lobby: 12 * HOUR_MS,    // esperando jugadores
+  playing: 12 * HOUR_MS,  // partida en curso (se puede retomar al día siguiente)
+  finished: 3 * HOUR_MS   // partida terminada
+};
+// Tope absoluto de vida de una sala, contado desde su creación. Se aplica
+// aunque haya conexiones abiertas o actividad reciente.
+const ROOM_MAX_AGE_MS = 24 * HOUR_MS;
+// Si hay conexiones abiertas, se vuelve a revisar con esta frecuencia.
+const CLEANUP_RECHECK_MS = HOUR_MS;
+
+// Cuántas suposiciones completadas se conservan para que un jugador que estuvo
+// desconectado pueda actualizar su anotador al volver.
+const SUGGESTION_HISTORY_LIMIT = 5;
+
 function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -146,6 +166,85 @@ export class GameRoom extends DurableObject {
   async saveRoom(room) {
     room.updatedAt = Date.now();
     await this.ctx.storage.put("room", room);
+    await this.scheduleCleanup(room);
+  }
+
+  // ── Limpieza de salas abandonadas ───────────────────────────────────────
+  // Los plazos se pueden acortar con la variable CLEANUP_TTL_OVERRIDE_MS, solo
+  // para pruebas locales (el tope de edad pasa a ser 3 veces ese valor).
+  cleanupLimits() {
+    const override = Number(this.env?.CLEANUP_TTL_OVERRIDE_MS);
+    if (Number.isFinite(override) && override > 0) {
+      return {
+        idle: { lobby: override, playing: override, finished: override },
+        maxAge: override * 3,
+        recheck: Math.min(CLEANUP_RECHECK_MS, override)
+      };
+    }
+    return { idle: ROOM_IDLE_TTL_MS, maxAge: ROOM_MAX_AGE_MS, recheck: CLEANUP_RECHECK_MS };
+  }
+
+  cleanupDeadlines(room) {
+    const limits = this.cleanupLimits();
+    const idleTtl = limits.idle[room.status] ?? limits.idle.lobby;
+    const lastActivity = room.updatedAt || room.createdAt || Date.now();
+    return {
+      idleDeadline: lastActivity + idleTtl,
+      maxDeadline: (room.createdAt || lastActivity) + limits.maxAge,
+      recheck: limits.recheck
+    };
+  }
+
+  async scheduleCleanup(room) {
+    const { idleDeadline, maxDeadline } = this.cleanupDeadlines(room);
+    await this.ctx.storage.setAlarm(Math.min(idleDeadline, maxDeadline));
+  }
+
+  openSocketCount() {
+    return this.ctx.getWebSockets().filter(socket => socket.readyState === WebSocket.OPEN).length;
+  }
+
+  async destroyRoom(reason) {
+    for (const socket of this.ctx.getWebSockets()) {
+      try { socket.close(1001, reason); } catch {}
+    }
+    await this.ctx.storage.deleteAlarm();
+    await this.ctx.storage.deleteAll();
+  }
+
+  async runCleanup() {
+    const room = await this.loadRoom();
+    if (!room) { await this.ctx.storage.deleteAll(); return; }
+    const now = Date.now();
+    const { idleDeadline, maxDeadline, recheck } = this.cleanupDeadlines(room);
+    const hasConnections = this.openSocketCount() > 0;
+
+    if (now >= maxDeadline) { await this.destroyRoom("Sala vencida"); return; }
+    if (now >= idleDeadline && !hasConnections) { await this.destroyRoom("Sala abandonada"); return; }
+
+    // Sigue viva: con conexiones abiertas se revisa más adelante; sin ellas,
+    // se espera al vencimiento por inactividad.
+    const next = hasConnections ? Math.min(maxDeadline, now + recheck) : Math.min(idleDeadline, maxDeadline);
+    await this.ctx.storage.setAlarm(Math.max(next, now + 1000));
+  }
+
+  // Las mutaciones y la limpieza comparten la misma cola para no pisarse.
+  enqueue(task) {
+    const result = this.requestQueue.then(task);
+    this.requestQueue = result.then(() => undefined, () => undefined);
+    return result;
+  }
+
+  alarm() {
+    return this.enqueue(() => this.runCleanup());
+  }
+
+  // Una desconexión cuenta como actividad: el plazo de abandono empieza ahí.
+  touchRoom() {
+    return this.enqueue(async () => {
+      const room = await this.loadRoom();
+      if (room) await this.saveRoom(room);
+    });
   }
 
   async actorFor(request, room) {
@@ -156,6 +255,31 @@ export class GameRoom extends DurableObject {
     if (hash === room.hostTokenHash) return { role: "host", playerId: null };
     const player = room.players.find(item => item.tokenHash === hash);
     return player ? { role: "player", playerId: player.id } : null;
+  }
+
+  // Vista pública de una suposición: nunca incluye la carta mostrada.
+  publicSuggestion(room, suggestion) {
+    return {
+      id: suggestion.id,
+      byPlayerId: suggestion.byPlayerId,
+      byPlayerName: room.players.find(player => player.id === suggestion.byPlayerId)?.name || "Jugador",
+      cards: suggestion.cards,
+      responderOrder: suggestion.responderOrder,
+      currentResponderId: suggestion.currentResponderId,
+      responses: suggestion.responses.map(response => ({
+        playerId: response.playerId,
+        playerName: room.players.find(player => player.id === response.playerId)?.name || "Jugador",
+        type: response.type
+      })),
+      completed: suggestion.completed,
+      outcome: suggestion.outcome
+    };
+  }
+
+  // Guarda las últimas suposiciones completadas para que un jugador que estuvo
+  // desconectado pueda ponerse al día al volver (ver snapshotFor).
+  recordCompletedSuggestion(room, suggestion) {
+    room.suggestionLog = [...(room.suggestionLog || []), { ...suggestion }].slice(-SUGGESTION_HISTORY_LIMIT);
   }
 
   publicSnapshot(room) {
@@ -191,21 +315,9 @@ export class GameRoom extends DurableObject {
       firstPlayerId: room.firstPlayerId,
       turnPlayerId: room.turnPlayerId,
       nextTurnPlayerId: room.turnPlayerId ? this.nextEligiblePlayerId(room, room.turnPlayerId) : null,
-      suggestion: room.suggestion ? {
-        id: room.suggestion.id,
-        byPlayerId: room.suggestion.byPlayerId,
-        byPlayerName: room.players.find(player => player.id === room.suggestion.byPlayerId)?.name || "Jugador",
-        cards: room.suggestion.cards,
-        responderOrder: room.suggestion.responderOrder,
-        currentResponderId: room.suggestion.currentResponderId,
-        responses: room.suggestion.responses.map(response => ({
-          playerId: response.playerId,
-          playerName: room.players.find(player => player.id === response.playerId)?.name || "Jugador",
-          type: response.type
-        })),
-        completed: room.suggestion.completed,
-        outcome: room.suggestion.outcome
-      } : null,
+      suggestion: room.suggestion ? this.publicSuggestion(room, room.suggestion) : null,
+      // Últimas suposiciones completadas, de la más vieja a la más nueva.
+      suggestionHistory: (room.suggestionLog || []).map(item => this.publicSuggestion(room, item)),
       startedAt: room.startedAt,
       winnerId: room.status === "finished" ? room.winnerId : null,
       winnerName: room.status === "finished" && room.winnerId
@@ -235,6 +347,15 @@ export class GameRoom extends DurableObject {
       privateData.shownCard = room.suggestion.shownCard;
       privateData.shownByPlayerId = room.suggestion.shownByPlayerId;
     }
+    // Cartas que le mostraron a este jugador en las últimas suposiciones. Solo
+    // las ve quien supuso: el resto del historial es público y no las incluye.
+    const shownCards = {};
+    for (const item of room.suggestionLog || []) {
+      if (item.outcome === "shown" && item.byPlayerId === actor.playerId) {
+        shownCards[item.id] = { card: item.shownCard, byPlayerId: item.shownByPlayerId };
+      }
+    }
+    privateData.shownCards = shownCards;
     return { ...snapshot, private: privateData };
   }
 
@@ -271,9 +392,7 @@ export class GameRoom extends DurableObject {
   }
 
   fetch(request) {
-    const result = this.requestQueue.then(() => this.handleRequest(request));
-    this.requestQueue = result.then(() => undefined, () => undefined);
-    return result;
+    return this.enqueue(() => this.handleRequest(request));
   }
 
   async handleRequest(request) {
@@ -527,6 +646,7 @@ export class GameRoom extends DurableObject {
           suggestion.currentResponderId = null;
           suggestion.outcome = "nobody";
           suggestion.completedAt = Date.now();
+          this.recordCompletedSuggestion(room, suggestion);
           room.turnPlayerId = this.nextEligiblePlayerId(room, suggestion.byPlayerId);
           if (!room.turnPlayerId) {
             room.status = "finished";
@@ -545,6 +665,7 @@ export class GameRoom extends DurableObject {
         suggestion.completed = true;
         suggestion.outcome = "shown";
         suggestion.completedAt = Date.now();
+        this.recordCompletedSuggestion(room, suggestion);
         room.turnPlayerId = this.nextEligiblePlayerId(room, suggestion.byPlayerId);
         if (!room.turnPlayerId) {
           room.status = "finished";
@@ -671,6 +792,7 @@ export class GameRoom extends DurableObject {
 
   async webSocketClose(socket, code, reason, wasClean) {
     await this.broadcastSnapshot();
+    await this.touchRoom();
   }
 
   async webSocketError(socket, error) {

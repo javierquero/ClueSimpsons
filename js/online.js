@@ -323,17 +323,36 @@
     } catch { return false; }
   }
 
+  // Aplica al anotador todas las suposiciones completadas que todavía no se
+  // procesaron: las últimas que guarda el servidor (de la más vieja a la más
+  // nueva) y, si el servidor no manda historial, la actual. Así, quien estuvo
+  // desconectado se pone al día al volver.
   function applyCompletedSuggestion(room) {
-    const suggestion = room?.suggestion;
-    if (!state.annotatorActive || !suggestion?.completed || !suggestion.id ||
-        hasProcessedSuggestion(suggestion.id)) return;
+    if (!state.annotatorActive || !room) return;
+    const pending = [...(room.suggestionHistory || [])];
+    if (room.suggestion?.completed && !pending.some(item => item.id === room.suggestion.id)) {
+      pending.push(room.suggestion);
+    }
+    pending.forEach(suggestion => applySuggestionToAnnotator(room, suggestion));
+  }
+
+  // La carta que le mostraron a este jugador en una suposición suya (o "").
+  function shownCardFor(room, suggestion) {
+    if (suggestion.byPlayerId !== state.session.playerId) return "";
+    const fromHistory = room.private?.shownCards?.[suggestion.id]?.card;
+    if (fromHistory) return fromHistory;
+    return room.suggestion?.id === suggestion.id ? (room.private?.shownCard || "") : "";
+  }
+
+  function applySuggestionToAnnotator(room, suggestion) {
+    if (!suggestion?.completed || !suggestion.id || hasProcessedSuggestion(suggestion.id)) return;
 
     const localOrder = localPlayerOrder(room);
     if (!localOrder.length) return;
     gameState.players = localOrder.map(player => player.name);
     const localIsSuggester = suggestion.byPlayerId === state.session.playerId;
     const shownResponse = suggestion.responses.find(response => response.type === "shown");
-    const actualCard = localIsSuggester ? room.private?.shownCard : "";
+    const actualCard = shownCardFor(room, suggestion);
 
     const suspectInput = document.getElementById("guess-suspect");
     const weaponInput = document.getElementById("guess-weapon");
