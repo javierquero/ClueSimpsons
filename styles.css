@@ -1600,7 +1600,6 @@ body.online-panel-open { overflow: hidden; }
 .online-auto-deal-toggle input { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 2px; accent-color: #ca8a04; }
 .online-auto-deal-toggle span { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
 .online-auto-deal-toggle strong { color: #422006; font-size: 13px; }
-.online-auto-deal-toggle small { color: #64748b; font-size: 11px; line-height: 1.4; }
 .online-auto-deal-control .online-button { margin-top: 12px; }
 .online-dealt-cards { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
 .online-dealt-cards span { padding: 7px 9px; border: 1px solid #fcd34d; border-radius: 8px; background: #fff; color: #713f12; font-size: 12px; font-weight: 800; }
