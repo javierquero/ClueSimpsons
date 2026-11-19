@@ -8,8 +8,5 @@
     "bindings": [
       { "name": "GAME_ROOMS", "class_name": "GameRoom" }
     ]
-  },
-  "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["GameRoom"] }
-  ]
+  }
 }
