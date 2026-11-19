@@ -803,9 +803,14 @@
         ? '<div class="online-private-accusation"><strong>Acusación incorrecta</strong><p>' +
           escapeHtml(room.private.lastAccusation.message) + '</p></div>'
         : "";
+      const characterRoster = room.players.some(player => player.character)
+        ? '<section class="online-character-roster"><p class="online-eyebrow">PERSONAJES</p><div>' +
+          sortedPlayers().map(player => '<span><strong>' + escapeHtml(player.name) + '</strong><small>' +
+            escapeHtml(player.character || "Sin asignar") + '</small></span>').join("") + '</div></section>'
+        : "";
       return '<section class="online-card online-room-card online-active-game">' +
         '<p class="online-eyebrow">' + (room.status === "finished" ? "PARTIDA FINALIZADA" : "PARTIDA EN CURSO") + '</p>' +
-        pauseControl + privateAccusationBanner + renderSuggestionPanel(room, me) +
+        characterRoster + pauseControl + privateAccusationBanner + renderSuggestionPanel(room, me) +
         accusationPanel + renderFinishedPanel(room) + '</section>';
     }
     const isHost = Boolean(state.session?.organizerToken);
