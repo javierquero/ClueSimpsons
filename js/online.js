@@ -574,7 +574,6 @@
     return '<section class="online-card"><p class="online-eyebrow">NUEVA PARTIDA</p><h3>Crear una partida</h3>' +
       '<label class="online-label" for="online-host-name">Tu nombre</label>' +
       '<input id="online-host-name" class="online-input" maxlength="30" autocomplete="name" placeholder="Cómo te verán los demás">' +
-      '<p class="online-muted">Al crear la sala vas a quedar incorporado automáticamente como jugador en el primer asiento.</p>' +
       '<div class="online-actions"><button class="online-button online-button-primary" data-action="create" ' +
       (state.busy ? 'disabled' : '') + '>' + (state.busy ? 'Creando…' : 'Crear partida') + '</button>' +
       '<button class="online-button online-button-light" data-action="home">Volver</button></div></section>';
