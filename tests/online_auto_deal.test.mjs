@@ -66,3 +66,28 @@ test('el reparto automático está apagado por defecto y sortea 18 cartas y pers
   assert.equal(started.data.room.status,'playing');
   assert.ok(started.data.room.players.every(p=>p.character));
 });
+
+test('los sorteos de cartas y personajes se pueden usar por separado', {timeout:30000}, async()=>{
+  const created=await api('/api/rooms',{method:'POST',body:{hostName:'Organizador'}});
+  assert.equal(created.status,201);
+  const code=created.data.code, hostToken=created.data.hostToken;
+  const players=[];
+  for(const name of ['Eva','Fede','Gus']){
+    const j=await api('/api/rooms/'+code+'/join',{method:'POST',body:{name}});
+    assert.equal(j.status,201);
+    players.push({id:j.data.playerId,token:j.data.playerToken});
+  }
+  const chars=await api('/api/rooms/'+code+'/settings',{method:'POST',token:hostToken,body:{autoCardsEnabled:false,autoCharactersEnabled:true}});
+  assert.equal(chars.status,200);
+  for(let i=0;i<players.length;i++){
+    const hand=await api('/api/rooms/'+code+'/hand',{method:'POST',token:players[i].token,body:{cards:[S[i],W[i],P[i]]}});
+    assert.equal(hand.status,200);
+  }
+  const drawn=await api('/api/rooms/'+code+'/deal',{method:'POST',token:hostToken,body:{}});
+  assert.equal(drawn.status,200);
+  assert.equal(drawn.data.room.autoCardsDealt,false);
+  assert.equal(drawn.data.room.autoCharactersAssigned,true);
+  assert.ok(drawn.data.room.players.every(p=>p.character));
+  const views=await Promise.all(players.map(p=>api('/api/rooms/'+code,{token:p.token})));
+  assert.ok(views.every(v=>v.data.room.private.ownCards.length===3));
+});
