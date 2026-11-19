@@ -60,5 +60,5 @@ test('el reparto automático está apagado por defecto y sortea 18 cartas y pers
   const started=await api('/api/rooms/'+code+'/start',{method:'POST',token:hostToken,body:{firstPlayerId:'random'}});
   assert.equal(started.status,200);
   assert.equal(started.data.room.status,'playing');
-  assert.equal(started.data.room.players.every(p=>p.character),'true' === 'true');
+  assert.ok(started.data.room.players.every(p=>p.character));
 });
