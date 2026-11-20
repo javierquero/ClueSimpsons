@@ -865,11 +865,10 @@
         autoDealControl +
         '<button class="online-button online-button-primary online-full-button" data-action="start" ' +
         (canStart && !state.busy ? "" : "disabled") + '>' + (state.busy ? "Iniciando…" : "Iniciar partida") + '</button>' +
-        '<p class="online-muted">' + (players.length < 3 ? "Se necesitan al menos 3 jugadores." :
-          !handsValid && !(cardsAutoEnabled || cardsDone) ? "Todos los jugadores deben cargar y confirmar sus cartas." :
-          cardsAutoEnabled && !cardsDone ? "Las cartas se sortearán al iniciar la partida." :
-          totalHandCards !== 18 ? "La mesa tiene " + totalHandCards + " de 18 cartas cargadas. Corrijan la cantidad de cartas antes de iniciar." :
-          "Distribución completa. Al iniciar, la partida comienza.") + '</p></div>'
+        (cardsAutoEnabled && !cardsDone ? "" : '<p class="online-muted">' + (players.length < 3 ? "Se necesitan al menos 3 jugadores." :
+          !handsValid && !cardsDone ? "Todos los jugadores deben cargar y confirmar sus cartas." :
+          totalHandCards !== 18 && !cardsDone ? "La mesa tiene " + totalHandCards + " de 18 cartas cargadas. Corrijan la cantidad de cartas antes de iniciar." :
+          "Distribución completa. Al iniciar, la partida comienza.") + '</p>') + '</div>'
       : "";
 
     const joinAsPlayer = isHost && !me && room.status === "lobby"
